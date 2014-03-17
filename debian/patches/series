@@ -1,0 +1,2 @@
+12_lessdeps_libgcrypt-config.diff
+15_multiarchpath_in_-L.diff
