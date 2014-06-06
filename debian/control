@@ -1,8 +1,9 @@
 Source: libgcrypt20
 Section: libs
 Priority: optional
-Maintainer: Debian GnuTLS Maintainers <pkg-gnutls-maint@lists.alioth.debian.org>
-Uploaders: Andreas Metzler <ametzler@debian.org>, 
+Maintainer: Pexip AS <packaging@pexip.com>
+XSBC-Pexip-Original-Maintainer: Debian GnuTLS Maintainers <pkg-gnutls-maint@lists.alioth.debian.org>
+XSBC-Pexip-Original-Uploaders: Andreas Metzler <ametzler@debian.org>, 
  Eric Dorland <eric@debian.org>, James Westby <jw+debian@jameswestby.net>,
  Simon Josefsson <simon@josefsson.org>
 Build-Depends: debhelper (>= 9),
@@ -13,6 +14,7 @@ Standards-Version: 3.9.5
 Vcs-Git: git://anonscm.debian.org/pkg-gnutls/libgcrypt.git -b branch1.6
 Vcs-Browser: http://anonscm.debian.org/gitweb/?p=pkg-gnutls/libgcrypt.git;a=shortlog;h=refs/heads/branch1.6
 Homepage: http://directory.fsf.org/project/libgcrypt/
+XS-Pexip-Upstream: http://ftp.debian.org/debian/ jessie
 
 Package: libgcrypt20-doc
 Section: doc

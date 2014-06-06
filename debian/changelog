@@ -1,3 +1,9 @@
+libgcrypt20 (1.6.1-2pexip1) pexip; urgency=low
+
+  * Prepare Pexip packaging
+
+ -- John-Mark Bell <jmb@pexip.com>  Fri, 06 Jun 2014 14:54:37 +0000
+
 libgcrypt20 (1.6.1-2) unstable; urgency=medium
 
   * libgcrypt20-dev does not provide libgcrypt-dev anymore and conflicts with
