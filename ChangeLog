@@ -1,4 +1,121 @@
+2014-08-21  Werner Koch  <wk@gnupg.org>
+
+	Release 1.6.2.
+	* configure.ac: Set LT version to C20/A0/R2.
+
+	build: Fix typo in help string.
+	* configure.ac: Fix.
+
+	sexp: Check args of gcry_sexp_build.
+	* src/sexp.c (do_vsexp_sscan): Return error for invalid args.
+
+	cipher: Fix a segv in case of calling with wrong parameters.
+	* cipher/md.c (_gcry_md_info): Fix arg testing.
+
+	cipher: Fix possible NULL deref in call to prime generator.
+	* cipher/primegen.c (_gcry_generate_elg_prime): Change to return an
+	error code.
+	* cipher/dsa.c (generate): Take care of new return code.
+	* cipher/elgamal.c (generate): Change to return an error code.  Take
+	care of _gcry_generate_elg_prime return code.
+	(generate_using_x): Take care of _gcry_generate_elg_prime return code.
+	(elg_generate): Propagate return code from generate.
+
+2014-08-20  Werner Koch  <wk@gnupg.org>
+
+	ecc: Support the non-standard 0x40 compression flag for EdDSA.
+	* cipher/ecc.c (ecc_generate): Check the "comp" flag for EdDSA.
+	* cipher/ecc-eddsa.c (eddsa_encode_x_y): Add arg WITH_PREFIX.
+	(_gcry_ecc_eddsa_encodepoint): Ditto.
+	(_gcry_ecc_eddsa_ensure_compact): Handle the 0x40 compression prefix.
+	(_gcry_ecc_eddsa_decodepoint): Ditto.
+	* tests/keygrip.c: Check an compresssed with prefix Ed25519 key.
+	* tests/t-ed25519.inp: Ditto.
+
+	mpi: Extend the internal mpi_get_buffer.
+	* mpi/mpicoder.c (do_get_buffer): Add arg EXTRAALLOC.
+	(_gcry_mpi_get_buffer_extra): New.
+
+2014-08-05  Werner Koch  <wk@gnupg.org>
+
+	mpi: Fix regression for powerpc-apple-darwin detection.
+	* mpi/config.links: Add separate entry for powerpc-apple-darwin.
+
+	Fix bug inhibiting the use of the sentinel attribute.
+	* src/gcrypt.h.in: Fix typo in macro.
+
+	mpi: Use BSD syntax for x86_64-apple-darwin.
+	* mpi/config.links: Add case for x86_64-apple-darwin.
+
+2014-08-05  Kristian Fiskerstrand  <kf@sumptuouscapital.com>
+
+	Fix building for the x32 target without asm modules.
+	* mpi/generic/mpi-asm-defs.h: Use a fixed value for the x32 ABI.
+
+2014-05-20  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	Fix ARM assembly when building __PIC__
+	* cipher/camellia-arm.S (GET_DATA_POINTER): New.
+	(_gcry_camellia_arm_encrypt_block): Use GET_DATA_POINTER.
+	(_gcry_camellia_arm_decrypt_block): Ditto.
+	* cipher/cast5-arm.S (GET_DATA_POINTER): New.
+	(_gcry_cast5_arm_encrypt_block, _gcry_cast5_arm_decrypt_block)
+	(_gcry_cast5_arm_enc_blk2, _gcry_cast5_arm_dec_blk2): Use
+	GET_DATA_POINTER.
+	* cipher/rijndael-arm.S (GET_DATA_POINTER): New.
+	(_gcry_aes_arm_encrypt_block, _gcry_aes_arm_decrypt_block): Use
+	GET_DATA_POINTER.
+
+2014-05-09  Werner Koch  <wk@gnupg.org>
+
+	mpi: Fix a subtle bug setting spurious bits with in mpi_set_bit.
+	* mpi/mpi-bit.c (_gcry_mpi_set_bit, _gcry_mpi_set_highbit): Clear
+	allocated but not used bits before resizing.
+	* tests/t-mpi-bits.c (set_bit_with_resize): New.
+
+2014-04-24  Werner Koch  <wk@gnupg.org>
+
+	Support building using the latest mingw-w64 toolchain.
+	* acinclude.m4 (GNUPG_SYS_SYMBOL_UNDERSCORE): Change mingw detection.
+
+	Use internal malloc function in fips.c.
+	* src/fips.c (check_binary_integrity): s/gcry_malloc/xtrymalloc/.
+
+2014-04-22  Werner Koch  <wk@gnupg.org>
+
+	random: Small patch for consistency and really burn the stack.
+	* random/rndlinux.c (_gcry_rndlinux_gather_random): s/int/size_t/.
+	(_gcry_rndlinux_gather_random): Replace memset by wipememory.
+
+2014-04-16  Werner Koch  <wk@gnupg.org>
+
+	pubkey: Re-map all deprecated RSA algo numbers.
+	* cipher/pubkey.c (map_algo): Mape RSA_E and RSA_S.
+
+	cipher: Fix possible NULL dereference.
+	* cipher/md.c (_gcry_md_selftest): Check for spec being NULL.
+
+2014-02-20  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	Fix ARMv6 detection when CFLAGS modify target CPU architecture.
+	* configure.ac (gcry_cv_cc_arm_arch_is_v6): Use compiler test instead
+	of preprocessor test.
+
+2014-01-31  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	Parse /proc/cpuinfo for ARM HW features.
+	* src/hwf-arm.c [__linux__] (HAS_PROC_CPUINFO)
+	(detect_arm_proc_cpuinfo): New.
+	(_gcry_hwf_detect_arm) [HAS_PROC_CPUINFO]: Check '/proc/cpuinfo' for
+	HW features.
+
 2014-01-29  Werner Koch  <wk@gnupg.org>
+
+	cipher: Take care of ENABLE_NEON_SUPPORT.
+	* cipher/salsa20.c (USE_ARM_NEON_ASM): Define only if
+	ENABLE_NEON_SUPPORT is defined.
+	* cipher/serpent.c (USE_NEON): Ditto.
+	* cipher/sha512.c (USE_ARM_NEON_ASM): Ditto.
 
 	Release 1.6.1.
 	* configure.ac: Set LT version to C20/A0/R1.

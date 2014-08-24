@@ -83,17 +83,17 @@ Description: LGPL Crypto library - runtime library
  Arcfour, Blowfish, CAST5, DES, AES, Twofish, Serpent, rfc2268 (rc2), SEED,
  Camellia, IDEA, Salsa, CRC, MD4, MD5, RIPE-MD160, SHA-1, SHA-256, SHA-512,
  Tiger, Whirlpool, DSA, DSA2, ElGamal, RSA, ECC.
-#
-#Package: libgcrypt20-udeb
-#Section: debian-installer
-#Package-Type: udeb
-#Architecture: any
-#Depends: ${shlibs:Depends}, ${misc:Depends}
-#Description: LGPL Crypto library - runtime library
-# libgcrypt contains cryptographic functions.  Many important free
-# ciphers, hash algorithms and public key signing algorithms have been
-# implemented:
-# .
-# Arcfour, Blowfish, CAST5, DES, AES, Twofish, Serpent, rfc2268 (rc2), SEED,
-# Camellia, IDEA, Salsa, CRC, MD4, MD5, RIPE-MD160, SHA-1, SHA-256, SHA-512,
-# Tiger, Whirlpool, DSA, DSA2, ElGamal, RSA, ECC.
+
+Package: libgcrypt20-udeb
+Section: debian-installer
+Package-Type: udeb
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: LGPL Crypto library - runtime library
+ libgcrypt contains cryptographic functions.  Many important free
+ ciphers, hash algorithms and public key signing algorithms have been
+ implemented:
+ .
+ Arcfour, Blowfish, CAST5, DES, AES, Twofish, Serpent, rfc2268 (rc2), SEED,
+ Camellia, IDEA, Salsa, CRC, MD4, MD5, RIPE-MD160, SHA-1, SHA-256, SHA-512,
+ Tiger, Whirlpool, DSA, DSA2, ElGamal, RSA, ECC.

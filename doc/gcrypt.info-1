@@ -1,7 +1,7 @@
 This is /home/wk/s/libgcrypt/doc/gcrypt.info, produced by makeinfo
 version 4.13 from /home/wk/s/libgcrypt/doc/gcrypt.texi.
 
-This manual is for Libgcrypt (version 1.6.1, 29 January 2014), which is
+This manual is for Libgcrypt (version 1.6.2, 21 August 2014), which is
 GNU's library of cryptographic building blocks.
 
 Copyright (C) 2000, 2002, 2003, 2004, 2006, 2007, 2008, 2009, 2011,
@@ -26,7 +26,7 @@ File: gcrypt.info,  Node: Top,  Next: Introduction,  Up: (dir)
 The Libgcrypt Library
 *********************
 
-This manual is for Libgcrypt (version 1.6.1, 29 January 2014), which is
+This manual is for Libgcrypt (version 1.6.2, 21 August 2014), which is
 GNU's library of cryptographic building blocks.
 
 Copyright (C) 2000, 2002, 2003, 2004, 2006, 2007, 2008, 2009, 2011,
@@ -2110,7 +2110,9 @@ D-MPI
    All point values are encoded in standard format; Libgcrypt does in
 general only support uncompressed points, thus the first byte needs to
 be `0x04'.  However "EdDSA" describes its own compression scheme which
-is used by default.
+is used by default; the non-standard first byte `0x40' may optionally
+be used to explicit flag the use of the algorithm’s native
+compression method.
 
    The public key is similar with "private-key" replaced by "public-key"
 and no D-MPI.
@@ -2173,8 +2175,10 @@ known:
      that points are returned in compact (compressed) representation.
      The `nocomp' flag requests that points are returned with full
      coordinates.  The default depends on the the algorithm and curve.
-     The compact representation requires a small overhead before a point
-     can be used but halves the size of a to be conveyed public key.
+     The compact representation requires a small overhead before a
+     point can be used but halves the size of a to be conveyed public
+     key.  If `comp' is used with the "EdDSA" algorithm the key
+     generation prefix the public key with a `0x40' byte.
 
 `pkcs1'
      Use PKCS#1 block type 2 padding for encryption, block type 1
@@ -6586,7 +6590,7 @@ Concept Index
 * ECB, Electronic Codebook mode:         Available cipher modes.
                                                                (line 13)
 * EdDSA:                                 Cryptographic Functions.
-                                                               (line 31)
+                                                               (line 33)
 * Enforced FIPS mode:                    Enabling FIPS mode.   (line 30)
 * error codes:                           Error Values.         (line  6)
 * error codes, list of <1>:              Error Codes.          (line  6)
@@ -6601,9 +6605,9 @@ Concept Index
 * FIPS 186 <1>:                          Public-Key Subsystem Architecture.
                                                                (line 51)
 * FIPS 186:                              Cryptographic Functions.
-                                                               (line 64)
+                                                               (line 66)
 * FIPS 186-2:                            Cryptographic Functions.
-                                                               (line 72)
+                                                               (line 74)
 * FIPS mode:                             Enabling FIPS mode.   (line  6)
 * GCM, Galois/Counter Mode:              Available cipher modes.
                                                                (line 50)
@@ -6635,24 +6639,24 @@ Concept Index
 * MD2, MD4, MD5:                         Available hash algorithms.
                                                                (line  6)
 * no-blinding:                           Cryptographic Functions.
-                                                               (line 39)
+                                                               (line 41)
 * nocomp:                                Cryptographic Functions.
                                                                (line 13)
 * OAEP:                                  Cryptographic Functions.
-                                                               (line 25)
+                                                               (line 27)
 * OFB, Output Feedback mode:             Available cipher modes.
                                                                (line 26)
 * param:                                 Cryptographic Functions.
-                                                               (line 45)
+                                                               (line 47)
 * PKCS1:                                 Cryptographic Functions.
-                                                               (line 21)
+                                                               (line 23)
 * PSS:                                   Cryptographic Functions.
-                                                               (line 28)
+                                                               (line 30)
 * RC2:                                   Available ciphers.    (line 69)
 * RC4:                                   Available ciphers.    (line 52)
 * rfc-2268:                              Available ciphers.    (line 69)
 * RFC6979:                               Cryptographic Functions.
-                                                               (line 36)
+                                                               (line 38)
 * Rijndael:                              Available ciphers.    (line 35)
 * RIPE-MD-160:                           Available hash algorithms.
                                                                (line  6)
@@ -6669,7 +6673,7 @@ Concept Index
 * TIGER, TIGER1, TIGER2:                 Available hash algorithms.
                                                                (line  6)
 * transient-key:                         Cryptographic Functions.
-                                                               (line 50)
+                                                               (line 52)
 * Triple-DES:                            Available ciphers.    (line 14)
 * Twofish:                               Available ciphers.    (line 46)
 * Whirlpool:                             Available hash algorithms.
@@ -6677,5 +6681,5 @@ Concept Index
 * X9.31 <1>:                             Public-Key Subsystem Architecture.
                                                                (line 51)
 * X9.31:                                 Cryptographic Functions.
-                                                               (line 57)
+                                                               (line 59)
 
