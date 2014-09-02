@@ -64,11 +64,11 @@ extern "C" {
    return the same version.  The purpose of this macro is to let
    autoconf (using the AM_PATH_GCRYPT macro) check that this header
    matches the installed library.  */
-#define GCRYPT_VERSION "1.6.1"
+#define GCRYPT_VERSION "1.6.2"
 
 /* The version number of this header.  It may be used to handle minor
    API incompatibilities.  */
-#define GCRYPT_VERSION_NUMBER 0x010601
+#define GCRYPT_VERSION_NUMBER 0x010602
 
 
 /* Internal: We can't use the convenience macros for the multi
@@ -102,7 +102,7 @@ extern "C" {
 
 #define _GCRY_GCC_ATTR_PRINTF(f,a)  __attribute__ ((format (printf,f,a)))
 
-#if _GCRT_GCC_VERSION >= 40000
+#if _GCRY_GCC_VERSION >= 40000
 #define _GCRY_GCC_ATTR_SENTINEL(a) __attribute__ ((sentinel(a)))
 #endif
 
