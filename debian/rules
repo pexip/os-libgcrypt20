@@ -1,6 +1,9 @@
 #! /usr/bin/make -f
 # Build the libgcrypt package for Debian.
 
+DEBVERSION := $(shell dpkg-parsechangelog | \
+	sed -n '/^Version: /s/^Version: //p')
+
 override_dh_auto_configure:
 	dh_auto_configure --verbose -- \
 		--enable-noexecstack \
@@ -37,6 +40,10 @@ override_dh_installinfo:
 override_dh_link:
 	rm -rf debian/libgcrypt20-dbg/usr/share/doc/libgcrypt20-dbg
 	dh_link
+
+override_dh_gencontrol:
+	dh_gencontrol -plibgcrypt11-dev -- -v1.5.4-3+really$(DEBVERSION)
+	dh_gencontrol --remaining-packages
 
 %:
 	dh $@ --parallel --with autotools_dev
