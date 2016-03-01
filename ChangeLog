@@ -1,3 +1,59 @@
+2015-02-27  Werner Koch  <wk@gnupg.org>
+
+	Release 1.6.3.
+
+	doc: Update yat2m to current upstream version (GnuPG).
+	(cherry picked from commit dd5df198727ea5d8f6b04288e14fd732051453c8)
+
+	w32: Use -static-libgcc to avoid linking to libgcc_s_sjlj-1.dll.
+	* src/Makefile.am (extra_ltoptions): New.
+	(libgcrypt_la_LDFLAGS): Use it.
+
+	build: Update build-aux files.
+
+	build: Require automake 1.14.
+	* configure.ac (AM_INIT_AUTOMAKE): Add serial-tests and dist-bzip2.
+	* Makefile.am (AUTOMAKE_OPTIONS): Remove.
+
+2015-02-26  NIIBE Yutaka  <gniibe@fsij.org>
+
+	mpi: Avoid data-dependent timing variations in mpi_powm.
+	* mpi/mpi-pow.c (mpi_powm): Access all data in the table by
+	mpi_set_cond.
+
+	mpi: Revise mpi_powm.
+	* mpi/mpi-pow.c (_gcry_mpi_powm): Rename the table to PRECOMP.
+
+	mpi: Add mpi_set_cond.
+	* mpi/mpiutil.c (_gcry_mpi_set_cond): New.
+	* src/mpi.h (mpi_set_cond): New.
+
+2015-02-23  Werner Koch  <wk@gnupg.org>
+
+	cipher: Use ciphertext blinding for Elgamal decryption.
+	* cipher/elgamal.c (USE_BLINDING): New.
+	(decrypt): Rewrite to use ciphertext blinding.
+
+2014-10-08  Werner Koch  <wk@gnupg.org>
+
+	Fix prime test for 2 and lower and add check command to mpicalc.
+	* cipher/primegen.c (check_prime): Return true for the small primes.
+	(_gcry_prime_check): Return correct values for 2 and lower numbers.
+
+	* src/mpicalc.c (do_primecheck): New.
+	(main): Add command 'P'.
+	(main): Allow for larger input data.
+
+2014-09-30  Werner Koch  <wk@gnupg.org>
+
+	mac: Fix gcry_mac_close to allow for a NULL handle.
+	* cipher/mac.c (_gcry_mac_close): Check for NULL.
+
+2014-09-02  Werner Koch  <wk@gnupg.org>
+
+	asm: Allow building x86 and amd64 using old compilers.
+	* src/hwf-x86.c (get_xgetbv): Build only if AVX support is enabled.
+
 2014-08-21  Werner Koch  <wk@gnupg.org>
 
 	Release 1.6.2.
