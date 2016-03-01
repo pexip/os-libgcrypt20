@@ -10,9 +10,9 @@ Build-Depends: debhelper (>= 9),
  libgpg-error-dev (>= 1.11), autotools-dev
 Build-Depends-Indep: texlive-latex-base, texlive-generic-recommended,
  texinfo (>= 4.6-0)
-Standards-Version: 3.9.5
+Standards-Version: 3.9.6
 Vcs-Git: git://anonscm.debian.org/pkg-gnutls/libgcrypt.git -b branch1.6
-Vcs-Browser: http://anonscm.debian.org/gitweb/?p=pkg-gnutls/libgcrypt.git;a=shortlog;h=refs/heads/branch1.6
+Vcs-Browser: http://anonscm.debian.org/cgit/pkg-gnutls/libgcrypt.git/?h=branch1.6
 Homepage: http://directory.fsf.org/project/libgcrypt/
 XS-Pexip-Upstream: http://ftp.debian.org/debian/ jessie
 
@@ -37,8 +37,8 @@ Description: LGPL Crypto library - documentation
 Package: libgcrypt20-dev
 Section: libdevel
 Architecture: any
-Conflicts: libgcrypt-dev, libgcrypt11-dev
-#Provides: libgcrypt-dev
+Conflicts: libgcrypt-dev, libgcrypt11-dev (<< 1.5.4-3+really1.6.2-4)
+Provides: libgcrypt-dev
 Depends: libgcrypt20 (= ${binary:Version}), libc6-dev | libc-dev,
  libgpg-error-dev, ${misc:Depends}
 Suggests: libgcrypt20-doc
@@ -99,3 +99,13 @@ Description: LGPL Crypto library - runtime library
  Arcfour, Blowfish, CAST5, DES, AES, Twofish, Serpent, rfc2268 (rc2), SEED,
  Camellia, IDEA, Salsa, CRC, MD4, MD5, RIPE-MD160, SHA-1, SHA-256, SHA-512,
  Tiger, Whirlpool, DSA, DSA2, ElGamal, RSA, ECC.
+
+Package: libgcrypt11-dev
+Section: oldlibs
+Priority: extra
+Architecture: all
+Depends: libgcrypt20-dev (>= ${source:Upstream-Version}), ${misc:Depends}
+Breaks: libgnutls-dev (<< 2.12.23-18)
+Description: transitional libgcrypt11-dev package
+ This is a transitional dummy package to ease the migration from
+ libgcrypt11-dev to libgcrypt20-dev. You can safely remove this package.

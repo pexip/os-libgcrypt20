@@ -1,3 +1,53 @@
+libgcrypt20 (1.6.3-2+deb8u1pexip1) pexip; urgency=low
+
+  * New upstream release.
+
+ -- John-Mark Bell <jmb@pexip.com>  Tue, 01 Mar 2016 08:47:39 +0000
+
+libgcrypt20 (1.6.3-2+deb8u1) jessie-security; urgency=high
+
+  * Non-maintainer upload by the Security Team.
+  * ecc: input validation on ECDH
+  * ecc: Constant-time multiplication for Weierstrass curve (CVE-2015-7511)
+
+ -- Salvatore Bonaccorso <carnil@debian.org>  Wed, 10 Feb 2016 07:18:35 +0100
+
+libgcrypt20 (1.6.3-2) unstable; urgency=medium
+
+  * Upload to unstable.
+  * Fix Vcs-Browser link.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sun, 01 Mar 2015 13:46:59 +0100
+
+libgcrypt20 (1.6.3-1) experimental; urgency=medium
+
+  * Use ascii-armored debian/upstream/signing-key.asc instead of
+    debian/upstream-signing-key.pgp for uscan's verification. This alllows us
+    to drop debian/source/include-binaries. Add 2071B08A33BD3F06 as accepted
+    key.
+  * New upstream release.
+    + Use ciphertext blinding for Elgamal decryption [CVE-2014-3591].
+      See http://www.cs.tau.ac.il/~tromer/radioexp/ for details.
+    + Fixed data-dependent timing variations in modular exponentiation
+      [related to CVE-2015-0837, Last-Level Cache Side-Channel Attacks
+      are Practical].
+
+ -- Andreas Metzler <ametzler@debian.org>  Sat, 28 Feb 2015 13:18:25 +0100
+
+libgcrypt20 (1.6.2-4) unstable; urgency=medium
+
+  * Add libgcrypt11-dev transitional package. It Breaks libgnutls-dev
+    (<< 2.12.23-18), because addition of a dummy package does not magically
+    fix GnuTLS 2.x incompatibilities with libgcrypt20.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sat, 27 Sep 2014 14:12:54 +0200
+
+libgcrypt20 (1.6.2-3) unstable; urgency=medium
+
+  * libgcrypt20-dev provides libgcrypt-dev.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sun, 31 Aug 2014 15:50:01 +0200
+
 libgcrypt20 (1.6.2-2pexip1) pexip; urgency=low
 
   * New upstream release.
