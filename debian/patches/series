@@ -4,3 +4,10 @@
 17_ecc-Constant-time-multiplication-for-Weierstrass-cur.patch
 18_random-Improve-the-diagram-showing-the-random-mixing.patch
 19_random-Hash-continuous-areas-in-the-csprng-pool.patch
+20_ecc-Store-EdDSA-session-key-in-secure-memory.patch
+21_secmem-Fix-SEGV-and-stat-calculation.patch
+22_CVE-2017-7526_1-mpi-Simplify-mpi_powm.patch
+22_CVE-2017-7526_2-Same-computation-for-square-and-multiply.patch
+22_CVE-2017-7526_3-rsa-Add-exponent-blinding.patch
+22_CVE-2017-7526_4-rsa-Fix-exponent-blinding.patch
+22_CVE-2017-7526_5-rsa-More-fix.patch

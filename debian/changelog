@@ -1,3 +1,20 @@
+libgcrypt20 (1.6.3-2+deb8u4) jessie-security; urgency=high
+
+  * 22_CVE-2017-752*.patch from upstream 1.7.8 release: Mitigate a
+    flush+reload side-channel attack on RSA secret keys dubbed "Sliding right
+    into  disaster". For details see <https://eprint.iacr.org/2017/627>.
+    [CVE-2017-7526]
+
+ -- Andreas Metzler <ametzler@debian.org>  Sat, 01 Jul 2017 11:53:07 +0200
+
+libgcrypt20 (1.6.3-2+deb8u3) jessie-security; urgency=high
+
+  * Non-maintainer upload by the Security Team.
+  * ecc: Store EdDSA session key in secure memory (CVE-2017-9526)
+  * secmem: Fix SEGV and stat calculation
+
+ -- Salvatore Bonaccorso <carnil@debian.org>  Mon, 12 Jun 2017 06:25:14 +0200
+
 libgcrypt20 (1.6.3-2+deb8u2) jessie-security; urgency=high
 
   * Non-maintainer upload by the Security Team.
