@@ -27,6 +27,9 @@
 /* Enable support for Intel AES-NI instructions. */
 #undef ENABLE_AESNI_SUPPORT
 
+/* Enable support for ARMv8 Crypto Extension instructions. */
+#undef ENABLE_ARM_CRYPTO_SUPPORT
+
 /* Enable support for Intel AVX2 instructions. */
 #undef ENABLE_AVX2_SUPPORT
 
@@ -47,6 +50,9 @@
 
 /* Enable support for Intel PCLMUL instructions. */
 #undef ENABLE_PCLMUL_SUPPORT
+
+/* Enable support for Intel SSE4.1 instructions. */
+#undef ENABLE_SSE41_SUPPORT
 
 /* Define to use the GNU C visibility attribute. */
 #undef GCRY_USE_VISIBILITY
@@ -69,6 +75,9 @@
 /* Defined if compiler has '__builtin_bswap64' intrinsic */
 #undef HAVE_BUILTIN_BSWAP64
 
+/* Defined if compiler has '__builtin_ctz' intrinsic */
+#undef HAVE_BUILTIN_CTZ
+
 /* Defined if a `byte' is typedef'd */
 #undef HAVE_BYTE_TYPEDEF
 
@@ -78,6 +87,10 @@
 /* Define to 1 if you have the `clock_gettime' function. */
 #undef HAVE_CLOCK_GETTIME
 
+/* Defined if underlying assembler is compatible with ARMv8/Aarch64 assembly
+   implementations */
+#undef HAVE_COMPATIBLE_GCC_AARCH64_PLATFORM_AS
+
 /* Defined if underlying assembler is compatible with amd64 assembly
    implementations */
 #undef HAVE_COMPATIBLE_GCC_AMD64_PLATFORM_AS
@@ -86,10 +99,14 @@
    implementations */
 #undef HAVE_COMPATIBLE_GCC_ARM_PLATFORM_AS
 
+/* Defined if underlying assembler is compatible with WIN64 assembly
+   implementations */
+#undef HAVE_COMPATIBLE_GCC_WIN64_PLATFORM_AS
+
 /* Defined for Alpha platforms */
 #undef HAVE_CPU_ARCH_ALPHA
 
-/* Defined for ARM platforms */
+/* Defined for ARM AArch64 platforms */
 #undef HAVE_CPU_ARCH_ARM
 
 /* Defined for M68k platforms */
@@ -142,6 +159,34 @@
 /* Defined if a GCC style "__attribute__ ((aligned (n))" is supported */
 #undef HAVE_GCC_ATTRIBUTE_ALIGNED
 
+/* Defined if compiler supports "__attribute__ ((ms_abi))" function attribute
+   */
+#undef HAVE_GCC_ATTRIBUTE_MS_ABI
+
+/* Defined if a GCC style "__attribute__ ((packed))" is supported */
+#undef HAVE_GCC_ATTRIBUTE_PACKED
+
+/* Defined if compiler supports "__attribute__ ((sysv_abi))" function
+   attribute */
+#undef HAVE_GCC_ATTRIBUTE_SYSV_ABI
+
+/* Defined if default calling convention is 'ms_abi' */
+#undef HAVE_GCC_DEFAULT_ABI_IS_MS_ABI
+
+/* Defined if default calling convention is 'sysv_abi' */
+#undef HAVE_GCC_DEFAULT_ABI_IS_SYSV_ABI
+
+/* Defined if inline assembler supports AArch32 Crypto Extension instructions
+   */
+#undef HAVE_GCC_INLINE_ASM_AARCH32_CRYPTO
+
+/* Defined if inline assembler supports AArch64 Crypto Extension instructions
+   */
+#undef HAVE_GCC_INLINE_ASM_AARCH64_CRYPTO
+
+/* Defined if inline assembler supports AArch64 NEON instructions */
+#undef HAVE_GCC_INLINE_ASM_AARCH64_NEON
+
 /* Defined if inline assembler supports AVX instructions */
 #undef HAVE_GCC_INLINE_ASM_AVX
 
@@ -156,6 +201,9 @@
 
 /* Defined if inline assembler supports PCLMUL instructions */
 #undef HAVE_GCC_INLINE_ASM_PCLMUL
+
+/* Defined if inline assembler supports SSE4.1 instructions */
+#undef HAVE_GCC_INLINE_ASM_SSE41
 
 /* Defined if inline assembler supports SSSE3 instructions */
 #undef HAVE_GCC_INLINE_ASM_SSSE3
@@ -200,11 +248,8 @@
 /* Defined if the GNU Pth is available */
 #undef HAVE_PTH
 
-/* Define if the <pthread.h> defines PTHREAD_MUTEX_RECURSIVE. */
-#undef HAVE_PTHREAD_MUTEX_RECURSIVE
-
-/* Define if the POSIX multithreading library has read/write locks. */
-#undef HAVE_PTHREAD_RWLOCK
+/* Define if we have pthread. */
+#undef HAVE_PTHREAD
 
 /* Define to 1 if you have the `raise' function. */
 #undef HAVE_RAISE
@@ -238,6 +283,9 @@
 
 /* Define to 1 if you have the `strtoul' function. */
 #undef HAVE_STRTOUL
+
+/* Define to 1 if you have the `syscall' function. */
+#undef HAVE_SYSCALL
 
 /* Define to 1 if you have the `sysconf' function. */
 #undef HAVE_SYSCONF
@@ -360,11 +408,11 @@
 /* A human readable text with the name of the OS */
 #undef PRINTABLE_OS_NAME
 
-/* Define if the pthread_in_use() detection is hard. */
-#undef PTHREAD_IN_USE_DETECTION_HARD
-
 /* Define as the return type of signal handlers (`int' or `void'). */
 #undef RETSIGTYPE
+
+/* The size of `uint64_t', as computed by sizeof. */
+#undef SIZEOF_UINT64_T
 
 /* The size of `unsigned int', as computed by sizeof. */
 #undef SIZEOF_UNSIGNED_INT
@@ -377,6 +425,9 @@
 
 /* The size of `unsigned short', as computed by sizeof. */
 #undef SIZEOF_UNSIGNED_SHORT
+
+/* The size of `void *', as computed by sizeof. */
+#undef SIZEOF_VOID_P
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
@@ -398,6 +449,9 @@
 
 /* Defined if this module should be included */
 #undef USE_CAST5
+
+/* Defined if this module should be included */
+#undef USE_CHACHA20
 
 /* Defined if this module should be included */
 #undef USE_CRC
@@ -430,6 +484,9 @@
 #undef USE_IDEA
 
 /* Defined if this module should be included */
+#undef USE_MD2
+
+/* Defined if this module should be included */
 #undef USE_MD4
 
 /* Defined if this module should be included */
@@ -437,13 +494,6 @@
 
 /* set this to limit filenames to the 8.3 format */
 #undef USE_ONLY_8DOT3
-
-/* Define if the POSIX multithreading library can be used. */
-#undef USE_POSIX_THREADS
-
-/* Define if references to the POSIX multithreading library should be made
-   weak. */
-#undef USE_POSIX_THREADS_WEAK
 
 /* Define to support the experimental random daemon */
 #undef USE_RANDOM_DAEMON
@@ -491,14 +541,10 @@
 #undef USE_SHA256
 
 /* Defined if this module should be included */
+#undef USE_SHA3
+
+/* Defined if this module should be included */
 #undef USE_SHA512
-
-/* Define if the old Solaris multithreading library can be used. */
-#undef USE_SOLARIS_THREADS
-
-/* Define if references to the old Solaris multithreading library should be
-   made weak. */
-#undef USE_SOLARIS_THREADS_WEAK
 
 /* Enable extensions on AIX 3, Interix.  */
 #ifndef _ALL_SOURCE
@@ -530,9 +576,6 @@
 
 /* Defined if this module should be included */
 #undef USE_WHIRLPOOL
-
-/* Define if the native Windows multithreading API can be used. */
-#undef USE_WINDOWS_THREADS
 
 /* Version of this package */
 #undef VERSION

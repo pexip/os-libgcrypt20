@@ -101,8 +101,11 @@ AC_DEFUN([GNUPG_CHECK_GNUMAKE],
 AC_DEFUN([GNUPG_SYS_SYMBOL_UNDERSCORE],
 [tmp_do_check="no"
 case "${host}" in
-    *-mingw32*)
+    i?86-mingw32* | i?86-*-mingw32*)
         ac_cv_sys_symbol_underscore=yes
+        ;;
+    x86_64-*-mingw32*)
+        ac_cv_sys_symbol_underscore=no
         ;;
     i386-emx-os2 | i[3456]86-pc-os2*emx | i386-pc-msdosdjgpp)
         ac_cv_sys_symbol_underscore=yes
@@ -239,7 +242,7 @@ int main()
     pool += (pgsize - ((long int)pool % pgsize));
 
     err = mlock( pool, 4096 );
-    if( !err || errno == EPERM )
+    if( !err || errno == EPERM || errno == EAGAIN)
         return 0; /* okay */
 
     return 1;  /* hmmm */

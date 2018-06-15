@@ -56,11 +56,10 @@
 #include <process.h>
 #endif
 #include "g10lib.h"
-#include "../cipher/rmd.h"
 #include "random.h"
 #include "rand-internal.h"
-#include "cipher.h" /* Required for the rmd160_hash_buffer() prototype.  */
-#include "ath.h"
+#include "cipher.h"         /* _gcry_sha1_hash_buffer  */
+#include "../cipher/sha1.h" /* _gcry_sha1_mixblock     */
 
 #ifndef RAND_MAX   /* For SunOS. */
 #define RAND_MAX 32767
@@ -84,7 +83,7 @@
 
 /* Contstants pertaining to the hash pool. */
 #define BLOCKLEN  64   /* Hash this amount of bytes... */
-#define DIGESTLEN 20   /* ... into a digest of this length (rmd160). */
+#define DIGESTLEN 20   /* ... into a digest of this length (sha-1). */
 /* POOLBLOCKS is the number of digests which make up the pool.  */
 #define POOLBLOCKS 30
 /* POOLSIZE must be a multiple of the digest length to make the AND
@@ -174,14 +173,8 @@ static void (*fast_gather_fnc)(void (*)(const void*, size_t,
    used by regular applications.  */
 static int quick_test;
 
-/* On systems without entropy gathering modules, this flag is set to
-   indicate that the random generator is not working properly.  A
-   warning message is issued as well.  This is useful only for
-   debugging and during development.  */
-static int faked_rng;
-
 /* This is the lock we use to protect all pool operations.  */
-static ath_mutex_t pool_lock;
+GPGRT_LOCK_DEFINE (pool_lock);
 
 /* This is a helper for assert calls.  These calls are used to assert
    that functions are called in a locked state.  It is not meant to be
@@ -242,8 +235,6 @@ static void (*getfnc_fast_random_poll (void))(void (*)(const void*, size_t,
                                               enum random_origins);
 static void read_random_source (enum random_origins origin,
                                 size_t length, int level);
-static int gather_faked (void (*add)(const void*, size_t, enum random_origins),
-                         enum random_origins, size_t length, int level );
 
 
 
@@ -259,14 +250,10 @@ static void
 initialize_basics(void)
 {
   static int initialized;
-  int err;
 
   if (!initialized)
     {
       initialized = 1;
-      err = ath_mutex_init (&pool_lock);
-      if (err)
-        log_fatal ("failed to create the pool lock: %s\n", strerror (err) );
 
 #ifdef USE_RANDOM_DAEMON
       _gcry_daemon_initialize_basics ();
@@ -286,9 +273,9 @@ lock_pool (void)
 {
   int err;
 
-  err = ath_mutex_lock (&pool_lock);
+  err = gpgrt_lock_lock (&pool_lock);
   if (err)
-    log_fatal ("failed to acquire the pool lock: %s\n", strerror (err));
+    log_fatal ("failed to acquire the pool lock: %s\n", gpg_strerror (err));
   pool_is_locked = 1;
 }
 
@@ -299,9 +286,9 @@ unlock_pool (void)
   int err;
 
   pool_is_locked = 0;
-  err = ath_mutex_unlock (&pool_lock);
+  err = gpgrt_lock_unlock (&pool_lock);
   if (err)
-    log_fatal ("failed to release the pool lock: %s\n", strerror (err));
+    log_fatal ("failed to release the pool lock: %s\n", gpg_strerror (err));
 }
 
 
@@ -331,11 +318,6 @@ initialize(void)
       /* Setup the slow entropy gathering function.  The code requires
          that this function exists. */
       slow_gather_fnc = getfnc_gather_random ();
-      if (!slow_gather_fnc)
-        {
-          faked_rng = 1;
-          slow_gather_fnc = gather_faked;
-	}
 
       /* Setup the fast entropy gathering function.  */
       fast_gather_fnc = getfnc_fast_random_poll ();
@@ -458,7 +440,7 @@ _gcry_rngcsprng_is_faked (void)
   /* We need to initialize due to the runtime determination of
      available entropy gather modules.  */
   initialize();
-  return (faked_rng || quick_test);
+  return quick_test;
 }
 
 
@@ -566,41 +548,46 @@ _gcry_rngcsprng_randomize (void *buffer, size_t length,
 
 
 /*
-   Mix the pool:
-
-   |........blocks*20byte........|20byte|..44byte..|
-   <..44byte..>           <20byte>
-        |                    |
-        |                    +------+
-        +---------------------------|----------+
-                                    v          v
-   |........blocks*20byte........|20byte|..44byte..|
-                                 <.....64bytes.....>
-                                         |
-      +----------------------------------+
-     Hash
-      v
-   |.............................|20byte|..44byte..|
-   <20byte><20byte><..44byte..>
-      |                |
-      |                +---------------------+
-      +-----------------------------+        |
-                                    v        v
-   |.............................|20byte|..44byte..|
-                                 <.....64byte......>
-                                        |
-              +-------------------------+
-             Hash
-              v
-   |.............................|20byte|..44byte..|
-   <20byte><20byte><..44byte..>
-
-   and so on until we did this for all blocks.
-
-   To better protect against implementation errors in this code, we
-   xor a digest of the entire pool into the pool before mixing.
-
-   Note: this function must only be called with a locked pool.
+ * Mix the 600 byte pool.  Note that the 64 byte scratch area directly
+ * follows the pool.  The numbers in the diagram give the number of
+ * bytes.
+ *         <................600...............>   <.64.>
+ * pool   |------------------------------------| |------|
+ *         <20><.24.>                      <20>
+ *          |     |                         +-----+
+ *          +-----|-------------------------------|-+
+ *                +-------------------------------|-|-+
+ *                                                v v v
+ *                                               |------|
+ *                                                <hash>
+ *          +---------------------------------------+
+ *          v
+ *         <20>
+ * pool'  |------------------------------------|
+ *         <20><20><.24.>
+ *          +---|-----|---------------------------+
+ *              +-----|---------------------------|-+
+ *                    +---------------------------|-|-+
+ *                                                v v v
+ *                                               |------|
+ *                                                <hash>
+ *                                                  |
+ *              +-----------------------------------+
+ *              v
+ *             <20>
+ * pool'' |------------------------------------|
+ *         <20><20><20><.24.>
+ *              +---|-----|-----------------------+
+ *                  +-----|-----------------------|-+
+ *                        +-----------------------|-|-+
+ *                                                v v v
+ *
+ * and so on until we did this for all 30 blocks.
+ *
+ * To better protect against implementation errors in this code, we
+ * xor a digest of the entire pool into the pool before mixing.
+ *
+ * Note: this function must only be called with a locked pool.
  */
 static void
 mix_pool(unsigned char *pool)
@@ -611,41 +598,40 @@ mix_pool(unsigned char *pool)
   unsigned char *hashbuf = pool + POOLSIZE;
   unsigned char *p, *pend;
   int i, n;
-  RMD160_CONTEXT md;
+  SHA1_CONTEXT md;
+  unsigned int nburn;
 
 #if DIGESTLEN != 20
-#error must have a digest length of 20 for ripe-md-160
+#error must have a digest length of 20 for SHA-1
 #endif
 
   gcry_assert (pool_is_locked);
-  _gcry_rmd160_init( &md );
+  _gcry_sha1_mixblock_init (&md);
 
-  /* Loop over the pool.  */
+  /* pool_0 -> pool'.  */
   pend = pool + POOLSIZE;
-  memcpy(hashbuf, pend - DIGESTLEN, DIGESTLEN );
-  memcpy(hashbuf+DIGESTLEN, pool, BLOCKLEN-DIGESTLEN);
-  _gcry_rmd160_mixblock( &md, hashbuf);
-  memcpy(pool, hashbuf, 20 );
+  memcpy (hashbuf, pend - DIGESTLEN, DIGESTLEN);
+  memcpy (hashbuf+DIGESTLEN, pool, BLOCKLEN-DIGESTLEN);
+  nburn = _gcry_sha1_mixblock (&md, hashbuf);
+  memcpy (pool, hashbuf, DIGESTLEN);
 
   if (failsafe_digest_valid && pool == rndpool)
     {
-      for (i=0; i < 20; i++)
+      for (i=0; i < DIGESTLEN; i++)
         pool[i] ^= failsafe_digest[i];
     }
 
+  /* Loop for the remaining iterations.  */
   p = pool;
   for (n=1; n < POOLBLOCKS; n++)
     {
-      memcpy (hashbuf, p, DIGESTLEN);
-
-      p += DIGESTLEN;
-      if (p+DIGESTLEN+BLOCKLEN < pend)
-        memcpy (hashbuf+DIGESTLEN, p+DIGESTLEN, BLOCKLEN-DIGESTLEN);
+      if (p + BLOCKLEN < pend)
+        memcpy (hashbuf, p, BLOCKLEN);
       else
         {
-          unsigned char *pp = p + DIGESTLEN;
+          unsigned char *pp = p;
 
-          for (i=DIGESTLEN; i < BLOCKLEN; i++ )
+          for (i=0; i < BLOCKLEN; i++ )
             {
               if ( pp >= pend )
                 pp = pool;
@@ -653,21 +639,22 @@ mix_pool(unsigned char *pool)
 	    }
 	}
 
-      _gcry_rmd160_mixblock ( &md, hashbuf);
-      memcpy(p, hashbuf, 20 );
+      _gcry_sha1_mixblock (&md, hashbuf);
+      p += DIGESTLEN;
+      memcpy (p, hashbuf, DIGESTLEN);
     }
 
-    /* Our hash implementation does only leave small parts (64 bytes)
-       of the pool on the stack, so it is okay not to require secure
-       memory here.  Before we use this pool, it will be copied to the
-       help buffer anyway. */
-    if ( pool == rndpool)
-      {
-        _gcry_rmd160_hash_buffer (failsafe_digest, pool, POOLSIZE);
-        failsafe_digest_valid = 1;
-      }
+  /* Our hash implementation does only leave small parts (64 bytes)
+     of the pool on the stack, so it is okay not to require secure
+     memory here.  Before we use this pool, it will be copied to the
+     help buffer anyway. */
+  if ( pool == rndpool)
+    {
+      _gcry_sha1_hash_buffer (failsafe_digest, pool, POOLSIZE);
+      failsafe_digest_valid = 1;
+    }
 
-    _gcry_burn_stack (384); /* for the rmd160_mixblock(), rmd160_hash_buffer */
+  _gcry_burn_stack (nburn);
 }
 
 
@@ -869,7 +856,7 @@ _gcry_rngcsprng_update_seed_file (void)
 
 
   /* Copy the entropy pool to a scratch pool and mix both of them. */
-  for (i=0,dp=(unsigned long*)keypool, sp=(unsigned long*)rndpool;
+  for (i=0,dp=(unsigned long*)(void*)keypool, sp=(unsigned long*)(void*)rndpool;
        i < POOLWORDS; i++, dp++, sp++ )
     {
       *dp = *sp + ADD_VALUE;
@@ -978,8 +965,8 @@ read_pool (byte *buffer, size_t length, int level)
 
       pool_balance = 0;
       needed = length - pool_balance;
-      if (needed < POOLSIZE/2)
-        needed = POOLSIZE/2;
+      if (needed < 16)  /* At least 128 bits.  */
+        needed = 16;
       else if( needed > POOLSIZE )
         BUG ();
       read_random_source (RANDOM_ORIGIN_EXTRAPOLL, needed,
@@ -1025,7 +1012,7 @@ read_pool (byte *buffer, size_t length, int level)
     }
 
   /* Create a new pool. */
-  for(i=0,dp=(unsigned long*)keypool, sp=(unsigned long*)rndpool;
+  for(i=0,dp=(unsigned long*)(void*)keypool, sp=(unsigned long*)(void*)rndpool;
       i < POOLWORDS; i++, dp++, sp++ )
     *dp = *sp + ADD_VALUE;
 
@@ -1239,7 +1226,7 @@ do_fast_random_poll (void)
 # endif /*!RUSAGE_SELF*/
 #endif /*HAVE_GETRUSAGE*/
 
-  /* Time and clock are availabe on all systems - so we better do it
+  /* Time and clock are available on all systems - so we better do it
      just in case one of the above functions didn't work.  */
   {
     time_t x = time(NULL);
@@ -1280,48 +1267,11 @@ _gcry_rngcsprng_fast_poll (void)
 
 
 static void
-read_random_source (enum random_origins orgin, size_t length, int level )
+read_random_source (enum random_origins origin, size_t length, int level)
 {
   if ( !slow_gather_fnc )
     log_fatal ("Slow entropy gathering module not yet initialized\n");
 
-  if ( slow_gather_fnc (add_randomness, orgin, length, level) < 0)
+  if (slow_gather_fnc (add_randomness, origin, length, level) < 0)
     log_fatal ("No way to gather entropy for the RNG\n");
-}
-
-
-static int
-gather_faked (void (*add)(const void*, size_t, enum random_origins),
-              enum random_origins origin, size_t length, int level )
-{
-  static int initialized=0;
-  size_t n;
-  char *buffer, *p;
-
-  (void)add;
-  (void)level;
-
-  if ( !initialized )
-    {
-      log_info(_("WARNING: using insecure random number generator!!\n"));
-      initialized=1;
-#ifdef HAVE_RAND
-      srand( time(NULL)*getpid());
-#else
-      srandom( time(NULL)*getpid());
-#endif
-    }
-
-  p = buffer = xmalloc( length );
-  n = length;
-#ifdef HAVE_RAND
-  while ( n-- )
-    *p++ = ((unsigned)(1 + (int) (256.0*rand()/(RAND_MAX+1.0)))-1);
-#else
-  while ( n-- )
-    *p++ = ((unsigned)(1 + (int) (256.0*random()/(RAND_MAX+1.0)))-1);
-#endif
-  add_randomness ( buffer, length, origin );
-  xfree (buffer);
-  return 0; /* okay */
 }

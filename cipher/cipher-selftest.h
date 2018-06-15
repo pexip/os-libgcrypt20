@@ -1,5 +1,5 @@
 /* cipher-selftest.h - Helper functions for bulk encryption selftests.
- *	Copyright © 2013 Jussi Kivilinna <jussi.kivilinna@iki.fi>
+ * Copyright (C) 2013 Jussi Kivilinna <jussi.kivilinna@iki.fi>
  *
  * This file is part of Libgcrypt.
  *
@@ -39,6 +39,11 @@ typedef void (*gcry_cipher_bulk_ctr_enc_t)(void *context, unsigned char *iv,
 					   void *outbuf_arg,
 					   const void *inbuf_arg,
 					   size_t nblocks);
+
+/* Helper function to allocate an aligned context for selftests.  */
+void *_gcry_cipher_selftest_alloc_ctx (const int context_size,
+                                       unsigned char **r_mem);
+
 
 /* Helper function for bulk CBC decryption selftest */
 const char *

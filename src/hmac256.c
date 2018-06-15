@@ -426,10 +426,8 @@ _gcry_hmac256_finalize (hmac256_context_t hd, size_t *r_dlen)
 
       tmphd = _gcry_hmac256_new (NULL, 0);
       if (!tmphd)
-        {
-          free (hd);
-          return NULL;
-        }
+	return NULL;
+
       _gcry_hmac256_update (tmphd, hd->opad, 64);
       _gcry_hmac256_update (tmphd, hd->buf, 32);
       finalize (tmphd);
@@ -648,6 +646,7 @@ main (int argc, char **argv)
   size_t n, dlen, idx;
   int use_stdin = 0;
   int use_binary = 0;
+  int use_stdkey = 0;
 
   assert (sizeof (u32) == 4);
 #ifdef __WIN32
@@ -691,11 +690,16 @@ main (int argc, char **argv)
           argc--; argv++;
           use_binary = 1;
         }
+      else if (!strcmp (*argv, "--stdkey"))
+        {
+          argc--; argv++;
+          use_stdkey = 1;
+        }
     }
 
   if (argc < 1)
     {
-      fprintf (stderr, "usage: %s [--binary] key [filename]\n", pgm);
+      fprintf (stderr, "usage: %s [--binary] [--stdkey] key [filename]\n", pgm);
       exit (1);
     }
 
@@ -704,7 +708,7 @@ main (int argc, char **argv)
     setmode (fileno (stdout), O_BINARY);
 #endif
 
-  key = *argv;
+  key = use_stdkey? "What am I, a doctor or a moonshuttle conductor?" : *argv;
   argc--, argv++;
   keylen = strlen (key);
   use_stdin = !argc;

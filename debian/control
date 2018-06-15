@@ -5,13 +5,13 @@ Maintainer: Debian GnuTLS Maintainers <pkg-gnutls-maint@lists.alioth.debian.org>
 Uploaders: Andreas Metzler <ametzler@debian.org>, 
  Eric Dorland <eric@debian.org>, James Westby <jw+debian@jameswestby.net>,
  Simon Josefsson <simon@josefsson.org>
-Build-Depends: debhelper (>= 9),
- libgpg-error-dev (>= 1.11), autotools-dev
+Build-Depends: debhelper (>= 9.20150628),
+ libgpg-error-dev (>= 1.11), dh-autoreconf, automake (>= 1:1.12)
 Build-Depends-Indep: texlive-latex-base, texlive-generic-recommended,
- texinfo (>= 4.6-0)
-Standards-Version: 3.9.6
-Vcs-Git: git://anonscm.debian.org/pkg-gnutls/libgcrypt.git -b branch1.6
-Vcs-Browser: http://anonscm.debian.org/cgit/pkg-gnutls/libgcrypt.git/?h=branch1.6
+ texinfo (>= 4.6-0), mingw-w64, libgpg-error-mingw-w64-dev
+Standards-Version: 3.9.8
+Vcs-Git: https://anonscm.debian.org/git/pkg-gnutls/libgcrypt.git -b branch1.6
+Vcs-Browser: https://anonscm.debian.org/cgit/pkg-gnutls/libgcrypt.git/?h=branch1.6
 Homepage: http://directory.fsf.org/project/libgcrypt/
 
 Package: libgcrypt20-doc
@@ -27,8 +27,10 @@ Description: LGPL Crypto library - documentation
  implemented:
  .
  Arcfour, Blowfish, CAST5, DES, AES, Twofish, Serpent, rfc2268 (rc2), SEED,
- Camellia, IDEA, Salsa, CRC, MD4, MD5, RIPE-MD160, SHA-1, SHA-256, SHA-512,
- Tiger, Whirlpool, DSA, DSA2, ElGamal, RSA, ECC.
+ Poly1305, Camellia, ChaCha20, IDEA, Salsa, CRC, MD2, MD4, MD5, RIPE-MD160,
+ SHA-1, SHA-256, SHA-512, SHA3-224, SHA3-256, SHA3-384, SHA3-512, SHAKE128,
+ SHAKE256 Tiger, Whirlpool, DSA, DSA2, ElGamal, RSA, ECC (Curve25519,
+ sec256k1, GOST R 34.10-2001 and GOST R 34.10-2012, etc.)
  .
  This package contains developer documentation.
 
@@ -46,27 +48,12 @@ Description: LGPL Crypto library - development files
  implemented:
  .
  Arcfour, Blowfish, CAST5, DES, AES, Twofish, Serpent, rfc2268 (rc2), SEED,
- Camellia, IDEA, Salsa, CRC, MD4, MD5, RIPE-MD160, SHA-1, SHA-256, SHA-512,
- Tiger, Whirlpool, DSA, DSA2, ElGamal, RSA, ECC.
+ Poly1305, Camellia, ChaCha20, IDEA, Salsa, CRC, MD2, MD4, MD5, RIPE-MD160,
+ SHA-1, SHA-256, SHA-512, SHA3-224, SHA3-256, SHA3-384, SHA3-512, SHAKE128,
+ SHAKE256 Tiger, Whirlpool, DSA, DSA2, ElGamal, RSA, ECC (Curve25519,
+ sec256k1, GOST R 34.10-2001 and GOST R 34.10-2012, etc.)
  .
  This package contains header files and libraries for static linking.
-
-Package: libgcrypt20-dbg
-Priority: extra
-Section: debug
-Architecture: any
-Depends: libgcrypt20 (= ${binary:Version}), ${misc:Depends}
-Multi-Arch: same
-Description: LGPL Crypto library - debugger files
- libgcrypt contains cryptographic functions.  Many important free
- ciphers, hash algorithms and public key signing algorithms have been
- implemented:
- .
- Arcfour, Blowfish, CAST5, DES, AES, Twofish, Serpent, rfc2268 (rc2), SEED,
- Camellia, IDEA, Salsa, CRC, MD4, MD5, RIPE-MD160, SHA-1, SHA-256, SHA-512,
- Tiger, Whirlpool, DSA, DSA2, ElGamal, RSA, ECC.
- .
- This package contains symbol tables for debugging.
 
 Package: libgcrypt20
 Priority: standard
@@ -81,8 +68,10 @@ Description: LGPL Crypto library - runtime library
  implemented:
  .
  Arcfour, Blowfish, CAST5, DES, AES, Twofish, Serpent, rfc2268 (rc2), SEED,
- Camellia, IDEA, Salsa, CRC, MD4, MD5, RIPE-MD160, SHA-1, SHA-256, SHA-512,
- Tiger, Whirlpool, DSA, DSA2, ElGamal, RSA, ECC.
+ Poly1305, Camellia, ChaCha20, IDEA, Salsa, CRC, MD2, MD4, MD5, RIPE-MD160,
+ SHA-1, SHA-256, SHA-512, SHA3-224, SHA3-256, SHA3-384, SHA3-512, SHAKE128,
+ SHAKE256 Tiger, Whirlpool, DSA, DSA2, ElGamal, RSA, ECC (Curve25519,
+ sec256k1, GOST R 34.10-2001 and GOST R 34.10-2012, etc.)
 
 Package: libgcrypt20-udeb
 Section: debian-installer
@@ -95,15 +84,38 @@ Description: LGPL Crypto library - runtime library
  implemented:
  .
  Arcfour, Blowfish, CAST5, DES, AES, Twofish, Serpent, rfc2268 (rc2), SEED,
- Camellia, IDEA, Salsa, CRC, MD4, MD5, RIPE-MD160, SHA-1, SHA-256, SHA-512,
- Tiger, Whirlpool, DSA, DSA2, ElGamal, RSA, ECC.
+ Poly1305, Camellia, ChaCha20, IDEA, Salsa, CRC, MD2, MD4, MD5, RIPE-MD160,
+ SHA-1, SHA-256, SHA-512, SHA3-224, SHA3-256, SHA3-384, SHA3-512, SHAKE128,
+ SHAKE256 Tiger, Whirlpool, DSA, DSA2, ElGamal, RSA, ECC (Curve25519,
+ sec256k1, GOST R 34.10-2001 and GOST R 34.10-2012, etc.)
 
 Package: libgcrypt11-dev
 Section: oldlibs
 Priority: extra
-Architecture: all
+Architecture: any
 Depends: libgcrypt20-dev (>= ${source:Upstream-Version}), ${misc:Depends}
 Breaks: libgnutls-dev (<< 2.12.23-18)
 Description: transitional libgcrypt11-dev package
  This is a transitional dummy package to ease the migration from
  libgcrypt11-dev to libgcrypt20-dev. You can safely remove this package.
+
+Package: libgcrypt-mingw-w64-dev
+Priority: extra
+Section: libdevel
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, libgpg-error-mingw-w64-dev
+Suggests: wine
+Description: LGPL Crypto library - Windows development
+ libgcrypt contains cryptographic functions.  Many important free
+ ciphers, hash algorithms and public key signing algorithms have been
+ implemented:
+ .
+ Arcfour, Blowfish, CAST5, DES, AES, Twofish, Serpent, rfc2268 (rc2), SEED,
+ Poly1305, Camellia, ChaCha20, IDEA, Salsa, CRC, MD2, MD4, MD5, RIPE-MD160,
+ SHA-1, SHA-256, SHA-512, SHA3-224, SHA3-256, SHA3-384, SHA3-512, SHAKE128,
+ SHAKE256 Tiger, Whirlpool, DSA, DSA2, ElGamal, RSA, ECC (Curve25519,
+ sec256k1, GOST R 34.10-2001 and GOST R 34.10-2012, etc.)
+ .
+ This is a Windows version of libgcrypt.  It's meant to be used when
+ cross-building software that targets the Windows platform, e.g. the
+ win32-loader component of Debian-Installer.

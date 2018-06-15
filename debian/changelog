@@ -1,35 +1,260 @@
-libgcrypt20 (1.6.3-2+deb8u4) jessie-security; urgency=high
+libgcrypt20 (1.7.6-2+deb9u3) stretch-security; urgency=high
 
-  * 22_CVE-2017-752*.patch from upstream 1.7.8 release: Mitigate a
+  * Non-maintainer upload by the Security Team.
+  * ecc: Add blinding for ECDSA (CVE-2018-0495)
+
+ -- Salvatore Bonaccorso <carnil@debian.org>  Fri, 15 Jun 2018 11:58:05 +0200
+
+libgcrypt20 (1.7.6-2+deb9u2) stretch-security; urgency=high
+
+  * Non-maintainer upload by the Security Team.
+  * ecc: Add input validation for X25519 [CVE-2017-0379]
+    Mitigate a local side-channel attack on Curve25519 dubbed "May the
+    Fourth be With You". (Closes: #873383)
+
+ -- Salvatore Bonaccorso <carnil@debian.org>  Sun, 27 Aug 2017 11:58:04 +0200
+
+libgcrypt20 (1.7.6-2+deb9u1) stretch-security; urgency=high
+
+  * 31_CVE-2017-752*.patch from upstream 1.7.8 release: Mitigate a
     flush+reload side-channel attack on RSA secret keys dubbed "Sliding right
-    into  disaster". For details see <https://eprint.iacr.org/2017/627>.
+    into disaster". For details see <https://eprint.iacr.org/2017/627>.
     [CVE-2017-7526]
 
- -- Andreas Metzler <ametzler@debian.org>  Sat, 01 Jul 2017 11:53:07 +0200
+ -- Andreas Metzler <ametzler@debian.org>  Sat, 01 Jul 2017 11:01:58 +0200
 
-libgcrypt20 (1.6.3-2+deb8u3) jessie-security; urgency=high
+libgcrypt20 (1.7.6-2) unstable; urgency=high
 
-  * Non-maintainer upload by the Security Team.
-  * ecc: Store EdDSA session key in secure memory (CVE-2017-9526)
-  * secmem: Fix SEGV and stat calculation
+  * Refresh debian/upstream/signing-key.asc, key-expiry-dates bumped.
+  * Pull two fixes from gcrypt 1.7.7 bugfix release:
+    + 30_gcry177_01-ecc-Store-EdDSA-session-key-in-secure-memory.patch
+      Fix possible timing attack on EdDSA session key.
+    + 30_gcry177_02-secmem-Fix-SEGV-and-stat-calculation.patch
+      Fix long standing bug in secure memory implementation which could lead
+      to a segv on free.
 
- -- Salvatore Bonaccorso <carnil@debian.org>  Mon, 12 Jun 2017 06:25:14 +0200
+ -- Andreas Metzler <ametzler@debian.org>  Sat, 03 Jun 2017 10:58:36 +0200
 
-libgcrypt20 (1.6.3-2+deb8u2) jessie-security; urgency=high
+libgcrypt20 (1.7.6-1) unstable; urgency=medium
 
-  * Non-maintainer upload by the Security Team.
-  * random: Improve the diagram showing the random mixing
-  * random: Hash continuous areas in the csprng pool (CVE-2016-6313)
+  * New upstream version, includes
+    30_rijndael-ssse3-fix-counter-operand-from-read-only-to.patch.
 
- -- Salvatore Bonaccorso <carnil@debian.org>  Wed, 17 Aug 2016 21:58:23 +0200
+ -- Andreas Metzler <ametzler@debian.org>  Thu, 26 Jan 2017 11:58:32 +0100
 
-libgcrypt20 (1.6.3-2+deb8u1) jessie-security; urgency=high
+libgcrypt20 (1.7.5-3) unstable; urgency=medium
 
-  * Non-maintainer upload by the Security Team.
-  * ecc: input validation on ECDH
-  * ecc: Constant-time multiplication for Weierstrass curve (CVE-2015-7511)
+  * 30_rijndael-ssse3-fix-counter-operand-from-read-only-to.patch from
+    upstream GIT master: Fix SSE3 assembly on Nehalem.
 
- -- Salvatore Bonaccorso <carnil@debian.org>  Wed, 10 Feb 2016 07:18:35 +0100
+ -- Andreas Metzler <ametzler@debian.org>  Sat, 14 Jan 2017 11:06:04 +0100
+
+libgcrypt20 (1.7.5-2) unstable; urgency=medium
+
+  * Upload to unstable.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sat, 17 Dec 2016 08:38:47 +0100
+
+libgcrypt20 (1.7.5-1) experimental; urgency=medium
+
+  * New upstream version.
+
+ -- Andreas Metzler <ametzler@debian.org>  Thu, 15 Dec 2016 19:32:33 +0100
+
+libgcrypt20 (1.7.3-2) unstable; urgency=medium
+
+  [ Helmut Grohne / Andreas Metzler ]
+  * Turn libgcrypt11-dev into an Arch:any package. Closes: #840205
+
+ -- Andreas Metzler <ametzler@debian.org>  Sun, 09 Oct 2016 18:00:59 +0200
+
+libgcrypt20 (1.7.3-1) unstable; urgency=high
+
+  * New upstream version.
+    Fix critical security bug in the RNG [CVE-2016-6313].  An
+    attacker who obtains 580 bytes from the standard RNG can
+    trivially predict the next 20 bytes of output.
+
+ -- Andreas Metzler <ametzler@debian.org>  Thu, 18 Aug 2016 07:47:10 +0200
+
+libgcrypt20 (1.7.2-2) unstable; urgency=low
+
+  * Upload to unstable.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sun, 17 Jul 2016 15:32:09 +0200
+
+libgcrypt20 (1.7.2-1) experimental; urgency=medium
+
+  * New upstream bugfix release.
+
+ -- Andreas Metzler <ametzler@debian.org>  Fri, 15 Jul 2016 19:21:29 +0200
+
+libgcrypt20 (1.7.1-2) unstable; urgency=medium
+
+  * Upload to unstable.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sat, 18 Jun 2016 07:24:03 +0200
+
+libgcrypt20 (1.7.1-1) experimental; urgency=medium
+
+  * Fix package descriptions. The algorithm-list was incomplete for some
+    packages. Closes: #821368 (Thanks, Katsuhiko Nishimra)
+  * New upstream bugfix release, update copyright info.
+
+ -- Andreas Metzler <ametzler@debian.org>  Thu, 16 Jun 2016 19:12:08 +0200
+
+libgcrypt20 (1.7.0-2) unstable; urgency=low
+
+  * Upload to unstable.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sun, 17 Apr 2016 13:16:30 +0200
+
+libgcrypt20 (1.7.0-1) experimental; urgency=medium
+
+  * New upstream release.
+  * Update debian/copyright from AUTHORS.
+  * Update algorithm list in package description.
+
+ -- Andreas Metzler <ametzler@debian.org>  Fri, 15 Apr 2016 19:31:29 +0200
+
+libgcrypt20 (1.6.5+git20160413+8472b-1) experimental; urgency=medium
+
+  * New upstream snapshot.
+  * Use hardening=+bindnow instead of hardening=+all, we are mainly shipping
+    libraries, including static ones.
+
+ -- Andreas Metzler <ametzler@debian.org>  Wed, 13 Apr 2016 18:54:07 +0200
+
+libgcrypt20 (1.6.5+git20160407+5e5d3-1) experimental; urgency=medium
+
+  * New upstream snapshot.
+
+ -- Andreas Metzler <ametzler@debian.org>  Thu, 07 Apr 2016 18:56:20 +0200
+
+libgcrypt20 (1.6.5+git20160329+48ee9-1) experimental; urgency=medium
+
+  * New upstream snapshot.
+  * Drop 40_Fix-building-random-drbg-for-Win32-64.patch, removal of
+    src/gcrypt.h in debian/clean is unnecessary, too.
+  * Build with DEB_BUILD_MAINT_OPTIONS := hardening=+all.
+
+ -- Andreas Metzler <ametzler@debian.org>  Wed, 30 Mar 2016 19:15:01 +0200
+
+libgcrypt20 (1.6.5+git20160220+839d12c-2) experimental; urgency=medium
+
+  [ Andreas Metzler ]
+  * Drop build/ from debian/clean, passing --builddirectory=build on dh $@
+    line makes this unnecessary.
+  * 40_Fix-building-random-drbg-for-Win32-64.patch from upstream GIT: Remove
+    include for sys/types.h and asm/types.h. Fixes FTBFS in win* (and
+    possibly kfreebsd-*).
+  * 25_norevisionfromgit.diff: Hardcode dummy values instead of trying to pull
+    revision/version info from GIT when autoconf is run.
+  * Delete generated header src/gcrypt.h on clean. - The version shipped in
+    the tarball can have different content than a freshly generated one, and
+    with out-of-tree-builds the outdated version is not overwritten.
+
+  [ Daniel Kahn Gillmor ]
+  * Add libgcrypt-mingw-w64-dev package which will allow building a gpgv-win32
+    package for debian installer's win32-loader. Closes: #814954
+
+ -- Andreas Metzler <ametzler@debian.org>  Mon, 22 Feb 2016 18:50:38 +0100
+
+libgcrypt20 (1.6.5+git20160220+839d12c-1) experimental; urgency=medium
+
+  [ Daniel Kahn Gillmor ]
+  * Build out-of-tree for cleanliness.
+
+  [ Andreas Metzler ]
+  * Also set --builddirectory=build on dh $@ line.
+  * New git snapshot, drop 30_bufhelp-disable-unaligned-ppc.patch.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sat, 20 Feb 2016 16:28:56 +0100
+
+libgcrypt20 (1.6.5+git20160212+a9b64-2) experimental; urgency=low
+
+  * Add 30_bufhelp-disable-unaligned-ppc.patch by Jussi Kivilinn (Disable
+    unaligned memory accesses on powerpc*) to fix errors on ppc64el.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sat, 13 Feb 2016 11:41:22 +0100
+
+libgcrypt20 (1.6.5+git20160212+a9b64-1) experimental; urgency=medium
+
+  * Upload upstream git master branch to experimental to get some buildd
+    exposure.
+  * New upstream version (preparing for 1.7.0):
+    + Drop 30_support_source_date_epoch.diff. Upstream now defaults to no
+      build-stamp.
+    + Drop 20_fedora_libgcrypt-1.6.3-aliasing.patch. It does not apply cleanly
+      and we want to test unpatched buildability anyway.
+    + List newly added symbols in symbols file.
+    + Update debian/copyright from AUTORS and LICENSES. RFC 1952 code is gone.
+      Closes: #745453
+    + Core enums have been extended (gcry_ctl_cmds, gcry_cipher_algos,
+      gcry_cipher_modes, gcry_pk_algos, gcry_md_algos, gcry_mac_algo) after
+      addition of inter alia SHA-3, ChaCha20, Poly1305, curve sec256k1 and
+      curves GOST R 34.10-2001 and GOST R 34.10-2012. Be paraniod and bump
+      Debian dependency info (via debian/libgcrypt20.symbols) to >= 1.7.0.
+
+ -- Andreas Metzler <ametzler@debian.org>  Fri, 12 Feb 2016 10:18:00 +0100
+
+libgcrypt20 (1.6.5-2) unstable; urgency=medium
+
+  * serial-tests was added in automake 1.12, add versioned b-d.
+  * Upload to unstable.
+
+ -- Andreas Metzler <ametzler@debian.org>  Wed, 10 Feb 2016 12:01:58 +0100
+
+libgcrypt20 (1.6.5-1) experimental; urgency=medium
+
+  * New upstream bugfix release.
+    + Mitigate side-channel attack on ECDH with Weierstrass curves
+     [CVE-2015-7511].  See http://www.cs.tau.ac.IL/~tromer/ecdh/ for
+     details.
+
+ -- Andreas Metzler <ametzler@debian.org>  Tue, 09 Feb 2016 19:52:06 +0100
+
+libgcrypt20 (1.6.4-5) unstable; urgency=medium
+
+  * Move Vcs-* from git/http to https.
+  * Add 30_support_source_date_epoch.diff: Support setting BUILD_TIMESTAMP
+    using SOURCE_DATE_EPOCH through the SOURCE_DATE_EPOCH environment
+    variable. (Thanks, Jérémy Bobbio!). Use/b-d on dh-autoreconf instead of
+    autotools-dev. Closes: #812428
+
+ -- Andreas Metzler <ametzler@debian.org>  Sun, 24 Jan 2016 16:00:41 +0100
+
+libgcrypt20 (1.6.4-4) unstable; urgency=medium
+
+  * Delete build-aux/texinfo.tex and let texinfo use the system copy instead
+    to prevent breakage in pdf generation in UTF-8 locale. Closes: #803081
+  * Migrate from libgcrypt20-dbg to ddebs. dh_strip's --ddeb-migration
+    option was added to debhelper/unstable with version 9.20150628, bump
+    build-dependency accordingly.
+
+ -- Andreas Metzler <ametzler@debian.org>  Fri, 25 Dec 2015 14:06:18 +0100
+
+libgcrypt20 (1.6.4-3) unstable; urgency=medium
+
+  * Upload to unstable.
+  * Ship pdf instead of postscript docs.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sun, 18 Oct 2015 13:37:58 +0200
+
+libgcrypt20 (1.6.4-2) experimental; urgency=medium
+
+  * Pull 20_fedora_libgcrypt-1.6.3-aliasing.patch from Fedora to fix testsuite
+    error with gcc5 on ppc64.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sat, 03 Oct 2015 18:06:52 +0200
+
+libgcrypt20 (1.6.4-1) experimental; urgency=medium
+
+  * libgcrypt-config: Do not fail on missing dpkg-architecture.
+    Closes: #796818
+  * New upstream version.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sat, 26 Sep 2015 13:22:15 +0200
 
 libgcrypt20 (1.6.3-2) unstable; urgency=medium
 

@@ -1,5 +1,5 @@
 /* cipher-ccm.c - CTR mode with CBC-MAC mode implementation
- * Copyright © 2013 Jussi Kivilinna <jussi.kivilinna@iki.fi>
+ * Copyright (C) 2013 Jussi Kivilinna <jussi.kivilinna@iki.fi>
  *
  * This file is part of Libgcrypt.
  *
@@ -25,12 +25,8 @@
 
 #include "g10lib.h"
 #include "cipher.h"
-#include "ath.h"
 #include "bufhelp.h"
 #include "./cipher-internal.h"
-
-/* We need a 64 bit type for this code.  */
-#ifdef HAVE_U64_TYPEDEF
 
 
 #define set_burn(burn, nburn) do { \
@@ -114,6 +110,7 @@ gcry_err_code_t
 _gcry_cipher_ccm_set_nonce (gcry_cipher_hd_t c, const unsigned char *nonce,
                             size_t noncelen)
 {
+  unsigned int marks_key;
   size_t L = 15 - noncelen;
   size_t L_;
 
@@ -126,12 +123,14 @@ _gcry_cipher_ccm_set_nonce (gcry_cipher_hd_t c, const unsigned char *nonce,
     return GPG_ERR_INV_LENGTH;
 
   /* Reset state */
+  marks_key = c->marks.key;
   memset (&c->u_mode, 0, sizeof(c->u_mode));
   memset (&c->marks, 0, sizeof(c->marks));
   memset (&c->u_iv, 0, sizeof(c->u_iv));
   memset (&c->u_ctr, 0, sizeof(c->u_ctr));
   memset (c->lastiv, 0, sizeof(c->lastiv));
   c->unused = 0;
+  c->marks.key = marks_key;
 
   /* Setup CTR */
   c->u_ctr.ctr[0] = L_;
@@ -365,78 +364,3 @@ _gcry_cipher_ccm_decrypt (gcry_cipher_hd_t c, unsigned char *outbuf,
 
   return err;
 }
-
-#else
-
-/*
- * Provide dummy functions so that we avoid adding too much #ifdefs in
- * cipher.c.
- */
-
-gcry_err_code_t
-_gcry_cipher_ccm_encrypt(gcry_cipher_hd_t c, unsigned char *outbuf,
-			 size_t outbuflen, const unsigned char *inbuf,
-			 size_t inbuflen)
-{
-  (void)c;
-  (void)outbuf;
-  (void)outbuflen;
-  (void)inbuf;
-  (void)inbuflen;
-  return GPG_ERR_NOT_SUPPORTED;
-}
-
-gcry_err_code_t
-_gcry_cipher_ccm_decrypt(gcry_cipher_hd_t c, unsigned char *outbuf,
-			 size_t outbuflen, const unsigned char *inbuf,
-			 size_t inbuflen)
-{
-  (void)c;
-  (void)outbuf;
-  (void)outbuflen;
-  (void)inbuf;
-  (void)inbuflen;
-  return GPG_ERR_NOT_SUPPORTED;
-}
-
-gcry_err_code_t
-_gcry_cipher_ccm_set_nonce(gcry_cipher_hd_t c, const unsigned char *nonce,
-			   size_t noncelen)
-{
-  (void)c;
-  (void)nonce;
-  (void)noncelen;
-  return GPG_ERR_NOT_SUPPORTED;
-}
-
-gcry_err_code_t
-_gcry_cipher_ccm_authenticate(gcry_cipher_hd_t c, const unsigned char *abuf,
-			      size_t abuflen)
-{
-  (void)c;
-  (void)abuf;
-  (void)abuflen;
-  return GPG_ERR_NOT_SUPPORTED;
-}
-
-gcry_err_code_t
-_gcry_cipher_ccm_get_tag(gcry_cipher_hd_t c, unsigned char *outtag,
-			 size_t taglen)
-{
-  (void)c;
-  (void)outtag;
-  (void)taglen;
-  return GPG_ERR_NOT_SUPPORTED;
-}
-
-gcry_err_code_t
-_gcry_cipher_ccm_check_tag(gcry_cipher_hd_t c, const unsigned char *intag,
-			   size_t taglen)
-{
-  (void)c;
-  (void)intag;
-  (void)taglen;
-  return GPG_ERR_NOT_SUPPORTED;
-}
-
-#endif /*HAVE_U64_TYPEDEF*/

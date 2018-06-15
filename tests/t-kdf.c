@@ -28,6 +28,8 @@
 #include <assert.h>
 
 #include "../src/gcrypt-int.h"
+#include "stopwatch.h"
+
 
 #ifndef DIM
 # define DIM(v)		     (sizeof(v)/sizeof((v)[0]))
@@ -58,6 +60,58 @@ die (const char *format, ...)
   vfprintf (stderr, format, arg_ptr);
   va_end (arg_ptr);
   exit (1);
+}
+
+
+static void
+dummy_consumer (volatile char *buffer, size_t buflen)
+{
+  (void)buffer;
+  (void)buflen;
+}
+
+
+static void
+bench_s2k (unsigned long s2kcount)
+{
+  gpg_error_t err;
+  const char passphrase[] = "123456789abcdef0";
+  char keybuf[128/8];
+  unsigned int repetitions = 10;
+  unsigned int count;
+  const char *elapsed;
+  int pass = 0;
+
+ again:
+  start_timer ();
+  for (count = 0; count < repetitions; count++)
+    {
+      err = gcry_kdf_derive (passphrase, strlen (passphrase),
+                             GCRY_KDF_ITERSALTED_S2K,
+                             GCRY_MD_SHA1, "saltsalt", 8, s2kcount,
+                             sizeof keybuf, keybuf);
+      if (err)
+        die ("gcry_kdf_derive failed: %s\n", gpg_strerror (err));
+      dummy_consumer (keybuf, sizeof keybuf);
+    }
+  stop_timer ();
+
+  elapsed = elapsed_time (repetitions);
+  if (!pass++)
+    {
+      if (!atoi (elapsed))
+        {
+          repetitions = 10000;
+          goto again;
+        }
+      else if (atoi (elapsed) < 10)
+        {
+          repetitions = 100;
+          goto again;
+        }
+    }
+
+  printf ("%s\n", elapsed);
 }
 
 
@@ -834,6 +888,10 @@ check_openpgp (void)
     {
       if (tv[tvidx].disabled)
         continue;
+      /* MD5 isn't supported in fips mode */
+      if (gcry_fips_mode_active()
+          && tv[tvidx].hashalgo == GCRY_MD_MD5)
+        continue;
       if (verbose)
         fprintf (stderr, "checking S2K test vector %d\n", tvidx);
       assert (tv[tvidx].dklen <= sizeof outbuf);
@@ -864,6 +922,7 @@ check_pbkdf2 (void)
     size_t plen;     /* Length of P. */
     const char *salt;
     size_t saltlen;
+    int hashalgo;
     unsigned long c; /* Iterations.  */
     int dklen;       /* Requested key length.  */
     const char *dk;  /* Derived key.  */
@@ -872,6 +931,7 @@ check_pbkdf2 (void)
     {
       "password", 8,
       "salt", 4,
+      GCRY_MD_SHA1,
       1,
       20,
       "\x0c\x60\xc8\x0f\x96\x1f\x0e\x71\xf3\xa9"
@@ -880,6 +940,7 @@ check_pbkdf2 (void)
     {
       "password", 8,
       "salt", 4,
+      GCRY_MD_SHA1,
       2,
       20,
       "\xea\x6c\x01\x4d\xc7\x2d\x6f\x8c\xcd\x1e"
@@ -888,6 +949,7 @@ check_pbkdf2 (void)
     {
       "password", 8,
       "salt", 4,
+      GCRY_MD_SHA1,
       4096,
       20,
       "\x4b\x00\x79\x01\xb7\x65\x48\x9a\xbe\xad"
@@ -896,6 +958,7 @@ check_pbkdf2 (void)
     {
       "password", 8,
       "salt", 4,
+      GCRY_MD_SHA1,
       16777216,
       20,
       "\xee\xfe\x3d\x61\xcd\x4d\xa4\xe4\xe9\x94"
@@ -905,6 +968,7 @@ check_pbkdf2 (void)
     {
       "passwordPASSWORDpassword", 24,
       "saltSALTsaltSALTsaltSALTsaltSALTsalt", 36,
+      GCRY_MD_SHA1,
       4096,
       25,
       "\x3d\x2e\xec\x4f\xe4\x1c\x84\x9b\x80\xc8"
@@ -914,6 +978,7 @@ check_pbkdf2 (void)
     {
       "pass\0word", 9,
       "sa\0lt", 5,
+      GCRY_MD_SHA1,
       4096,
       16,
       "\x56\xfa\x6a\xa7\x55\x48\x09\x9d\xcc\x37"
@@ -922,15 +987,140 @@ check_pbkdf2 (void)
     { /* empty password test, not in RFC-6070 */
       "", 0,
       "salt", 4,
+      GCRY_MD_SHA1,
       2,
       20,
       "\x13\x3a\x4c\xe8\x37\xb4\xd2\x52\x1e\xe2"
       "\xbf\x03\xe1\x1c\x71\xca\x79\x4e\x07\x97"
+    },
+    {
+      "password", 8,
+      "salt", 4,
+      GCRY_MD_GOSTR3411_CP,
+      1,
+      32,
+      "\x73\x14\xe7\xc0\x4f\xb2\xe6\x62\xc5\x43\x67\x42\x53\xf6\x8b\xd0"
+      "\xb7\x34\x45\xd0\x7f\x24\x1b\xed\x87\x28\x82\xda\x21\x66\x2d\x58"
+    },
+    {
+      "password", 8,
+      "salt", 4,
+      GCRY_MD_GOSTR3411_CP,
+      2,
+      32,
+      "\x99\x0d\xfa\x2b\xd9\x65\x63\x9b\xa4\x8b\x07\xb7\x92\x77\x5d\xf7"
+      "\x9f\x2d\xb3\x4f\xef\x25\xf2\x74\x37\x88\x72\xfe\xd7\xed\x1b\xb3"
+    },
+    {
+      "password", 8,
+      "salt", 4,
+      GCRY_MD_GOSTR3411_CP,
+      4096,
+      32,
+      "\x1f\x18\x29\xa9\x4b\xdf\xf5\xbe\x10\xd0\xae\xb3\x6a\xf4\x98\xe7"
+      "\xa9\x74\x67\xf3\xb3\x11\x16\xa5\xa7\xc1\xaf\xff\x9d\xea\xda\xfe"
+    },
+    /* { -- takes too long (4-5 min) to calculate
+      "password", 8,
+      "salt", 4,
+      GCRY_MD_GOSTR3411_CP,
+      16777216,
+      32,
+      "\xa5\x7a\xe5\xa6\x08\x83\x96\xd1\x20\x85\x0c\x5c\x09\xde\x0a\x52"
+      "\x51\x00\x93\x8a\x59\xb1\xb5\xc3\xf7\x81\x09\x10\xd0\x5f\xcd\x97"
+    }, */
+    {
+      "passwordPASSWORDpassword", 24,
+      "saltSALTsaltSALTsaltSALTsaltSALTsalt", 36,
+      GCRY_MD_GOSTR3411_CP,
+      4096,
+      40,
+      "\x78\x83\x58\xc6\x9c\xb2\xdb\xe2\x51\xa7\xbb\x17\xd5\xf4\x24\x1f"
+      "\x26\x5a\x79\x2a\x35\xbe\xcd\xe8\xd5\x6f\x32\x6b\x49\xc8\x50\x47"
+      "\xb7\x63\x8a\xcb\x47\x64\xb1\xfd"
+    },
+    {
+      "pass\0word", 9,
+      "sa\0lt", 5,
+      GCRY_MD_GOSTR3411_CP,
+      4096,
+      20,
+      "\x43\xe0\x6c\x55\x90\xb0\x8c\x02\x25\x24"
+      "\x23\x73\x12\x7e\xdf\x9c\x8e\x9c\x32\x91"
+    },
+    {
+      "password", 8,
+      "salt", 4,
+      GCRY_MD_STRIBOG512,
+      1,
+      64,
+      "\x64\x77\x0a\xf7\xf7\x48\xc3\xb1\xc9\xac\x83\x1d\xbc\xfd\x85\xc2"
+      "\x61\x11\xb3\x0a\x8a\x65\x7d\xdc\x30\x56\xb8\x0c\xa7\x3e\x04\x0d"
+      "\x28\x54\xfd\x36\x81\x1f\x6d\x82\x5c\xc4\xab\x66\xec\x0a\x68\xa4"
+      "\x90\xa9\xe5\xcf\x51\x56\xb3\xa2\xb7\xee\xcd\xdb\xf9\xa1\x6b\x47"
+    },
+    {
+      "password", 8,
+      "salt", 4,
+      GCRY_MD_STRIBOG512,
+      2,
+      64,
+      "\x5a\x58\x5b\xaf\xdf\xbb\x6e\x88\x30\xd6\xd6\x8a\xa3\xb4\x3a\xc0"
+      "\x0d\x2e\x4a\xeb\xce\x01\xc9\xb3\x1c\x2c\xae\xd5\x6f\x02\x36\xd4"
+      "\xd3\x4b\x2b\x8f\xbd\x2c\x4e\x89\xd5\x4d\x46\xf5\x0e\x47\xd4\x5b"
+      "\xba\xc3\x01\x57\x17\x43\x11\x9e\x8d\x3c\x42\xba\x66\xd3\x48\xde"
+    },
+    {
+      "password", 8,
+      "salt", 4,
+      GCRY_MD_STRIBOG512,
+      4096,
+      64,
+      "\xe5\x2d\xeb\x9a\x2d\x2a\xaf\xf4\xe2\xac\x9d\x47\xa4\x1f\x34\xc2"
+      "\x03\x76\x59\x1c\x67\x80\x7f\x04\x77\xe3\x25\x49\xdc\x34\x1b\xc7"
+      "\x86\x7c\x09\x84\x1b\x6d\x58\xe2\x9d\x03\x47\xc9\x96\x30\x1d\x55"
+      "\xdf\x0d\x34\xe4\x7c\xf6\x8f\x4e\x3c\x2c\xda\xf1\xd9\xab\x86\xc3"
+    },
+    /* { -- takes toooo long
+      "password", 8,
+      "salt", 4,
+      GCRY_MD_STRIBOG512,
+      16777216,
+      64,
+      "\x49\xe4\x84\x3b\xba\x76\xe3\x00\xaf\xe2\x4c\x4d\x23\xdc\x73\x92"
+      "\xde\xf1\x2f\x2c\x0e\x24\x41\x72\x36\x7c\xd7\x0a\x89\x82\xac\x36"
+      "\x1a\xdb\x60\x1c\x7e\x2a\x31\x4e\x8c\xb7\xb1\xe9\xdf\x84\x0e\x36"
+      "\xab\x56\x15\xbe\x5d\x74\x2b\x6c\xf2\x03\xfb\x55\xfd\xc4\x80\x71"
+    }, */
+    {
+      "passwordPASSWORDpassword", 24,
+      "saltSALTsaltSALTsaltSALTsaltSALTsalt", 36,
+      GCRY_MD_STRIBOG512,
+      4096,
+      100,
+      "\xb2\xd8\xf1\x24\x5f\xc4\xd2\x92\x74\x80\x20\x57\xe4\xb5\x4e\x0a"
+      "\x07\x53\xaa\x22\xfc\x53\x76\x0b\x30\x1c\xf0\x08\x67\x9e\x58\xfe"
+      "\x4b\xee\x9a\xdd\xca\xe9\x9b\xa2\xb0\xb2\x0f\x43\x1a\x9c\x5e\x50"
+      "\xf3\x95\xc8\x93\x87\xd0\x94\x5a\xed\xec\xa6\xeb\x40\x15\xdf\xc2"
+      "\xbd\x24\x21\xee\x9b\xb7\x11\x83\xba\x88\x2c\xee\xbf\xef\x25\x9f"
+      "\x33\xf9\xe2\x7d\xc6\x17\x8c\xb8\x9d\xc3\x74\x28\xcf\x9c\xc5\x2a"
+      "\x2b\xaa\x2d\x3a"
+    },
+    {
+      "pass\0word", 9,
+      "sa\0lt", 5,
+      GCRY_MD_STRIBOG512,
+      4096,
+      64,
+      "\x50\xdf\x06\x28\x85\xb6\x98\x01\xa3\xc1\x02\x48\xeb\x0a\x27\xab"
+      "\x6e\x52\x2f\xfe\xb2\x0c\x99\x1c\x66\x0f\x00\x14\x75\xd7\x3a\x4e"
+      "\x16\x7f\x78\x2c\x18\xe9\x7e\x92\x97\x6d\x9c\x1d\x97\x08\x31\xea"
+      "\x78\xcc\xb8\x79\xf6\x70\x68\xcd\xac\x19\x10\x74\x08\x44\xe8\x30"
     }
   };
   int tvidx;
   gpg_error_t err;
-  unsigned char outbuf[32];
+  unsigned char outbuf[100];
   int i;
 
   for (tvidx=0; tvidx < DIM(tv); tvidx++)
@@ -938,10 +1128,11 @@ check_pbkdf2 (void)
       if (tv[tvidx].disabled)
         continue;
       if (verbose)
-        fprintf (stderr, "checking PBKDF2 test vector %d\n", tvidx);
+        fprintf (stderr, "checking PBKDF2 test vector %d algo %d\n", tvidx,
+                 tv[tvidx].hashalgo);
       assert (tv[tvidx].dklen <= sizeof outbuf);
       err = gcry_kdf_derive (tv[tvidx].p, tv[tvidx].plen,
-                             GCRY_KDF_PBKDF2, GCRY_MD_SHA1,
+                             GCRY_KDF_PBKDF2, tv[tvidx].hashalgo,
                              tv[tvidx].salt, tv[tvidx].saltlen,
                              tv[tvidx].c, tv[tvidx].dklen, outbuf);
       if (err)
@@ -1058,10 +1249,58 @@ check_scrypt (void)
 int
 main (int argc, char **argv)
 {
-  if (argc > 1 && !strcmp (argv[1], "--verbose"))
-    verbose = 1;
-  else if (argc > 1 && !strcmp (argv[1], "--debug"))
-    verbose = debug = 1;
+  int last_argc = -1;
+  unsigned long s2kcount = 0;
+
+  if (argc)
+    { argc--; argv++; }
+
+  while (argc && last_argc != argc )
+    {
+      last_argc = argc;
+      if (!strcmp (*argv, "--"))
+        {
+          argc--; argv++;
+          break;
+        }
+      else if (!strcmp (*argv, "--help"))
+        {
+          fputs ("usage: t-kdf [options]"
+                 "Options:\n"
+                 " --verbose    print timinigs etc.\n"
+                 " --debug      flyswatter\n"
+                 " --s2k        print the time needed for S2K\n",
+                 stdout);
+          exit (0);
+        }
+      else if (!strcmp (*argv, "--verbose"))
+        {
+          verbose++;
+          argc--; argv++;
+        }
+      else if (!strcmp (*argv, "--debug"))
+        {
+          verbose += 2;
+          debug++;
+          argc--; argv++;
+        }
+      else if (!strcmp (*argv, "--s2k"))
+        {
+          s2kcount = 1;
+          argc--; argv++;
+        }
+      else if (!strncmp (*argv, "--", 2))
+        die ("unknown option '%s'\n", *argv);
+    }
+
+  if (s2kcount)
+    {
+      if (argc != 1)
+        die ("usage: t-kdf --s2k S2KCOUNT\n", stderr );
+      s2kcount = strtoul (*argv, NULL, 10);
+      if (!s2kcount)
+        die ("t-kdf: S2KCOUNT must be positive\n", stderr );
+    }
 
   if (!gcry_check_version (GCRYPT_VERSION))
     die ("version mismatch\n");
@@ -1071,9 +1310,14 @@ main (int argc, char **argv)
   if (debug)
     gcry_control (GCRYCTL_SET_DEBUG_FLAGS, 1u, 0);
 
-  check_openpgp ();
-  check_pbkdf2 ();
-  check_scrypt ();
+  if (s2kcount)
+    bench_s2k (s2kcount);
+  else
+    {
+      check_openpgp ();
+      check_pbkdf2 ();
+      check_scrypt ();
+    }
 
   return error_count ? 1 : 0;
 }

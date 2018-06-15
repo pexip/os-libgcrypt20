@@ -29,18 +29,21 @@
 #include "cipher.h"
 #include "bithelp.h"
 #include "bufhelp.h"
+#include "cipher-internal.h"
 #include "cipher-selftest.h"
 
 
 /* USE_SSE2 indicates whether to compile with AMD64 SSE2 code. */
 #undef USE_SSE2
-#if defined(__x86_64__) && defined(HAVE_COMPATIBLE_GCC_AMD64_PLATFORM_AS)
+#if defined(__x86_64__) && (defined(HAVE_COMPATIBLE_GCC_AMD64_PLATFORM_AS) || \
+    defined(HAVE_COMPATIBLE_GCC_WIN64_PLATFORM_AS))
 # define USE_SSE2 1
 #endif
 
 /* USE_AVX2 indicates whether to compile with AMD64 AVX2 code. */
 #undef USE_AVX2
-#if defined(__x86_64__) && defined(HAVE_COMPATIBLE_GCC_AMD64_PLATFORM_AS)
+#if defined(__x86_64__) && (defined(HAVE_COMPATIBLE_GCC_AMD64_PLATFORM_AS) || \
+    defined(HAVE_COMPATIBLE_GCC_WIN64_PLATFORM_AS))
 # if defined(ENABLE_AVX2_SUPPORT)
 #  define USE_AVX2 1
 # endif
@@ -86,6 +89,18 @@ typedef struct serpent_context
 } serpent_context_t;
 
 
+/* Assembly implementations use SystemV ABI, ABI conversion and additional
+ * stack to store XMM6-XMM15 needed on Win64. */
+#undef ASM_FUNC_ABI
+#if defined(USE_SSE2) || defined(USE_AVX2)
+# ifdef HAVE_COMPATIBLE_GCC_WIN64_PLATFORM_AS
+#  define ASM_FUNC_ABI __attribute__((sysv_abi))
+# else
+#  define ASM_FUNC_ABI
+# endif
+#endif
+
+
 #ifdef USE_SSE2
 /* Assembler implementations of Serpent using SSE2.  Process 8 block in
    parallel.
@@ -93,37 +108,77 @@ typedef struct serpent_context
 extern void _gcry_serpent_sse2_ctr_enc(serpent_context_t *ctx,
 				       unsigned char *out,
 				       const unsigned char *in,
-				       unsigned char *ctr);
+				       unsigned char *ctr) ASM_FUNC_ABI;
 
 extern void _gcry_serpent_sse2_cbc_dec(serpent_context_t *ctx,
 				       unsigned char *out,
 				       const unsigned char *in,
-				       unsigned char *iv);
+				       unsigned char *iv) ASM_FUNC_ABI;
 
 extern void _gcry_serpent_sse2_cfb_dec(serpent_context_t *ctx,
 				       unsigned char *out,
 				       const unsigned char *in,
-				       unsigned char *iv);
+				       unsigned char *iv) ASM_FUNC_ABI;
+
+extern void _gcry_serpent_sse2_ocb_enc(serpent_context_t *ctx,
+				       unsigned char *out,
+				       const unsigned char *in,
+				       unsigned char *offset,
+				       unsigned char *checksum,
+				       const u64 Ls[8]) ASM_FUNC_ABI;
+
+extern void _gcry_serpent_sse2_ocb_dec(serpent_context_t *ctx,
+				       unsigned char *out,
+				       const unsigned char *in,
+				       unsigned char *offset,
+				       unsigned char *checksum,
+				       const u64 Ls[8]) ASM_FUNC_ABI;
+
+extern void _gcry_serpent_sse2_ocb_auth(serpent_context_t *ctx,
+					const unsigned char *abuf,
+					unsigned char *offset,
+					unsigned char *checksum,
+					const u64 Ls[8]) ASM_FUNC_ABI;
 #endif
 
 #ifdef USE_AVX2
-/* Assembler implementations of Serpent using SSE2.  Process 16 block in
+/* Assembler implementations of Serpent using AVX2.  Process 16 block in
    parallel.
  */
 extern void _gcry_serpent_avx2_ctr_enc(serpent_context_t *ctx,
 				       unsigned char *out,
 				       const unsigned char *in,
-				       unsigned char *ctr);
+				       unsigned char *ctr) ASM_FUNC_ABI;
 
 extern void _gcry_serpent_avx2_cbc_dec(serpent_context_t *ctx,
 				       unsigned char *out,
 				       const unsigned char *in,
-				       unsigned char *iv);
+				       unsigned char *iv) ASM_FUNC_ABI;
 
 extern void _gcry_serpent_avx2_cfb_dec(serpent_context_t *ctx,
 				       unsigned char *out,
 				       const unsigned char *in,
-				       unsigned char *iv);
+				       unsigned char *iv) ASM_FUNC_ABI;
+
+extern void _gcry_serpent_avx2_ocb_enc(serpent_context_t *ctx,
+				       unsigned char *out,
+				       const unsigned char *in,
+				       unsigned char *offset,
+				       unsigned char *checksum,
+				       const u64 Ls[16]) ASM_FUNC_ABI;
+
+extern void _gcry_serpent_avx2_ocb_dec(serpent_context_t *ctx,
+				       unsigned char *out,
+				       const unsigned char *in,
+				       unsigned char *offset,
+				       unsigned char *checksum,
+				       const u64 Ls[16]) ASM_FUNC_ABI;
+
+extern void _gcry_serpent_avx2_ocb_auth(serpent_context_t *ctx,
+					const unsigned char *abuf,
+					unsigned char *offset,
+					unsigned char *checksum,
+					const u64 Ls[16]) ASM_FUNC_ABI;
 #endif
 
 #ifdef USE_NEON
@@ -144,6 +199,26 @@ extern void _gcry_serpent_neon_cfb_dec(serpent_context_t *ctx,
 				       unsigned char *out,
 				       const unsigned char *in,
 				       unsigned char *iv);
+
+extern void _gcry_serpent_neon_ocb_enc(serpent_context_t *ctx,
+				       unsigned char *out,
+				       const unsigned char *in,
+				       unsigned char *offset,
+				       unsigned char *checksum,
+				       const void *Ls[8]);
+
+extern void _gcry_serpent_neon_ocb_dec(serpent_context_t *ctx,
+				       unsigned char *out,
+				       const unsigned char *in,
+				       unsigned char *offset,
+				       unsigned char *checksum,
+				       const void *Ls[8]);
+
+extern void _gcry_serpent_neon_ocb_auth(serpent_context_t *ctx,
+					const unsigned char *abuf,
+					unsigned char *offset,
+					unsigned char *checksum,
+					const void *Ls[8]);
 #endif
 
 
@@ -1151,6 +1226,374 @@ _gcry_serpent_cfb_dec(void *context, unsigned char *iv,
   _gcry_burn_stack(burn_stack_depth);
 }
 
+/* Bulk encryption/decryption of complete blocks in OCB mode. */
+size_t
+_gcry_serpent_ocb_crypt (gcry_cipher_hd_t c, void *outbuf_arg,
+			const void *inbuf_arg, size_t nblocks, int encrypt)
+{
+#if defined(USE_AVX2) || defined(USE_SSE2) || defined(USE_NEON)
+  serpent_context_t *ctx = (void *)&c->context.c;
+  unsigned char *outbuf = outbuf_arg;
+  const unsigned char *inbuf = inbuf_arg;
+  unsigned char l_tmp[sizeof(serpent_block_t)];
+  int burn_stack_depth = 2 * sizeof (serpent_block_t);
+  u64 blkn = c->u_mode.ocb.data_nblocks;
+#else
+  (void)c;
+  (void)outbuf_arg;
+  (void)inbuf_arg;
+  (void)encrypt;
+#endif
+
+#ifdef USE_AVX2
+  if (ctx->use_avx2)
+    {
+      int did_use_avx2 = 0;
+      u64 Ls[16];
+      unsigned int n = 16 - (blkn % 16);
+      u64 *l;
+      int i;
+
+      if (nblocks >= 16)
+	{
+	  for (i = 0; i < 16; i += 8)
+	    {
+	      /* Use u64 to store pointers for x32 support (assembly function
+	       * assumes 64-bit pointers). */
+	      Ls[(i + 0 + n) % 16] = (uintptr_t)(void *)c->u_mode.ocb.L[0];
+	      Ls[(i + 1 + n) % 16] = (uintptr_t)(void *)c->u_mode.ocb.L[1];
+	      Ls[(i + 2 + n) % 16] = (uintptr_t)(void *)c->u_mode.ocb.L[0];
+	      Ls[(i + 3 + n) % 16] = (uintptr_t)(void *)c->u_mode.ocb.L[2];
+	      Ls[(i + 4 + n) % 16] = (uintptr_t)(void *)c->u_mode.ocb.L[0];
+	      Ls[(i + 5 + n) % 16] = (uintptr_t)(void *)c->u_mode.ocb.L[1];
+	      Ls[(i + 6 + n) % 16] = (uintptr_t)(void *)c->u_mode.ocb.L[0];
+	    }
+
+	  Ls[(7 + n) % 16] = (uintptr_t)(void *)c->u_mode.ocb.L[3];
+	  l = &Ls[(15 + n) % 16];
+
+	  /* Process data in 16 block chunks. */
+	  while (nblocks >= 16)
+	    {
+	      /* l_tmp will be used only every 65536-th block. */
+	      blkn += 16;
+	      *l = (uintptr_t)(void *)ocb_get_l(c, l_tmp, blkn - blkn % 16);
+
+	      if (encrypt)
+		_gcry_serpent_avx2_ocb_enc(ctx, outbuf, inbuf, c->u_iv.iv,
+					  c->u_ctr.ctr, Ls);
+	      else
+		_gcry_serpent_avx2_ocb_dec(ctx, outbuf, inbuf, c->u_iv.iv,
+					  c->u_ctr.ctr, Ls);
+
+	      nblocks -= 16;
+	      outbuf += 16 * sizeof(serpent_block_t);
+	      inbuf  += 16 * sizeof(serpent_block_t);
+	      did_use_avx2 = 1;
+	    }
+	}
+
+      if (did_use_avx2)
+	{
+	  /* serpent-avx2 assembly code does not use stack */
+	  if (nblocks == 0)
+	    burn_stack_depth = 0;
+	}
+
+      /* Use generic code to handle smaller chunks... */
+    }
+#endif
+
+#ifdef USE_SSE2
+  {
+    int did_use_sse2 = 0;
+    u64 Ls[8];
+    unsigned int n = 8 - (blkn % 8);
+    u64 *l;
+
+    if (nblocks >= 8)
+      {
+	/* Use u64 to store pointers for x32 support (assembly function
+	  * assumes 64-bit pointers). */
+	Ls[(0 + n) % 8] = (uintptr_t)(void *)c->u_mode.ocb.L[0];
+	Ls[(1 + n) % 8] = (uintptr_t)(void *)c->u_mode.ocb.L[1];
+	Ls[(2 + n) % 8] = (uintptr_t)(void *)c->u_mode.ocb.L[0];
+	Ls[(3 + n) % 8] = (uintptr_t)(void *)c->u_mode.ocb.L[2];
+	Ls[(4 + n) % 8] = (uintptr_t)(void *)c->u_mode.ocb.L[0];
+	Ls[(5 + n) % 8] = (uintptr_t)(void *)c->u_mode.ocb.L[1];
+	Ls[(6 + n) % 8] = (uintptr_t)(void *)c->u_mode.ocb.L[0];
+	l = &Ls[(7 + n) % 8];
+
+	/* Process data in 8 block chunks. */
+	while (nblocks >= 8)
+	  {
+	    /* l_tmp will be used only every 65536-th block. */
+	    blkn += 8;
+	    *l = (uintptr_t)(void *)ocb_get_l(c, l_tmp, blkn - blkn % 8);
+
+	    if (encrypt)
+	      _gcry_serpent_sse2_ocb_enc(ctx, outbuf, inbuf, c->u_iv.iv,
+					  c->u_ctr.ctr, Ls);
+	    else
+	      _gcry_serpent_sse2_ocb_dec(ctx, outbuf, inbuf, c->u_iv.iv,
+					  c->u_ctr.ctr, Ls);
+
+	    nblocks -= 8;
+	    outbuf += 8 * sizeof(serpent_block_t);
+	    inbuf  += 8 * sizeof(serpent_block_t);
+	    did_use_sse2 = 1;
+	  }
+      }
+
+    if (did_use_sse2)
+      {
+	/* serpent-sse2 assembly code does not use stack */
+	if (nblocks == 0)
+	  burn_stack_depth = 0;
+      }
+
+    /* Use generic code to handle smaller chunks... */
+  }
+#endif
+
+#ifdef USE_NEON
+  if (ctx->use_neon)
+    {
+      int did_use_neon = 0;
+      const void *Ls[8];
+      unsigned int n = 8 - (blkn % 8);
+      const void **l;
+
+      if (nblocks >= 8)
+	{
+	  Ls[(0 + n) % 8] = c->u_mode.ocb.L[0];
+	  Ls[(1 + n) % 8] = c->u_mode.ocb.L[1];
+	  Ls[(2 + n) % 8] = c->u_mode.ocb.L[0];
+	  Ls[(3 + n) % 8] = c->u_mode.ocb.L[2];
+	  Ls[(4 + n) % 8] = c->u_mode.ocb.L[0];
+	  Ls[(5 + n) % 8] = c->u_mode.ocb.L[1];
+	  Ls[(6 + n) % 8] = c->u_mode.ocb.L[0];
+	  l = &Ls[(7 + n) % 8];
+
+	  /* Process data in 8 block chunks. */
+	  while (nblocks >= 8)
+	    {
+	      /* l_tmp will be used only every 65536-th block. */
+	      blkn += 8;
+	      *l = ocb_get_l(c, l_tmp, blkn - blkn % 8);
+
+	      if (encrypt)
+		_gcry_serpent_neon_ocb_enc(ctx, outbuf, inbuf, c->u_iv.iv,
+					  c->u_ctr.ctr, Ls);
+	      else
+		_gcry_serpent_neon_ocb_dec(ctx, outbuf, inbuf, c->u_iv.iv,
+					  c->u_ctr.ctr, Ls);
+
+	      nblocks -= 8;
+	      outbuf += 8 * sizeof(serpent_block_t);
+	      inbuf  += 8 * sizeof(serpent_block_t);
+	      did_use_neon = 1;
+	    }
+	}
+
+      if (did_use_neon)
+	{
+	  /* serpent-neon assembly code does not use stack */
+	  if (nblocks == 0)
+	    burn_stack_depth = 0;
+	}
+
+      /* Use generic code to handle smaller chunks... */
+    }
+#endif
+
+#if defined(USE_AVX2) || defined(USE_SSE2) || defined(USE_NEON)
+  c->u_mode.ocb.data_nblocks = blkn;
+
+  wipememory(&l_tmp, sizeof(l_tmp));
+
+  if (burn_stack_depth)
+    _gcry_burn_stack (burn_stack_depth + 4 * sizeof(void *));
+#endif
+
+  return nblocks;
+}
+
+/* Bulk authentication of complete blocks in OCB mode. */
+size_t
+_gcry_serpent_ocb_auth (gcry_cipher_hd_t c, const void *abuf_arg,
+			size_t nblocks)
+{
+#if defined(USE_AVX2) || defined(USE_SSE2) || defined(USE_NEON)
+  serpent_context_t *ctx = (void *)&c->context.c;
+  const unsigned char *abuf = abuf_arg;
+  unsigned char l_tmp[sizeof(serpent_block_t)];
+  int burn_stack_depth = 2 * sizeof(serpent_block_t);
+  u64 blkn = c->u_mode.ocb.aad_nblocks;
+#else
+  (void)c;
+  (void)abuf_arg;
+#endif
+
+#ifdef USE_AVX2
+  if (ctx->use_avx2)
+    {
+      int did_use_avx2 = 0;
+      u64 Ls[16];
+      unsigned int n = 16 - (blkn % 16);
+      u64 *l;
+      int i;
+
+      if (nblocks >= 16)
+	{
+	  for (i = 0; i < 16; i += 8)
+	    {
+	      /* Use u64 to store pointers for x32 support (assembly function
+	       * assumes 64-bit pointers). */
+	      Ls[(i + 0 + n) % 16] = (uintptr_t)(void *)c->u_mode.ocb.L[0];
+	      Ls[(i + 1 + n) % 16] = (uintptr_t)(void *)c->u_mode.ocb.L[1];
+	      Ls[(i + 2 + n) % 16] = (uintptr_t)(void *)c->u_mode.ocb.L[0];
+	      Ls[(i + 3 + n) % 16] = (uintptr_t)(void *)c->u_mode.ocb.L[2];
+	      Ls[(i + 4 + n) % 16] = (uintptr_t)(void *)c->u_mode.ocb.L[0];
+	      Ls[(i + 5 + n) % 16] = (uintptr_t)(void *)c->u_mode.ocb.L[1];
+	      Ls[(i + 6 + n) % 16] = (uintptr_t)(void *)c->u_mode.ocb.L[0];
+	    }
+
+	  Ls[(7 + n) % 16] = (uintptr_t)(void *)c->u_mode.ocb.L[3];
+	  l = &Ls[(15 + n) % 16];
+
+	  /* Process data in 16 block chunks. */
+	  while (nblocks >= 16)
+	    {
+	      /* l_tmp will be used only every 65536-th block. */
+	      blkn += 16;
+	      *l = (uintptr_t)(void *)ocb_get_l(c, l_tmp, blkn - blkn % 16);
+
+	      _gcry_serpent_avx2_ocb_auth(ctx, abuf, c->u_mode.ocb.aad_offset,
+					  c->u_mode.ocb.aad_sum, Ls);
+
+	      nblocks -= 16;
+	      abuf += 16 * sizeof(serpent_block_t);
+	      did_use_avx2 = 1;
+	    }
+	}
+
+      if (did_use_avx2)
+	{
+	  /* serpent-avx2 assembly code does not use stack */
+	  if (nblocks == 0)
+	    burn_stack_depth = 0;
+	}
+
+      /* Use generic code to handle smaller chunks... */
+    }
+#endif
+
+#ifdef USE_SSE2
+  {
+    int did_use_sse2 = 0;
+    u64 Ls[8];
+    unsigned int n = 8 - (blkn % 8);
+    u64 *l;
+
+    if (nblocks >= 8)
+      {
+	/* Use u64 to store pointers for x32 support (assembly function
+	* assumes 64-bit pointers). */
+	Ls[(0 + n) % 8] = (uintptr_t)(void *)c->u_mode.ocb.L[0];
+	Ls[(1 + n) % 8] = (uintptr_t)(void *)c->u_mode.ocb.L[1];
+	Ls[(2 + n) % 8] = (uintptr_t)(void *)c->u_mode.ocb.L[0];
+	Ls[(3 + n) % 8] = (uintptr_t)(void *)c->u_mode.ocb.L[2];
+	Ls[(4 + n) % 8] = (uintptr_t)(void *)c->u_mode.ocb.L[0];
+	Ls[(5 + n) % 8] = (uintptr_t)(void *)c->u_mode.ocb.L[1];
+	Ls[(6 + n) % 8] = (uintptr_t)(void *)c->u_mode.ocb.L[0];
+	l = &Ls[(7 + n) % 8];
+
+	/* Process data in 8 block chunks. */
+	while (nblocks >= 8)
+	  {
+	    /* l_tmp will be used only every 65536-th block. */
+	    blkn += 8;
+	    *l = (uintptr_t)(void *)ocb_get_l(c, l_tmp, blkn - blkn % 8);
+
+	    _gcry_serpent_sse2_ocb_auth(ctx, abuf, c->u_mode.ocb.aad_offset,
+					c->u_mode.ocb.aad_sum, Ls);
+
+	    nblocks -= 8;
+	    abuf += 8 * sizeof(serpent_block_t);
+	    did_use_sse2 = 1;
+	  }
+      }
+
+    if (did_use_sse2)
+      {
+	/* serpent-avx2 assembly code does not use stack */
+	if (nblocks == 0)
+	  burn_stack_depth = 0;
+      }
+
+    /* Use generic code to handle smaller chunks... */
+  }
+#endif
+
+#ifdef USE_NEON
+  if (ctx->use_neon)
+    {
+      int did_use_neon = 0;
+      const void *Ls[8];
+      unsigned int n = 8 - (blkn % 8);
+      const void **l;
+
+      if (nblocks >= 8)
+	{
+	  Ls[(0 + n) % 8] = c->u_mode.ocb.L[0];
+	  Ls[(1 + n) % 8] = c->u_mode.ocb.L[1];
+	  Ls[(2 + n) % 8] = c->u_mode.ocb.L[0];
+	  Ls[(3 + n) % 8] = c->u_mode.ocb.L[2];
+	  Ls[(4 + n) % 8] = c->u_mode.ocb.L[0];
+	  Ls[(5 + n) % 8] = c->u_mode.ocb.L[1];
+	  Ls[(6 + n) % 8] = c->u_mode.ocb.L[0];
+	  l = &Ls[(7 + n) % 8];
+
+	  /* Process data in 8 block chunks. */
+	  while (nblocks >= 8)
+	    {
+	      /* l_tmp will be used only every 65536-th block. */
+	      blkn += 8;
+	      *l = ocb_get_l(c, l_tmp, blkn - blkn % 8);
+
+	      _gcry_serpent_neon_ocb_auth(ctx, abuf, c->u_mode.ocb.aad_offset,
+					  c->u_mode.ocb.aad_sum, Ls);
+
+	      nblocks -= 8;
+	      abuf += 8 * sizeof(serpent_block_t);
+	      did_use_neon = 1;
+	    }
+	}
+
+      if (did_use_neon)
+	{
+	  /* serpent-neon assembly code does not use stack */
+	  if (nblocks == 0)
+	    burn_stack_depth = 0;
+	}
+
+      /* Use generic code to handle smaller chunks... */
+    }
+#endif
+
+#if defined(USE_AVX2) || defined(USE_SSE2) || defined(USE_NEON)
+  c->u_mode.ocb.aad_nblocks = blkn;
+
+  wipememory(&l_tmp, sizeof(l_tmp));
+
+  if (burn_stack_depth)
+    _gcry_burn_stack (burn_stack_depth + 4 * sizeof(void *));
+#endif
+
+  return nblocks;
+}
+
 
 
 /* Run the self-tests for SERPENT-CTR-128, tests IV increment of bulk CTR
@@ -1291,18 +1734,54 @@ serpent_test (void)
 }
 
 
+static gcry_cipher_oid_spec_t serpent128_oids[] =
+  {
+    {"1.3.6.1.4.1.11591.13.2.1", GCRY_CIPHER_MODE_ECB },
+    {"1.3.6.1.4.1.11591.13.2.2", GCRY_CIPHER_MODE_CBC },
+    {"1.3.6.1.4.1.11591.13.2.3", GCRY_CIPHER_MODE_OFB },
+    {"1.3.6.1.4.1.11591.13.2.4", GCRY_CIPHER_MODE_CFB },
+    { NULL }
+  };
 
-/* "SERPENT" is an alias for "SERPENT128".  */
-static const char *cipher_spec_serpent128_aliases[] =
+static gcry_cipher_oid_spec_t serpent192_oids[] =
+  {
+    {"1.3.6.1.4.1.11591.13.2.21", GCRY_CIPHER_MODE_ECB },
+    {"1.3.6.1.4.1.11591.13.2.22", GCRY_CIPHER_MODE_CBC },
+    {"1.3.6.1.4.1.11591.13.2.23", GCRY_CIPHER_MODE_OFB },
+    {"1.3.6.1.4.1.11591.13.2.24", GCRY_CIPHER_MODE_CFB },
+    { NULL }
+  };
+
+static gcry_cipher_oid_spec_t serpent256_oids[] =
+  {
+    {"1.3.6.1.4.1.11591.13.2.41", GCRY_CIPHER_MODE_ECB },
+    {"1.3.6.1.4.1.11591.13.2.42", GCRY_CIPHER_MODE_CBC },
+    {"1.3.6.1.4.1.11591.13.2.43", GCRY_CIPHER_MODE_OFB },
+    {"1.3.6.1.4.1.11591.13.2.44", GCRY_CIPHER_MODE_CFB },
+    { NULL }
+  };
+
+static const char *serpent128_aliases[] =
   {
     "SERPENT",
+    "SERPENT-128",
+    NULL
+  };
+static const char *serpent192_aliases[] =
+  {
+    "SERPENT-192",
+    NULL
+  };
+static const char *serpent256_aliases[] =
+  {
+    "SERPENT-256",
     NULL
   };
 
 gcry_cipher_spec_t _gcry_cipher_spec_serpent128 =
   {
     GCRY_CIPHER_SERPENT128, {0, 0},
-    "SERPENT128", cipher_spec_serpent128_aliases, NULL, 16, 128,
+    "SERPENT128", serpent128_aliases, serpent128_oids, 16, 128,
     sizeof (serpent_context_t),
     serpent_setkey, serpent_encrypt, serpent_decrypt
   };
@@ -1310,7 +1789,7 @@ gcry_cipher_spec_t _gcry_cipher_spec_serpent128 =
 gcry_cipher_spec_t _gcry_cipher_spec_serpent192 =
   {
     GCRY_CIPHER_SERPENT192, {0, 0},
-    "SERPENT192", NULL, NULL, 16, 192,
+    "SERPENT192", serpent192_aliases, serpent192_oids, 16, 192,
     sizeof (serpent_context_t),
     serpent_setkey, serpent_encrypt, serpent_decrypt
   };
@@ -1318,7 +1797,7 @@ gcry_cipher_spec_t _gcry_cipher_spec_serpent192 =
 gcry_cipher_spec_t _gcry_cipher_spec_serpent256 =
   {
     GCRY_CIPHER_SERPENT256, {0, 0},
-    "SERPENT256", NULL, NULL, 16, 256,
+    "SERPENT256", serpent256_aliases, serpent256_oids, 16, 256,
     sizeof (serpent_context_t),
     serpent_setkey, serpent_encrypt, serpent_decrypt
   };
