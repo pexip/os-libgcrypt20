@@ -108,17 +108,15 @@ bin_PROGRAMS = dumpsexp$(EXEEXT) hmac256$(EXEEXT) mpicalc$(EXEEXT) \
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(srcdir)/gcrypt.h.in $(srcdir)/libgcrypt-config.in \
-	$(srcdir)/versioninfo.rc.in $(top_srcdir)/build-aux/depcomp \
-	$(include_HEADERS)
+	$(srcdir)/versioninfo.rc.in $(top_srcdir)/build-aux/depcomp
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/gpg-error.m4 \
-	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/lock.m4 \
-	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
-	$(top_srcdir)/m4/ltversion.m4 $(top_srcdir)/m4/lt~obsolete.m4 \
+	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/ltoptions.m4 \
+	$(top_srcdir)/m4/ltsugar.m4 $(top_srcdir)/m4/ltversion.m4 \
+	$(top_srcdir)/m4/lt~obsolete.m4 \
 	$(top_srcdir)/m4/noexecstack.m4 $(top_srcdir)/m4/onceonly.m4 \
 	$(top_srcdir)/m4/socklen.m4 $(top_srcdir)/m4/sys_socket_h.m4 \
-	$(top_srcdir)/m4/threadlib.m4 $(top_srcdir)/acinclude.m4 \
-	$(top_srcdir)/configure.ac
+	$(top_srcdir)/acinclude.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -163,8 +161,7 @@ am_libgcrypt_la_OBJECTS = libgcrypt_la-visibility.lo \
 	libgcrypt_la-sexp.lo libgcrypt_la-hwfeatures.lo \
 	libgcrypt_la-stdmem.lo libgcrypt_la-secmem.lo \
 	libgcrypt_la-missing-string.lo libgcrypt_la-fips.lo \
-	libgcrypt_la-hmac256.lo libgcrypt_la-context.lo \
-	libgcrypt_la-ath.lo
+	libgcrypt_la-hmac256.lo libgcrypt_la-context.lo
 libgcrypt_la_OBJECTS = $(am_libgcrypt_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -178,7 +175,7 @@ PROGRAMS = $(bin_PROGRAMS) $(sbin_PROGRAMS)
 am_dumpsexp_OBJECTS = dumpsexp-dumpsexp.$(OBJEXT)
 dumpsexp_OBJECTS = $(am_dumpsexp_OBJECTS)
 @HAVE_W32CE_SYSTEM_TRUE@am__DEPENDENCIES_3 = $(am__DEPENDENCIES_2)
-dumpsexp_DEPENDENCIES = $(am__DEPENDENCIES_3) $(am__DEPENDENCIES_2)
+dumpsexp_DEPENDENCIES = $(am__DEPENDENCIES_3)
 dumpsexp_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(dumpsexp_CFLAGS) \
 	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
@@ -187,7 +184,6 @@ am__gcryptrnd_SOURCES_DIST = gcryptrnd.c
 @USE_RANDOM_DAEMON_TRUE@	gcryptrnd-gcryptrnd.$(OBJEXT)
 gcryptrnd_OBJECTS = $(am_gcryptrnd_OBJECTS)
 @USE_RANDOM_DAEMON_TRUE@gcryptrnd_DEPENDENCIES = libgcrypt.la \
-@USE_RANDOM_DAEMON_TRUE@	$(am__DEPENDENCIES_2) \
 @USE_RANDOM_DAEMON_TRUE@	$(am__DEPENDENCIES_2) \
 @USE_RANDOM_DAEMON_TRUE@	$(am__DEPENDENCIES_2)
 gcryptrnd_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
@@ -199,7 +195,7 @@ getrandom_OBJECTS = $(am_getrandom_OBJECTS)
 getrandom_LDADD = $(LDADD)
 am_hmac256_OBJECTS = hmac256-hmac256.$(OBJEXT)
 hmac256_OBJECTS = $(am_hmac256_OBJECTS)
-hmac256_DEPENDENCIES = $(am__DEPENDENCIES_3) $(am__DEPENDENCIES_2)
+hmac256_DEPENDENCIES = $(am__DEPENDENCIES_3)
 hmac256_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(hmac256_CFLAGS) \
 	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
@@ -258,7 +254,7 @@ am__can_run_installinfo = \
     *) (install-info --version) >/dev/null 2>&1;; \
   esac
 DATA = $(m4data_DATA)
-HEADERS = $(include_HEADERS)
+HEADERS = $(nodist_include_HEADERS)
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 # Read a list of newline-separated strings from the standard input,
 # and print each of them once, without duplicates.  Input order is
@@ -323,6 +319,8 @@ GCRYPT_RANDOM = @GCRYPT_RANDOM@
 GPG_ERROR_CFLAGS = @GPG_ERROR_CFLAGS@
 GPG_ERROR_CONFIG = @GPG_ERROR_CONFIG@
 GPG_ERROR_LIBS = @GPG_ERROR_LIBS@
+GPG_ERROR_MT_CFLAGS = @GPG_ERROR_MT_CFLAGS@
+GPG_ERROR_MT_LIBS = @GPG_ERROR_MT_LIBS@
 GREP = @GREP@
 INSERT_SYS_SELECT_H = @INSERT_SYS_SELECT_H@
 INSTALL = @INSTALL@
@@ -343,16 +341,12 @@ LIBGCRYPT_LT_CURRENT = @LIBGCRYPT_LT_CURRENT@
 LIBGCRYPT_LT_REVISION = @LIBGCRYPT_LT_REVISION@
 LIBGCRYPT_PUBKEY_CIPHERS = @LIBGCRYPT_PUBKEY_CIPHERS@
 LIBGCRYPT_THREAD_MODULES = @LIBGCRYPT_THREAD_MODULES@
-LIBMULTITHREAD = @LIBMULTITHREAD@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
-LIBTHREAD = @LIBTHREAD@
 LIBTOOL = @LIBTOOL@
 LIPO = @LIPO@
 LN_S = @LN_S@
-LTLIBMULTITHREAD = @LTLIBMULTITHREAD@
 LTLIBOBJS = @LTLIBOBJS@
-LTLIBTHREAD = @LTLIBTHREAD@
 MAINT = @MAINT@
 MAKEINFO = @MAKEINFO@
 MANIFEST_TOOL = @MANIFEST_TOOL@
@@ -383,6 +377,7 @@ SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
+SYSROOT = @SYSROOT@
 SYS_SOCKET_H = @SYS_SOCKET_H@
 VERSION = @VERSION@
 VERSION_NUMBER = @VERSION_NUMBER@
@@ -441,13 +436,13 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-EXTRA_DIST = Manifest libgcrypt-config.in libgcrypt.m4 libgcrypt.vers \
+EXTRA_DIST = libgcrypt-config.in libgcrypt.m4 libgcrypt.vers \
              gcrypt.h.in libgcrypt.def
 
 bin_SCRIPTS = libgcrypt-config
 m4datadir = $(datadir)/aclocal
 m4data_DATA = libgcrypt.m4
-include_HEADERS = gcrypt.h
+nodist_include_HEADERS = gcrypt.h
 lib_LTLIBRARIES = libgcrypt.la
 @HAVE_W32CE_SYSTEM_FALSE@arch_gpg_error_cflags = 
 
@@ -462,13 +457,12 @@ AM_CCASFLAGS = $(NOEXECSTACK_FLAGS)
 libgcrypt_la_CFLAGS = $(GPG_ERROR_CFLAGS)
 libgcrypt_la_SOURCES = \
         gcrypt-int.h g10lib.h visibility.c visibility.h types.h \
-	cipher.h cipher-proto.h \
+	gcrypt-testapi.h cipher.h cipher-proto.h \
 	misc.c global.c sexp.c hwfeatures.c hwf-common.h \
 	stdmem.c stdmem.h secmem.c secmem.h \
 	mpi.h missing-string.c fips.c \
 	hmac256.c hmac256.h context.c context.h \
-	ec-context.h \
-	ath.h ath.c
+	ec-context.h
 
 EXTRA_libgcrypt_la_SOURCES = hwf-x86.c hwf-arm.c
 gcrypt_hwf_modules = @GCRYPT_HWF_MODULES@
@@ -509,16 +503,16 @@ libgcrypt_la_LIBADD = $(gcrypt_res) \
 
 dumpsexp_SOURCES = dumpsexp.c
 dumpsexp_CFLAGS = $(arch_gpg_error_cflags)
-dumpsexp_LDADD = $(arch_gpg_error_libs) $(LIBTHREAD)
+dumpsexp_LDADD = $(arch_gpg_error_libs)
 mpicalc_SOURCES = mpicalc.c
 mpicalc_CFLAGS = $(GPG_ERROR_CFLAGS)
-mpicalc_LDADD = libgcrypt.la $(GPG_ERROR_LIBS) $(LIBTHREAD)
+mpicalc_LDADD = libgcrypt.la $(DL_LIBS) $(GPG_ERROR_LIBS)
 hmac256_SOURCES = hmac256.c
 hmac256_CFLAGS = -DSTANDALONE $(arch_gpg_error_cflags)
-hmac256_LDADD = $(arch_gpg_error_libs) $(LIBTHREAD)
+hmac256_LDADD = $(arch_gpg_error_libs)
 @USE_RANDOM_DAEMON_TRUE@gcryptrnd_SOURCES = gcryptrnd.c
 @USE_RANDOM_DAEMON_TRUE@gcryptrnd_CFLAGS = $(GPG_ERROR_CFLAGS) $(PTH_CFLAGS)
-@USE_RANDOM_DAEMON_TRUE@gcryptrnd_LDADD = libgcrypt.la $(GPG_ERROR_LIBS) $(PTH_LIBS) $(LIBTHREAD)
+@USE_RANDOM_DAEMON_TRUE@gcryptrnd_LDADD = libgcrypt.la $(GPG_ERROR_LIBS) $(PTH_LIBS)
 @USE_RANDOM_DAEMON_TRUE@getrandom_SOURCES = getrandom.c
 all: all-am
 
@@ -762,7 +756,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gcryptrnd-gcryptrnd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/getrandom.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmac256-hmac256.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgcrypt_la-ath.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgcrypt_la-context.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgcrypt_la-fips.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgcrypt_la-global.Plo@am__quote@
@@ -876,13 +869,6 @@ libgcrypt_la-context.lo: context.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgcrypt_la_CFLAGS) $(CFLAGS) -c -o libgcrypt_la-context.lo `test -f 'context.c' || echo '$(srcdir)/'`context.c
 
-libgcrypt_la-ath.lo: ath.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgcrypt_la_CFLAGS) $(CFLAGS) -MT libgcrypt_la-ath.lo -MD -MP -MF $(DEPDIR)/libgcrypt_la-ath.Tpo -c -o libgcrypt_la-ath.lo `test -f 'ath.c' || echo '$(srcdir)/'`ath.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libgcrypt_la-ath.Tpo $(DEPDIR)/libgcrypt_la-ath.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='ath.c' object='libgcrypt_la-ath.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgcrypt_la_CFLAGS) $(CFLAGS) -c -o libgcrypt_la-ath.lo `test -f 'ath.c' || echo '$(srcdir)/'`ath.c
-
 libgcrypt_la-hwf-x86.lo: hwf-x86.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgcrypt_la_CFLAGS) $(CFLAGS) -MT libgcrypt_la-hwf-x86.lo -MD -MP -MF $(DEPDIR)/libgcrypt_la-hwf-x86.Tpo -c -o libgcrypt_la-hwf-x86.lo `test -f 'hwf-x86.c' || echo '$(srcdir)/'`hwf-x86.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libgcrypt_la-hwf-x86.Tpo $(DEPDIR)/libgcrypt_la-hwf-x86.Plo
@@ -979,9 +965,9 @@ uninstall-m4dataDATA:
 	@list='$(m4data_DATA)'; test -n "$(m4datadir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	dir='$(DESTDIR)$(m4datadir)'; $(am__uninstall_files_from_dir)
-install-includeHEADERS: $(include_HEADERS)
+install-nodist_includeHEADERS: $(nodist_include_HEADERS)
 	@$(NORMAL_INSTALL)
-	@list='$(include_HEADERS)'; test -n "$(includedir)" || list=; \
+	@list='$(nodist_include_HEADERS)'; test -n "$(includedir)" || list=; \
 	if test -n "$$list"; then \
 	  echo " $(MKDIR_P) '$(DESTDIR)$(includedir)'"; \
 	  $(MKDIR_P) "$(DESTDIR)$(includedir)" || exit 1; \
@@ -995,9 +981,9 @@ install-includeHEADERS: $(include_HEADERS)
 	  $(INSTALL_HEADER) $$files "$(DESTDIR)$(includedir)" || exit $$?; \
 	done
 
-uninstall-includeHEADERS:
+uninstall-nodist_includeHEADERS:
 	@$(NORMAL_UNINSTALL)
-	@list='$(include_HEADERS)'; test -n "$(includedir)" || list=; \
+	@list='$(nodist_include_HEADERS)'; test -n "$(includedir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	dir='$(DESTDIR)$(includedir)'; $(am__uninstall_files_from_dir)
 
@@ -1146,8 +1132,8 @@ info: info-am
 
 info-am:
 
-install-data-am: install-data-local install-includeHEADERS \
-	install-m4dataDATA
+install-data-am: install-data-local install-m4dataDATA \
+	install-nodist_includeHEADERS
 
 install-dvi: install-dvi-am
 
@@ -1195,8 +1181,8 @@ ps: ps-am
 ps-am:
 
 uninstall-am: uninstall-binPROGRAMS uninstall-binSCRIPTS \
-	uninstall-includeHEADERS uninstall-libLTLIBRARIES \
-	uninstall-local uninstall-m4dataDATA uninstall-sbinPROGRAMS
+	uninstall-libLTLIBRARIES uninstall-local uninstall-m4dataDATA \
+	uninstall-nodist_includeHEADERS uninstall-sbinPROGRAMS
 
 .MAKE: install-am install-strip
 
@@ -1208,18 +1194,17 @@ uninstall-am: uninstall-binPROGRAMS uninstall-binSCRIPTS \
 	html-am info info-am install install-am install-binPROGRAMS \
 	install-binSCRIPTS install-data install-data-am \
 	install-data-local install-dvi install-dvi-am install-exec \
-	install-exec-am install-html install-html-am \
-	install-includeHEADERS install-info install-info-am \
-	install-libLTLIBRARIES install-m4dataDATA install-man \
-	install-pdf install-pdf-am install-ps install-ps-am \
-	install-sbinPROGRAMS install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	tags tags-am uninstall uninstall-am uninstall-binPROGRAMS \
-	uninstall-binSCRIPTS uninstall-includeHEADERS \
+	install-exec-am install-html install-html-am install-info \
+	install-info-am install-libLTLIBRARIES install-m4dataDATA \
+	install-man install-nodist_includeHEADERS install-pdf \
+	install-pdf-am install-ps install-ps-am install-sbinPROGRAMS \
+	install-strip installcheck installcheck-am installdirs \
+	maintainer-clean maintainer-clean-generic mostlyclean \
+	mostlyclean-compile mostlyclean-generic mostlyclean-libtool \
+	pdf pdf-am ps ps-am tags tags-am uninstall uninstall-am \
+	uninstall-binPROGRAMS uninstall-binSCRIPTS \
 	uninstall-libLTLIBRARIES uninstall-local uninstall-m4dataDATA \
-	uninstall-sbinPROGRAMS
+	uninstall-nodist_includeHEADERS uninstall-sbinPROGRAMS
 
 
 @HAVE_W32_SYSTEM_TRUE@.rc.lo:
