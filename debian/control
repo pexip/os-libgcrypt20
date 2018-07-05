@@ -14,7 +14,7 @@ Standards-Version: 3.9.6
 Vcs-Git: git://anonscm.debian.org/pkg-gnutls/libgcrypt.git -b branch1.6
 Vcs-Browser: http://anonscm.debian.org/cgit/pkg-gnutls/libgcrypt.git/?h=branch1.6
 Homepage: http://directory.fsf.org/project/libgcrypt/
-XS-Pexip-Upstream: http://ftp.debian.org/debian/ jessie
+XS-Pexip-Upstream: http://ftp.debian.org/debian/ stretch
 
 Package: libgcrypt20-doc
 Section: doc
