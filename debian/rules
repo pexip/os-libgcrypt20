@@ -4,22 +4,49 @@
 DEBVERSION := $(shell dpkg-parsechangelog | \
 	sed -n '/^Version: /s/^Version: //p')
 
+export DEB_BUILD_MAINT_OPTIONS := hardening=+bindnow
+
+WIN_FLAGS=LDFLAGS="-Xlinker --no-insert-timestamp" CFLAGS="-g -Os" CPPFLAGS=
+
 override_dh_auto_configure:
-	dh_auto_configure --verbose -- \
+	dh_auto_configure --verbose --builddirectory=build -- \
 		--enable-noexecstack \
 		--enable-ld-version-script --enable-static \
 		--libdir=/lib/$(DEB_HOST_MULTIARCH)
 
 override_dh_makeshlibs:
-	dh_makeshlibs -V 'libgcrypt20 (>=1.6.0-0)' \
+	dh_makeshlibs -V 'libgcrypt20 (>=1.7.0-0)' \
 		--add-udeb=libgcrypt20-udeb -- -c4
 
 override_dh_auto_build-indep:
-	cd doc && $(MAKE) stamp-vti
-	cd doc && $(MAKE) gcrypt.ps html
+	# use current version in /usr/share/texmf/tex/texinfo/, see #803081
+	rm -f build-aux/texinfo.tex
+	cd build/doc && $(MAKE) stamp-vti
+	cd build/doc && $(MAKE) pdf html
+	for cpu in i686 x86_64; do \
+	 mkdir -p build-$$cpu-w64-mingw32 && \
+	 cd build-$$cpu-w64-mingw32 && $(WIN_FLAGS) ../configure \
+	    --prefix=/usr/$$cpu-w64-mingw32 \
+	    --with-libgpg-error-prefix=/usr/$$cpu-w64-mingw32 \
+	    --disable-padlock-support --disable-asm \
+	    --enable-static \
+	    --host $$cpu-w64-mingw32 && \
+	  $(WIN_FLAGS) $(MAKE) \
+	  || exit 1 ; \
+	  cd .. ; \
+	done
 
-override_dh_auto_install:
-	dh_auto_install --verbose
+override_dh_auto_install-indep:
+	for cpu in i686 x86_64; do \
+	  cd build-$$cpu-w64-mingw32 && \
+	  $(MAKE) install DESTDIR=$(shell pwd)/debian/tmp \
+	  || exit 1 ; \
+	  cd .. ; \
+	done
+	find debian/tmp -name libgcrypt.la -type f -delete
+
+override_dh_auto_install-arch:
+	dh_auto_install --verbose --builddirectory=build
 	mkdir -p -m755 debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)
 	cd debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH) \
 		&& ln -v -s /lib/$(DEB_HOST_MULTIARCH)/`readlink ../../../lib/*/*.so` libgcrypt.so
@@ -28,7 +55,7 @@ override_dh_auto_install:
 		debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/
 
 override_dh_strip:
-	dh_strip --dbg-package=libgcrypt20-dbg
+	dh_strip --ddeb-migration='libgcrypt20-dbg (<< 1.6.4-4~)'
 
 override_dh_installinfo:
 	dh_installinfo
@@ -46,4 +73,4 @@ override_dh_gencontrol:
 	dh_gencontrol --remaining-packages
 
 %:
-	dh $@ --parallel --with autotools_dev
+	dh $@ --parallel --builddirectory=build --with autoreconf

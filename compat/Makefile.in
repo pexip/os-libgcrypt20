@@ -115,13 +115,12 @@ DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am clock.c \
 	getpid.c $(top_srcdir)/build-aux/depcomp
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/gpg-error.m4 \
-	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/lock.m4 \
-	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
-	$(top_srcdir)/m4/ltversion.m4 $(top_srcdir)/m4/lt~obsolete.m4 \
+	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/ltoptions.m4 \
+	$(top_srcdir)/m4/ltsugar.m4 $(top_srcdir)/m4/ltversion.m4 \
+	$(top_srcdir)/m4/lt~obsolete.m4 \
 	$(top_srcdir)/m4/noexecstack.m4 $(top_srcdir)/m4/onceonly.m4 \
 	$(top_srcdir)/m4/socklen.m4 $(top_srcdir)/m4/sys_socket_h.m4 \
-	$(top_srcdir)/m4/threadlib.m4 $(top_srcdir)/acinclude.m4 \
-	$(top_srcdir)/configure.ac
+	$(top_srcdir)/acinclude.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -240,6 +239,8 @@ GCRYPT_RANDOM = @GCRYPT_RANDOM@
 GPG_ERROR_CFLAGS = @GPG_ERROR_CFLAGS@
 GPG_ERROR_CONFIG = @GPG_ERROR_CONFIG@
 GPG_ERROR_LIBS = @GPG_ERROR_LIBS@
+GPG_ERROR_MT_CFLAGS = @GPG_ERROR_MT_CFLAGS@
+GPG_ERROR_MT_LIBS = @GPG_ERROR_MT_LIBS@
 GREP = @GREP@
 INSERT_SYS_SELECT_H = @INSERT_SYS_SELECT_H@
 INSTALL = @INSTALL@
@@ -260,16 +261,12 @@ LIBGCRYPT_LT_CURRENT = @LIBGCRYPT_LT_CURRENT@
 LIBGCRYPT_LT_REVISION = @LIBGCRYPT_LT_REVISION@
 LIBGCRYPT_PUBKEY_CIPHERS = @LIBGCRYPT_PUBKEY_CIPHERS@
 LIBGCRYPT_THREAD_MODULES = @LIBGCRYPT_THREAD_MODULES@
-LIBMULTITHREAD = @LIBMULTITHREAD@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
-LIBTHREAD = @LIBTHREAD@
 LIBTOOL = @LIBTOOL@
 LIPO = @LIPO@
 LN_S = @LN_S@
-LTLIBMULTITHREAD = @LTLIBMULTITHREAD@
 LTLIBOBJS = @LTLIBOBJS@
-LTLIBTHREAD = @LTLIBTHREAD@
 MAINT = @MAINT@
 MAKEINFO = @MAKEINFO@
 MANIFEST_TOOL = @MANIFEST_TOOL@
@@ -300,6 +297,7 @@ SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
+SYSROOT = @SYSROOT@
 SYS_SOCKET_H = @SYS_SOCKET_H@
 VERSION = @VERSION@
 VERSION_NUMBER = @VERSION_NUMBER@

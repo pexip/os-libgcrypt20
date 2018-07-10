@@ -104,13 +104,12 @@ DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/build-aux/depcomp
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/gpg-error.m4 \
-	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/lock.m4 \
-	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
-	$(top_srcdir)/m4/ltversion.m4 $(top_srcdir)/m4/lt~obsolete.m4 \
+	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/ltoptions.m4 \
+	$(top_srcdir)/m4/ltsugar.m4 $(top_srcdir)/m4/ltversion.m4 \
+	$(top_srcdir)/m4/lt~obsolete.m4 \
 	$(top_srcdir)/m4/noexecstack.m4 $(top_srcdir)/m4/onceonly.m4 \
 	$(top_srcdir)/m4/socklen.m4 $(top_srcdir)/m4/sys_socket_h.m4 \
-	$(top_srcdir)/m4/threadlib.m4 $(top_srcdir)/acinclude.m4 \
-	$(top_srcdir)/configure.ac
+	$(top_srcdir)/acinclude.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -120,10 +119,10 @@ CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 am__DEPENDENCIES_1 =
 am__librandom_la_SOURCES_DIST = random.c random.h rand-internal.h \
-	random-csprng.c random-fips.c random-system.c rndhw.c \
+	random-csprng.c random-drbg.c random-system.c rndhw.c \
 	random-daemon.c
 @USE_RANDOM_DAEMON_TRUE@am__objects_1 = random-daemon.lo
-am_librandom_la_OBJECTS = random.lo random-csprng.lo random-fips.lo \
+am_librandom_la_OBJECTS = random.lo random-csprng.lo random-drbg.lo \
 	random-system.lo rndhw.lo $(am__objects_1)
 librandom_la_OBJECTS = $(am_librandom_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
@@ -236,6 +235,8 @@ GCRYPT_RANDOM = @GCRYPT_RANDOM@
 GPG_ERROR_CFLAGS = @GPG_ERROR_CFLAGS@
 GPG_ERROR_CONFIG = @GPG_ERROR_CONFIG@
 GPG_ERROR_LIBS = @GPG_ERROR_LIBS@
+GPG_ERROR_MT_CFLAGS = @GPG_ERROR_MT_CFLAGS@
+GPG_ERROR_MT_LIBS = @GPG_ERROR_MT_LIBS@
 GREP = @GREP@
 INSERT_SYS_SELECT_H = @INSERT_SYS_SELECT_H@
 INSTALL = @INSTALL@
@@ -256,16 +257,12 @@ LIBGCRYPT_LT_CURRENT = @LIBGCRYPT_LT_CURRENT@
 LIBGCRYPT_LT_REVISION = @LIBGCRYPT_LT_REVISION@
 LIBGCRYPT_PUBKEY_CIPHERS = @LIBGCRYPT_PUBKEY_CIPHERS@
 LIBGCRYPT_THREAD_MODULES = @LIBGCRYPT_THREAD_MODULES@
-LIBMULTITHREAD = @LIBMULTITHREAD@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
-LIBTHREAD = @LIBTHREAD@
 LIBTOOL = @LIBTOOL@
 LIPO = @LIPO@
 LN_S = @LN_S@
-LTLIBMULTITHREAD = @LTLIBMULTITHREAD@
 LTLIBOBJS = @LTLIBOBJS@
-LTLIBTHREAD = @LTLIBTHREAD@
 MAINT = @MAINT@
 MAKEINFO = @MAKEINFO@
 MANIFEST_TOOL = @MANIFEST_TOOL@
@@ -296,6 +293,7 @@ SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
+SYSROOT = @SYSROOT@
 SYS_SOCKET_H = @SYS_SOCKET_H@
 VERSION = @VERSION@
 VERSION_NUMBER = @VERSION_NUMBER@
@@ -364,7 +362,7 @@ GCRYPT_MODULES = @GCRYPT_RANDOM@
 librandom_la_DEPENDENCIES = $(GCRYPT_MODULES)
 librandom_la_LIBADD = $(GCRYPT_MODULES)
 librandom_la_SOURCES = random.c random.h rand-internal.h \
-	random-csprng.c random-fips.c random-system.c rndhw.c \
+	random-csprng.c random-drbg.c random-system.c rndhw.c \
 	$(am__append_1)
 EXTRA_librandom_la_SOURCES = \
 rndlinux.c \
@@ -430,7 +428,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/random-csprng.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/random-daemon.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/random-fips.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/random-drbg.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/random-system.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/random.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rndegd.Plo@am__quote@

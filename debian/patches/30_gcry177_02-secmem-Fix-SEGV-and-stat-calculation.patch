@@ -1,0 +1,69 @@
+From 91456759b887e153c4d4ce19538d478df260cab2 Mon Sep 17 00:00:00 2001
+From: NIIBE Yutaka <gniibe@fsij.org>
+Date: Fri, 2 Jun 2017 10:34:42 +0900
+Subject: [PATCH 2/2] secmem: Fix SEGV and stat calculation.
+
+* src/secmem (init_pool): Care about the header size.
+(_gcry_secmem_malloc_internal): Likewise.
+(_gcry_secmem_malloc_internal): Use mb->size for stats.
+
+--
+
+GnuPG-bug-id: 3027
+Signed-off-by: NIIBE Yutaka <gniibe@fsij.org>
+---
+ src/secmem.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/src/secmem.c b/src/secmem.c
+index 46bbf82e..b2a9667d 100644
+--- a/src/secmem.c
++++ b/src/secmem.c
+@@ -454,7 +454,7 @@ init_pool (pooldesc_t *pool, size_t n)
+ 
+   /* Initialize first memory block.  */
+   mb = (memblock_t *) pool->mem;
+-  mb->size = pool->size;
++  mb->size = pool->size - BLOCK_HEAD_SIZE;
+   mb->flags = 0;
+ }
+ 
+@@ -610,7 +610,7 @@ _gcry_secmem_malloc_internal (size_t size, int xhint)
+   mb = mb_get_new (pool, (memblock_t *) pool->mem, size);
+   if (mb)
+     {
+-      stats_update (pool, size, 0);
++      stats_update (pool, mb->size, 0);
+       return &mb->aligned.c;
+     }
+ 
+@@ -624,7 +624,7 @@ _gcry_secmem_malloc_internal (size_t size, int xhint)
+           mb = mb_get_new (pool, (memblock_t *) pool->mem, size);
+           if (mb)
+             {
+-              stats_update (pool, size, 0);
++              stats_update (pool, mb->size, 0);
+               return &mb->aligned.c;
+             }
+         }
+@@ -641,7 +641,7 @@ _gcry_secmem_malloc_internal (size_t size, int xhint)
+         return NULL; /* Not enough memory available for a new pool.  */
+       /* Initialize first memory block.  */
+       mb = (memblock_t *) pool->mem;
+-      mb->size = pool->size;
++      mb->size = pool->size - BLOCK_HEAD_SIZE;
+       mb->flags = 0;
+ 
+       pool->okay = 1;
+@@ -660,7 +660,7 @@ _gcry_secmem_malloc_internal (size_t size, int xhint)
+       mb = mb_get_new (pool, (memblock_t *) pool->mem, size);
+       if (mb)
+         {
+-          stats_update (pool, size, 0);
++          stats_update (pool, mb->size, 0);
+           return &mb->aligned.c;
+         }
+     }
+-- 
+2.11.0
+

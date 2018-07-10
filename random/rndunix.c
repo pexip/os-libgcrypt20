@@ -86,6 +86,9 @@
 #include <config.h>
 #include <stdlib.h>
 #include <stdio.h>
+#ifdef HAVE_STDINT_H
+# include <stdint.h>
+#endif
 #include <string.h>
 
 /* OS-specific includes */
@@ -143,6 +146,9 @@
 #endif
 #ifndef STDOUT_FILENO
 #define STDOUT_FILENO 1
+#endif
+#ifndef STDERR_FILENO
+#define STDERR_FILENO 2
 #endif
 
 #define GATHER_BUFSIZE		49152	/* Usually about 25K are filled */
@@ -708,7 +714,7 @@ start_gatherer( int pipefd )
     int dbgall;
 
     {
-	const char *s = getenv("GNUPG_RNDUNIX_DBG");
+	const char *s = getenv("GCRYPT_RNDUNIX_DBG");
 	if( s ) {
 	    dbgfp = (*s=='-' && !s[1])? stdout : fopen(s, "a");
 	    if( !dbgfp )
@@ -717,18 +723,24 @@ start_gatherer( int pipefd )
 	    else
 		fprintf(dbgfp,"\nSTART RNDUNIX DEBUG pid=%d\n", (int)getpid());
 	}
-	dbgall = !!getenv("GNUPG_RNDUNIX_DBGALL");
+	dbgall = !!getenv("GCRYPT_RNDUNIX_DBGALL");
     }
     /* close all files but the ones we need */
     {	int nmax, n1, n2, i;
 #ifdef _SC_OPEN_MAX
 	if( (nmax=sysconf( _SC_OPEN_MAX )) < 0 ) {
-#ifdef _POSIX_OPEN_MAX
+# ifdef _POSIX_OPEN_MAX
 	    nmax = _POSIX_OPEN_MAX;
-#else
+# else
 	    nmax = 20; /* assume a reasonable value */
-#endif
+# endif
 	}
+        /* AIX returns INT32_MAX instead of a proper value.  We assume that
+         * this is always an error and use a reasonable value.  */
+# ifdef INT32_MAX
+        if (nmax == INT32_MAX)
+          nmax = 20;
+# endif
 #else /*!_SC_OPEN_MAX*/
 	nmax = 20; /* assume a reasonable value */
 #endif /*!_SC_OPEN_MAX*/
@@ -766,13 +778,27 @@ start_gatherer( int pipefd )
 
     fclose(stderr);		/* Arrghh!!  It's Stuart code!! */
 
+    /* Mary goes to Berkeley: NetBSD emits warnings if the standard
+       descriptors are not open when running setuid program.  Thus we
+       connect them to the bitbucket if they are not already open.  */
+    {
+      struct stat statbuf;
+
+      if (fstat (STDIN_FILENO, &statbuf) == -1 && errno == EBADF)
+        open ("/dev/null",O_RDONLY);
+      if (fstat (STDOUT_FILENO, &statbuf) == -1 && errno == EBADF)
+        open ("/dev/null",O_WRONLY);
+      if (fstat (STDERR_FILENO, &statbuf) == -1 && errno == EBADF)
+        open ("/dev/null",O_WRONLY);
+    }
+
     for(;;) {
 	GATHER_MSG msg;
 	size_t nbytes;
 	const char *p;
 
 	msg.usefulness = slow_poll( dbgfp, dbgall, &nbytes );
-	p = gather_buffer;
+	p = (const char*)gather_buffer;
 	while( nbytes ) {
 	    msg.ndata = nbytes > sizeof(msg.data)? sizeof(msg.data) : nbytes;
 	    memcpy( msg.data, p, msg.ndata );

@@ -32,6 +32,10 @@
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
+#if defined(__linux__) && defined(HAVE_SYSCALL)
+# include <sys/syscall.h>
+#endif
+
 #include "types.h"
 #include "g10lib.h"
 #include "rand-internal.h"
@@ -139,10 +143,18 @@ _gcry_rndlinux_gather_random (void (*add)(const void*, size_t,
 
 
   /* First read from a hardware source.  However let it account only
-     for up to 50% of the requested bytes.  */
+     for up to 50% (or 25% for RDRAND) of the requested bytes.  */
   n_hw = _gcry_rndhw_poll_slow (add, origin);
-  if (n_hw > length/2)
-    n_hw = length/2;
+  if ((_gcry_get_hw_features () & HWF_INTEL_RDRAND))
+    {
+      if (n_hw > length/4)
+        n_hw = length/4;
+    }
+  else
+    {
+      if (n_hw > length/2)
+        n_hw = length/2;
+    }
   if (length > 1)
     length -= n_hw;
 
@@ -182,6 +194,48 @@ _gcry_rndlinux_gather_random (void (*add)(const void*, size_t,
       fd_set rfds;
       struct timeval tv;
       int rc;
+
+      /* If we have a modern Linux kernel and we want to read from the
+       * the non-blocking /dev/urandom, we first try to use the new
+       * getrandom syscall.  That call guarantees that the kernel's
+       * RNG has been properly seeded before returning any data.  This
+       * is different from /dev/urandom which may, due to its
+       * non-blocking semantics, return data even if the kernel has
+       * not been properly seeded.  Unfortunately we need to use a
+       * syscall and not a new device and thus we are not able to use
+       * select(2) to have a timeout. */
+#if defined(__linux__) && defined(HAVE_SYSCALL) && defined(__NR_getrandom)
+      if (fd == fd_urandom)
+        {
+          long ret;
+          size_t nbytes;
+
+          do
+            {
+              nbytes = length < sizeof(buffer)? length : sizeof(buffer);
+              if (nbytes > 256)
+                nbytes = 256;
+              ret = syscall (__NR_getrandom,
+                             (void*)buffer, (size_t)nbytes, (unsigned int)0);
+            }
+          while (ret == -1 && errno == EINTR);
+          if (ret == -1 && errno == ENOSYS)
+            ; /* The syscall is not supported - fallback to /dev/urandom.  */
+          else
+            { /* The syscall is supported.  Some sanity checks.  */
+              if (ret == -1)
+                log_fatal ("unexpected error from getrandom: %s\n",
+                           strerror (errno));
+              else if (ret != nbytes)
+                log_fatal ("getrandom returned only"
+                           " %ld of %zu requested bytes\n", ret, nbytes);
+
+              (*add)(buffer, nbytes, origin);
+              length -= nbytes;
+              continue; /* until LENGTH is zero.  */
+            }
+        }
+#endif
 
       /* If we collected some bytes update the progress indicator.  We
          do this always and not just if the select timed out because
@@ -224,6 +278,7 @@ _gcry_rndlinux_gather_random (void (*add)(const void*, size_t,
             }
         }
 
+      /* Read from the device.  */
       do
         {
           size_t nbytes;

@@ -6,14 +6,17 @@ Description: Do not print standard multiarch path
 Origin: vendor
 Forwarded: not-needed
 
---- libgcrypt11-1.5.2.orig/src/libgcrypt-config.in
-+++ libgcrypt11-1.5.2/src/libgcrypt-config.in
-@@ -154,7 +154,7 @@ if test "$echo_libs" = "yes"; then
+--- a/src/libgcrypt-config.in
++++ b/src/libgcrypt-config.in
+@@ -152,9 +152,10 @@ fi
+ if test "$echo_libs" = "yes"; then
+     libdirs=""
      libs_final="$libs"
++    debianmultiarch=`if which dpkg-architecture > /dev/null ; then dpkg-architecture -qDEB_HOST_MULTIARCH ; fi`
  
      # Set up `libdirs'.
 -    if test "x$libdir" != "x/usr/lib" -a "x$libdir" != "x/lib"; then
-+    if test "x$libdir" != "x/usr/lib" -a "x$libdir" != "x/lib" -a "x$libdir" != "x/lib/`dpkg-architecture -qDEB_HOST_MULTIARCH`" ; then
++    if test "x$libdir" != "x/usr/lib" -a "x$libdir" != "x/lib" -a "x$libdir" != "x/lib/${debianmultiarch}" ; then
  	libdirs="-L$libdir"
      fi
  
