@@ -1,3 +1,9 @@
+libgcrypt20 (1.7.6-2+deb9u3pexip1) pexip; urgency=medium
+
+  * Migrate to Stretch
+
+ -- John-Mark Bell <jmb@pexip.com>  Tue, 10 Jul 2018 00:19:57 +0000
+
 libgcrypt20 (1.7.6-2+deb9u3) stretch-security; urgency=high
 
   * Non-maintainer upload by the Security Team.
