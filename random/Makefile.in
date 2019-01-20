@@ -119,11 +119,11 @@ CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 am__DEPENDENCIES_1 =
 am__librandom_la_SOURCES_DIST = random.c random.h rand-internal.h \
-	random-csprng.c random-drbg.c random-system.c rndhw.c \
-	random-daemon.c
+	random-csprng.c random-drbg.c random-system.c rndjent.c \
+	rndhw.c random-daemon.c
 @USE_RANDOM_DAEMON_TRUE@am__objects_1 = random-daemon.lo
 am_librandom_la_OBJECTS = random.lo random-csprng.lo random-drbg.lo \
-	random-system.lo rndhw.lo $(am__objects_1)
+	random-system.lo rndjent.lo rndhw.lo $(am__objects_1)
 librandom_la_OBJECTS = $(am_librandom_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -362,15 +362,20 @@ GCRYPT_MODULES = @GCRYPT_RANDOM@
 librandom_la_DEPENDENCIES = $(GCRYPT_MODULES)
 librandom_la_LIBADD = $(GCRYPT_MODULES)
 librandom_la_SOURCES = random.c random.h rand-internal.h \
-	random-csprng.c random-drbg.c random-system.c rndhw.c \
-	$(am__append_1)
+	random-csprng.c random-drbg.c random-system.c rndjent.c \
+	rndhw.c $(am__append_1)
 EXTRA_librandom_la_SOURCES = \
 rndlinux.c \
 rndegd.c \
 rndunix.c \
 rndw32.c  \
-rndw32ce.c
+rndw32ce.c \
+jitterentropy-base.c jitterentropy.h jitterentropy-base-user.h
 
+@ENABLE_O_FLAG_MUNGING_FALSE@o_flag_munging = cat
+
+# The rndjent module needs to be compiled without optimization.  */
+@ENABLE_O_FLAG_MUNGING_TRUE@o_flag_munging = sed -e 's/-O\([1-9s][1-9s]*\)/-O0/g' -e 's/-Ofast/-O0/g'
 all: all-am
 
 .SUFFIXES:
@@ -426,6 +431,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/jitterentropy-base.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/random-csprng.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/random-daemon.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/random-drbg.Plo@am__quote@
@@ -433,6 +439,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/random.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rndegd.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rndhw.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rndjent.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rndlinux.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rndunix.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rndw32.Plo@am__quote@
@@ -668,6 +675,14 @@ uninstall-am:
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	tags tags-am uninstall uninstall-am
 
+
+rndjent.o: $(srcdir)/rndjent.c jitterentropy-base-user.h \
+           $(srcdir)/jitterentropy-base.c $(srcdir)/jitterentropy.h
+	`echo $(COMPILE) -c $(srcdir)/rndjent.c | $(o_flag_munging) `
+
+rndjent.lo: $(srcdir)/rndjent.c jitterentropy-base-user.h \
+            $(srcdir)/jitterentropy-base.c $(srcdir)/jitterentropy.h
+	`echo $(LTCOMPILE) -c $(srcdir)/rndjent.c | $(o_flag_munging) `
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

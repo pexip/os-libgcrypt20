@@ -1,27 +1,201 @@
-libgcrypt20 (1.7.6-2+deb9u3) stretch-security; urgency=high
+libgcrypt20 (1.8.4-5) unstable; urgency=medium
 
-  * Non-maintainer upload by the Security Team.
-  * ecc: Add blinding for ECDSA (CVE-2018-0495)
+  * 30_doc-Fix-library-initialization-examples.patch from upstream
+    LIBGCRYPT-1.8-BRANCH: Stop suggesting gcry_check_version (GCRYPT_VERSION)
+    in documentation. Add some touch magic to still allow building without
+    makeinfo. See #914009
+  * [lintian] Minimize upstream/signing-key.asc.
+  * Use dh v11 compatibility level.
 
- -- Salvatore Bonaccorso <carnil@debian.org>  Fri, 15 Jun 2018 11:58:05 +0200
+ -- Andreas Metzler <ametzler@debian.org>  Sun, 20 Jan 2019 14:47:23 +0100
 
-libgcrypt20 (1.7.6-2+deb9u2) stretch-security; urgency=high
+libgcrypt20 (1.8.4-4) unstable; urgency=medium
 
-  * Non-maintainer upload by the Security Team.
-  * ecc: Add input validation for X25519 [CVE-2017-0379]
-    Mitigate a local side-channel attack on Curve25519 dubbed "May the
-    Fourth be With You". (Closes: #873383)
+  * Run "wrap-and-sort --max-line-length=72 --short-indent" and add back
+    autodeleted comments.
+  * Drop libgcrypt11-dev transition package. Closes: #878654
 
- -- Salvatore Bonaccorso <carnil@debian.org>  Sun, 27 Aug 2017 11:58:04 +0200
+ -- Andreas Metzler <ametzler@debian.org>  Sun, 02 Dec 2018 13:43:39 +0100
 
-libgcrypt20 (1.7.6-2+deb9u1) stretch-security; urgency=high
+libgcrypt20 (1.8.4-3) unstable; urgency=medium
 
-  * 31_CVE-2017-752*.patch from upstream 1.7.8 release: Mitigate a
-    flush+reload side-channel attack on RSA secret keys dubbed "Sliding right
-    into disaster". For details see <https://eprint.iacr.org/2017/627>.
-    [CVE-2017-7526]
+  * Fix arch-indep build error by running dh_auto_install for both -arch and
+    -indep builds.
 
- -- Andreas Metzler <ametzler@debian.org>  Sat, 01 Jul 2017 11:01:58 +0200
+ -- Andreas Metzler <ametzler@debian.org>  Sun, 28 Oct 2018 07:22:27 +0100
+
+libgcrypt20 (1.8.4-2) unstable; urgency=medium
+
+  * Upload to unstable.
+  * Use dh_missing.
+  * Ship info files from installed tree (debian/tmp/) instead of from doc/.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sat, 27 Oct 2018 18:33:22 +0200
+
+libgcrypt20 (1.8.4-1) experimental; urgency=medium
+
+  * New upstream bugfix release.
+    + Drop 40-*.patch.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sat, 27 Oct 2018 07:45:13 +0200
+
+libgcrypt20 (1.8.3-2) experimental; urgency=low
+
+  * Update from LIBGCRYPT-1.8-BRANCH:
+    + 40-01-Post-release-updates.patch
+    + 40-02-random-Fix-hang-of-_gcry_rndjent_get_version.patch
+    + 40-03-sexp-Fix-uninitialized-use-of-a-var-in-the-error-cas.patch
+    + 40-04-ecc-Fix-potential-unintended-freeing-of-an-internal-.patch
+    + 40-06-ecc-Fix-possible-memory-leakage-in-parameter-check-o.patch
+    + 40-07-ecc-Fix-memory-leak-in-the-error-case-of-ecc_encrypt.patch
+    + 40-08-Fix-memory-leak-in-secmem-in-out-of-core-conditions.patch
+    + 40-09-doc-Update-yat2m.c-from-upstream-libgpg-error.patch
+    + 40-10-build-Add-release-make-target.patch
+
+ -- Andreas Metzler <ametzler@debian.org>  Fri, 26 Oct 2018 17:29:25 +0200
+
+libgcrypt20 (1.8.3-1) unstable; urgency=high
+
+  * [lintian] Fix spelling-error-in-patch-description in
+    15_multiarchpath_in_-L.diff.
+  * New upstream version.
+    + Use blinding for ECDSA signing to mitigate a novel side-channel
+      attack.  CVE-2018-0495
+  * [lintian] Delete trailing empty lines in changelog.
+
+ -- Andreas Metzler <ametzler@debian.org>  Wed, 13 Jun 2018 19:15:54 +0200
+
+libgcrypt20 (1.8.2-2) unstable; urgency=medium
+
+  * Upload to unstable.
+  * Partially sync priorities with override file. (libgcrypt20 optional from
+    standard.)
+  * Point Vcs* to salsa.
+
+ -- Andreas Metzler <ametzler@debian.org>  Wed, 28 Mar 2018 18:43:21 +0200
+
+libgcrypt20 (1.8.2-1) experimental; urgency=medium
+
+  * New upstream version.
+    + Drop 30_Fix-secmem-test-for-machine-with-larger-page.patch and
+      31_tests-Add-HAVE_MMAP-check-for-MinGW.patch.
+  * Use dh v10 mode. Bump b-d, drop explicit b-d on automake and
+    dh_autoreconf, remove --parallel --with autoreconf options from dh
+    invocation.
+  * Clean up, delete some libgcrypt20-dbg leftovers.
+  * Use https for upstream URL.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sat, 16 Dec 2017 13:36:49 +0100
+
+libgcrypt20 (1.8.1-4) unstable; urgency=low
+
+  * Upload to unstable.
+
+ -- Andreas Metzler <ametzler@debian.org>  Wed, 15 Nov 2017 18:52:21 +0100
+
+libgcrypt20 (1.8.1-3) experimental; urgency=medium
+
+  * Replace 30_fedora_t-secmem-PPC64.diff with
+    30_Fix-secmem-test-for-machine-with-larger-page.patch and
+    31_tests-Add-HAVE_MMAP-check-for-MinGW.patch from upstream GIT
+    LIBGCRYPT-1.8-BRANCH.
+  * Set Rules-Requires-Root: no.
+
+ -- Andreas Metzler <ametzler@debian.org>  Tue, 14 Nov 2017 19:10:39 +0100
+
+libgcrypt20 (1.8.1-2) experimental; urgency=medium
+
+  * Sync priorities with override file
+    (libgcrypt11-dev/libgcrypt-mingw-w64-dev: extra -> optional). Bump
+    Standards-Version to 4.1.1.
+  * Point watchfile to https URL.
+  * Use DEB_VERSION_UPSTREAM_REVISION instead of DEB_VERSION to generate fake
+    version number.
+  * Sync debian/copyright with upstream's LICENSES file, adding the OCB
+    license 1. Closes: #879984
+  * [lintian] Drop trailing whitespace in control and changelog.
+  * [lintian] Fix typo in copyright file.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sat, 04 Nov 2017 19:06:49 +0100
+
+libgcrypt20 (1.8.1-1) experimental; urgency=medium
+
+  * New upstream version.
+    + Mitigates a local side-channel attack on Curve25519 dubbed "May the
+      Fourth be With You".  [CVE-2017-0379] Closes: #873383
+    + Add the OID SHA384WithECDSA from RFC-7427 to SHA-384. Closes: 873297
+  * Use @ARCHIVE_EXT@ in watchfile instead of hardcoding bz2.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sun, 27 Aug 2017 13:13:01 +0200
+
+libgcrypt20 (1.8.0-2) experimental; urgency=low
+
+  * 30_fedora_t-secmem-PPC64.diff from Fedora package: Fix t_secmen on
+    powerpc which uses a pagesize > 16K.
+  * Use /usr/share/dpkg/pkg-info.mk instead of invoking dpkg-parsechangelog.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sat, 19 Aug 2017 16:06:03 +0200
+
+libgcrypt20 (1.8.0-1) experimental; urgency=low
+
+  * New upstream version.
+    + Drop 30_mpi-Fix-mpi_set_secure.patch.
+    + Update copyright file.
+    + Update symbol file.
+    + Bump libgpg-error-dev b-d requirement to >= 1.25.
+    + Update algorithm list in package description.
+
+ -- Andreas Metzler <ametzler@debian.org>  Wed, 19 Jul 2017 19:47:46 +0200
+
+libgcrypt20 (1.7.9-2) unstable; urgency=medium
+
+  * Sync debian/copyright with upstream's LICENSES file, adding the OCB
+    license 1. Closes: #879984
+  * [lintian] Drop trailing whitespace in control and changelog.
+  * [lintian] Sync priorities with override file (extra -> optional).
+  * [lintian] Fix typo in copyright file.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sat, 04 Nov 2017 16:37:16 +0100
+
+libgcrypt20 (1.7.9-1) unstable; urgency=high
+
+  * New upstream version, mitigates a local side-channel attack on Curve25519
+    dubbed "May the Fourth be With You".  [CVE-2017-0379] Closes: #873383
+    + Drop 30_mpi-Fix-mpi_set_secure.patch
+
+ -- Andreas Metzler <ametzler@debian.org>  Sun, 27 Aug 2017 11:56:17 +0200
+
+libgcrypt20 (1.7.8-2) unstable; urgency=medium
+
+  * 30_mpi-Fix-mpi_set_secure.patch from upstream LIBGCRYPT-1-7-BRANCH: Fix
+    memory allocation in mpi_set_secure. Closes: #866964
+  * Drop override_dh_strip from debian/rules.
+
+ -- Andreas Metzler <ametzler@debian.org>  Thu, 06 Jul 2017 18:16:23 +0200
+
+libgcrypt20 (1.7.8-1) unstable; urgency=high
+
+  * Fix 25_norevisionfromgit.diff to let ./configure generate a version-string
+    without -beta suffix. LP: #1700157
+  * New upstream version.
+    + Mitigate a flush+reload side-channel attack on RSA secret keys dubbed
+      "Sliding right into disaster".  For details see
+      <https://eprint.iacr.org/2017/627>.  [CVE-2017-7526]
+
+ -- Andreas Metzler <ametzler@debian.org>  Thu, 29 Jun 2017 18:27:03 +0200
+
+libgcrypt20 (1.7.7-2) unstable; urgency=low
+
+  * Upload to unstable.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sun, 18 Jun 2017 11:28:58 +0200
+
+libgcrypt20 (1.7.7-1) experimental; urgency=medium
+
+  * New upstream version.
+    + Drop 30_gcry177*.patch
+
+ -- Andreas Metzler <ametzler@debian.org>  Sun, 04 Jun 2017 15:34:56 +0200
 
 libgcrypt20 (1.7.6-2) unstable; urgency=high
 
@@ -505,15 +679,15 @@ libgcrypt11 (1.4.6-6) unstable; urgency=low
   * Convert to multi-arch.
     + configure with --libdir=/lib/$(DEB_HOST_MULTIARCH), update
       *.install accordingly.
-    + Bump cdbs Build-Depends to 0.4.93 (required for expanding 
+    + Bump cdbs Build-Depends to 0.4.93 (required for expanding
       $(DEB_HOST_MULTIARCH)).
     + Bump debhelper b-d to 8.1.3 (for ${misc:Pre-Depends}).
-    + runtime library is Multi-Arch: same and has Pre-Depends: 
+    + runtime library is Multi-Arch: same and has Pre-Depends:
       ${misc:Pre-Depends}.
     + This is based on 1.4.6-5ubuntu1, however some differences remain. -dbg
       package is not Multi-Arch: same (Due to usr/lib/debug/usr/bin/*). We
       ship the so-symlink in /lib/$(DEB_HOST_MULTIARCH) instead of
-      /usr/lib/$(DEB_HOST_MULTIARCH). 
+      /usr/lib/$(DEB_HOST_MULTIARCH).
 
  -- Andreas Metzler <ametzler@debian.org>  Sat, 25 Jun 2011 17:52:12 +0200
 
@@ -1145,7 +1319,7 @@ libgcrypt (1.1.5-3.1) unstable; urgency=medium
 
   * NMU
   * Fixes compile problems on powerpc/alpha/m68k (Closes: #130642)
-  * Fixes compile problems on Hurd (Closes: #126368) 
+  * Fixes compile problems on Hurd (Closes: #126368)
 
  -- Randolph Chung <tausq@debian.org>  Tue,  5 Feb 2002 04:46:43 +0000
 
@@ -1168,7 +1342,7 @@ libgcrypt (1.1.5-3) unstable; urgency=medium
 libgcrypt (1.1.5-2) unstable; urgency=low
 
   * Changed Maintainer: address
-  * Fixed build depends (Closes: #128743) 
+  * Fixed build depends (Closes: #128743)
 
  -- Robert van der Meulen <rvdm@debian.org>  Sun, 13 Jan 2002 19:44:11 +0100
 
@@ -1208,5 +1382,3 @@ libgcrypt (1.1.4-1) unstable; urgency=low
   * Initial Release. (Closes: #107498)
 
  -- Ivo Timmermans <ivo@debian.org>  Sat,  4 Aug 2001 11:22:10 +0200
-
-
