@@ -17,7 +17,7 @@
 /* The time this package was configured for a build */
 #undef BUILD_TIMESTAMP
 
-/* configure did not test for endianess */
+/* configure did not test for endianness */
 #undef DISABLED_ENDIAN_CHECK
 
 /* Define if you don't want the default EGD socket name. For details see
@@ -41,6 +41,9 @@
 
 /* Define to support an HMAC based integrity check */
 #undef ENABLE_HMAC_BINARY_CHECK
+
+/* Enable support for the jitter entropy collector. */
+#undef ENABLE_JENT_SUPPORT
 
 /* Enable support for ARM NEON instructions. */
 #undef ENABLE_NEON_SUPPORT
@@ -158,6 +161,9 @@
 
 /* Defined if a GCC style "__attribute__ ((aligned (n))" is supported */
 #undef HAVE_GCC_ATTRIBUTE_ALIGNED
+
+/* Defined if a GCC style "__attribute__ ((may_alias))" is supported */
+#undef HAVE_GCC_ATTRIBUTE_MAY_ALIAS
 
 /* Defined if compiler supports "__attribute__ ((ms_abi))" function attribute
    */
@@ -439,6 +445,9 @@
 #undef USE_ARCFOUR
 
 /* Defined if this module should be included */
+#undef USE_BLAKE2
+
+/* Defined if this module should be included */
 #undef USE_BLOWFISH
 
 /* Defined if this module should be included */
@@ -594,6 +603,9 @@
 #  undef WORDS_BIGENDIAN
 # endif
 #endif
+
+/* Expose all libc features (__DARWIN_C_FULL). */
+#undef _DARWIN_C_SOURCE
 
 /* Define to 1 if on MINIX. */
 #undef _MINIX

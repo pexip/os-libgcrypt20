@@ -739,6 +739,35 @@ sha512_read (void *context)
 }
 
 
+/* Shortcut functions which puts the hash value of the supplied buffer
+ * into outbuf which must have a size of 64 bytes.  */
+void
+_gcry_sha512_hash_buffer (void *outbuf, const void *buffer, size_t length)
+{
+  SHA512_CONTEXT hd;
+
+  sha512_init (&hd, 0);
+  _gcry_md_block_write (&hd, buffer, length);
+  sha512_final (&hd);
+  memcpy (outbuf, hd.bctx.buf, 64);
+}
+
+
+/* Variant of the above shortcut function using multiple buffers.  */
+void
+_gcry_sha512_hash_buffers (void *outbuf, const gcry_buffer_t *iov, int iovcnt)
+{
+  SHA512_CONTEXT hd;
+
+  sha512_init (&hd, 0);
+  for (;iovcnt > 0; iov++, iovcnt--)
+    _gcry_md_block_write (&hd,
+                          (const char*)iov[0].data + iov[0].off, iov[0].len);
+  sha512_final (&hd);
+  memcpy (outbuf, hd.bctx.buf, 64);
+}
+
+
 
 /*
      Self-test section.
@@ -913,6 +942,9 @@ static gcry_md_oid_spec_t oid_spec_sha384[] =
 
     /* PKCS#1 sha384WithRSAEncryption */
     { "1.2.840.113549.1.1.12" },
+
+    /* SHA384WithECDSA: RFC 7427 (A.3.3.) */
+    { "1.2.840.10045.4.3.3" },
 
     { NULL },
   };

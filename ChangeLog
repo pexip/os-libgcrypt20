@@ -1,22 +1,818 @@
+2018-10-26  Werner Koch  <wk@gnupg.org>
+
+	Release 1.8.4.
+	+ commit 93775172713c00c363187b5d6a88895b04ac7c8e
+
+
+2018-10-26  Daniel Kahn Gillmor  <dkg@fifthhorseman.net>
+
+	random: use getrandom() on Linux where available.
+	+ commit 0973c3f9ee7a9ad7c97b77849ed33ecd6789c787
+	* random/rndlinux.c (_gcry_rndlinux_gather_random): use the
+	getrandom() syscall on Linux if it exists, regardless of what kind of
+	entropy was requested.
+
+2018-10-26  Werner Koch  <wk@gnupg.org>
+
+	random: Make sure to re-open /dev/random after a fork.
+	+ commit 60885655756dd0427872b8f01c06da14eab5af70
+	* random/rndlinux.c (_gcry_rndlinux_gather_random): Detect fork and
+	re-open devices.
+
+	primes: Avoid leaking bits of the prime test to pageable memory.
+	+ commit 5b1d022293c5779b1150a7653cce4e3bf494a07c
+	* cipher/primegen.c (gen_prime): Allocate MODS in secure memory.
+
+2018-10-24  Werner Koch  <wk@gnupg.org>
+
+	build: Add release make target.
+	+ commit 99a5babfd1e759310db8ab8b11d182f2e139dfb1
+	* Makefile.am (release, sign-release): New targets.
+
+	(cherry picked from commit 03bb25ee7ed6f1076bf788ab981ca68672880daa)
+
+	Fix memory leak in secmem in out of core conditions.
+	+ commit abd267bf239345ceae5c0de239d1530b427a53a1
+	* src/secmem.c (_gcry_secmem_malloc_internal): Release pool descriptor
+	if the pool could not be allocated.
+
+	ecc: Fix memory leak in the error case of ecc_encrypt_raw.
+	+ commit 60224352f4de1189e0076c6172886dc787a1e6e6
+	* cipher/ecc.c (ecc_encrypt_raw): Add proper error cleanup in the main
+	block.
+
+	ecc: Fix possible memory leakage in parameter check of eddsa.
+	+ commit 347987d4cf29b6a611b7fafa14fddeb50c0651d2
+	* cipher/ecc-eddsa.c (_gcry_ecc_eddsa_verify): Fix mem leak.
+
+	ecc: Fix potential unintended freeing of an internal param.
+	+ commit be68b3ee4fd1f85edc95eaad11c8fd52ccd27ccd
+	* cipher/ecc-curves.c (_gcry_ecc_get_mpi): Fix c+p error
+
+	sexp: Fix uninitialized use of a var in the error case.
+	+ commit 8cc7cac82ec2087c3e1ece56dbd12855a383f090
+	* src/sexp.c (_gcry_sexp_vextract_param): Initialize L1.
+
+2018-06-19  Will Dietz  <w@wdtz.org>
+
+	random: Fix hang of _gcry_rndjent_get_version.
+	+ commit 20c034865f2dd15ce2871385b6e29c15d1570539
+	* random/rndjent.c (_gcry_rndjent_get_version): Move locking.
+
+2018-06-13  Werner Koch  <wk@gnupg.org>
+
+	Release 1.8.3.
+	+ commit 5600d2d6b23640b0114655214f18959ee81fe58e
+
+
+2018-06-13  NIIBE Yutaka  <gniibe@fsij.org>
+
+	ecc: Add blinding for ECDSA.
+	+ commit 9be06c6b2e5c96edf40e566bbf51d44c4d46fb07
+	* cipher/ecc-ecdsa.c (_gcry_ecc_ecdsa_sign): Blind secret D with
+	randomized nonce B.
+
+2018-06-11  Werner Koch  <wk@gnupg.org>
+
+	ecc: Improve gcry_mpi_ec_curve_point.
+	+ commit 846f8fe8b3be6d235592db184361df1bc2b07a8a
+	* mpi/ec.c (_gcry_mpi_ec_curve_point): Check range of coordinates.
+	* tests/t-mpi-point.c (point_on_curve): New.
+
+	mpi: New internal function _gcry_mpi_cmpabs.
+	+ commit 54620a27f4503e703e219e6e11c4be14ce4e3d35
+	* mpi/mpi-cmp.c (_gcry_mpi_cmp): Factor out to ...
+	(do_mpi_cmp): New.  Add arg absmode.
+	(_gcry_mpi_cmpabs): New.
+	* src/gcrypt-int.h (mpi_cmpabs): New macro.
+
+	(cherry picked from commit 6606ae44e0de1069b29dd4215ee9748280940e1b)
+
+2018-04-29  Werner Koch  <wk@gnupg.org>
+
+	build: Convince gcc not to delete NULL ptr checks.
+	+ commit 1a0289daa408773e1a6cefb2562288245f49651c
+	* configure.ac: Try to use -fno-delete-null-pointer-checks.
+
+	(cherry picked from commit 61dbb7c08ab11c10060e193b52e3e1d2ec6dd062)
+
+	prime: Avoid rare assertion failure in gcry_prime_check.
+	+ commit c5bed9df96337b1553cdcd4a85eec10e78b4d14a
+	* cipher/primegen.c (is_prime): Don't fail on the assert X > 1.
+
+2018-04-17  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	Make BMI2 inline assembly check more robust.
+	+ commit 22db6237de00cafb85c0112073b55d0d750e6b03
+	* configure.ac (gcry_cv_gcc_inline_asm_bmi2): New assembly test.
+
+2018-04-17  Stephan Mueller  <smueller@chronox.de>
+
+	AES-KW: fix in-place encryption.
+	+ commit bbf88f0e9d481486ceca079e2611e84db8d039c7
+	* cipher/cipher-aeswrap.c: move memmove call before KW IV setting
+
+2018-04-17  Werner Koch  <wk@gnupg.org>
+
+	mpi: Fix for buidling for MIPS64 with Clang.
+	+ commit a0e016e29409ccd78966a5eb82dea236ad44d9c9
+	* mpi/longlong.h [MIPS64][__clang__]: Use the C version like we
+	already do for 32 bit MIPS.
+
+2018-04-17  NIIBE Yutaka  <gniibe@fsij.org>
+
+	hmac: Use xtrymalloc.
+	+ commit 06fdc074eb29faf584ffd13feea4c063936446fb
+	* src/hmac256.c (_gcry_hmac256_new): Use xtrymalloc.
+	(_gcry_hmac256_file): Likewise.
+
+	random: Protect another use of jent_rng_collector.
+	+ commit 0da4a237661cd273303ae6baaaba2d9f6292b990
+	* random/rndjent.c (_gcry_rndjent_get_version): Lock the access.
+
+	(cherry picked from commit 0de2a22fcf6607d0aecb550feefa414cee3731b2)
+
+2018-04-17  Martin Storsjö  <martin@martin.st>
+
+	random: Don't assume that _WIN64 implies x86_64.
+	+ commit e1695a8f6ca1135d777450cf9ce64628b0778ccb
+	* random/rndw32.c: Change _WIN64 ifdef into __x86_64__.
+
+2018-04-17  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	Improve constant-time buffer compare.
+	+ commit 4e11e9d988181cf9cd87c7c86fa8e7a0f643a573
+	* cipher/bufhelp.h (buf_eq_const): Rewrite logic.
+
+	Fix incorrect counter overflow handling for GCM.
+	+ commit 0a391b259adcd7ea734dc03c2048a135e018166d
+	* cipher/cipher-gcm.c (gcm_ctr_encrypt): New function to handle
+	32-bit CTR increment for GCM.
+	(_gcry_cipher_gcm_encrypt, _gcry_cipher_gcm_decrypt): Do not use
+	generic CTR implementation directly, use gcm_ctr_encrypt instead.
+	* tests/basic.c (_check_gcm_cipher): Add test-vectors for 32-bit
+	CTR overflow.
+	(check_gcm_cipher): Add 'split input to 15 bytes and 17 bytes'
+	test-runs.
+
+	doc: fix double "See" in front of reference.
+	+ commit c114ffd6da837e7aace318e37bbcf9325dd985b7
+	* doc/gcrypt.texi: Change @xref to @ref when text already has 'see' in
+	the front.
+
+2017-12-13  Werner Koch  <wk@gnupg.org>
+
+	Release 1.8.2.
+	+ commit eb84e429950b6a61c00112e70a584940c1d352e4
+
+
+2017-11-24  Werner Koch  <wk@gnupg.org>
+
+	sexp: Avoid a fatal error in case of ENOMEM in called functions.
+	+ commit 59df8d6295426d0a9cf7646c381df2ea29fdb8c5
+	* src/sexp.c (do_vsexp_sscan): Replace BUG() by a proper error
+	return.  Replace sprintf by snprintf.
+	(convert_to_hex): Replace sprintf by snprintf.
+	(convert_to_string): Ditto.
+	(_gcry_sexp_sprint): Ditto.
+
+2017-11-23  Werner Koch  <wk@gnupg.org>
+
+	api: Add auto expand secmem feature.
+	+ commit f4582f8c429f22b18f8ca8a40660a91d721f5c96
+	* src/global.c (_gcry_vcontrol): Implement control value 78.
+	* src/secmem.c (auto_expand): New var.
+	(_gcry_secmem_set_auto_expand): New.
+	(_gcry_secmem_malloc_internal): Act upon AUTO_EXPAND.
+
+2017-11-14  NIIBE Yutaka  <gniibe@fsij.org>
+
+	tests: Add HAVE_MMAP check for MinGW.
+	+ commit 334e1a1cfc8f59db765a0bff0ca29090aa11b0f6
+	* tests/t-secmem.c (main): Conditionalize with HAVE_MMAP.
+
+2017-11-09  NIIBE Yutaka  <gniibe@fsij.org>
+
+	Fix secmem test for machine with larger page.
+	+ commit da127f7505ff7681fc9dbfbf332121d2998e88aa
+	* tests/t-secmem.c (main): Detect page size and setup chunk size.
+	* src/secmem.c (init_pool): Simplify the expression.
+
+2017-08-27  Werner Koch  <wk@gnupg.org>
+
+	Release 1.8.1.
+	+ commit 80fd8615048c3897b91a315cca22ab139b056ccd
+	* configure.ac: Set LT version to C22/A2/R1.
+
+2017-08-27  NIIBE Yutaka  <gniibe@fsij.org>
+
+	ecc: Add input validation for X25519.
+	+ commit bf76acbf0da6b0f245e491bec12c0f0a1b5be7c9
+	* cipher/ecc.c (ecc_decrypt_raw): Add input validation.
+	* mpi/ec.c (ec_p_init): Use scratch buffer for bad points.
+	(_gcry_mpi_ec_bad_point): New.
+
+2017-08-07  Marcus Brinkmann  <marcus.brinkmann@ruhr-uni-bochum.de>
+
+	cipher: Add OID for SHA384WithECDSA.
+	+ commit a7bd2cbd3eabda88fb3cac5cbc13c21c97a7b315
+	* cipher/sha512.c (oid_spec_sha384): Add SHA384WithECDSA.
+
+2017-08-02  Werner Koch  <wk@gnupg.org>
+
+	tests: Fix a printf glitch for a Windows test.
+	+ commit df1e221b3012e96bbffbc7d5fd70836a9ae1cc19
+	* tests/t-convert.c (check_formats): Fix print format glitch on
+	Windows.
+	* tests/t-ed25519.c: Typo fix.
+
+	tests: Add benchmarking option to tests/random.
+	+ commit 21d0f068a721c022f955084c28304934fd198c5e
+	* tests/random.c: Always include unistd.h.
+	(prepend_srcdir): New.
+	(run_benchmark): New.
+	(main): Add options --benchmark and --with-seed-file.  Print whetehr
+	JENT has been used.
+	* tests/t-common.h (split_fields_colon): New. Taken from GnuPG.
+	License of that code changed to LGPLv2.1.
+
+	random: Add more bytes to the pool in addition to the seed file.
+	+ commit eea36574f37830a6a80b4fad884825e815b2912f
+	* random/random-csprng.c (read_seed_file): Read 128 or 32 butes
+	depending on whether we have the Jitter RNG.
+
+2017-08-01  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	Add script to run basic tests with all supported HWF combinations.
+	+ commit 94a92a3db909aef0ebcc009c2d7f5a2663e99004
+	* tests/basic_all_hwfeature_combinations.sh: New.
+	* tests/Makefile.am: Add basic_all_hwfeature_combinations.sh.
+
+2017-07-29  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	Fix return value type for _gcry_md_extract.
+	+ commit cf1528e7f2761774d06ace0de48f39c96b52dc4f
+	* src/gcrypt-int.h (_gcry_md_extract): Use gpg_err_code_t instead of
+	gpg_error_t for internal function return type.
+
+	Fix building AArch32 CE implementations when target is ARMv6 arch.
+	+ commit 4a7aa30ae9f3ce798dd886c2f2d4164c43027748
+	* cipher/cipher-gcm-armv8-aarch32-ce.S: Select ARMv8 architecure.
+	* cipher/rijndael-armv8-aarch32-ce.S: Ditto.
+	* cipher/sha1-armv8-aarch32-ce.S: Ditto.
+	* cipher/sha256-armv8-aarch32-ce.S: Ditto.
+	* configure.ac (gcry_cv_gcc_inline_asm_aarch32_crypto): Ditto.
+
+2017-07-25  NIIBE Yutaka  <gniibe@fsij.org>
+
+	sexp: Add fall through annotation.
+	+ commit b7cd44335d9cde43be6f693dca6399ed0762649c
+	* src/dumpsexp.c (parse_and_print): It's fall through.
+
+2017-07-24  Werner Koch  <wk@gnupg.org>
+
+	random: Fix the command line munging for jitterbase.
+	+ commit ac39522ab08fcd2483edc223334c6ab9d19e91f3
+	* random/Makefile.am (o_flag_munging): Make the first sed term also
+	global.
+
+2017-07-19  NIIBE Yutaka  <gniibe@fsij.org>
+
+	Remove byte order mark.
+	+ commit 1d8e4c2c3a7d0a4154caf5bd720a9a0b04179390
+	* random/jitterentropy-base.c, random/jitterentropy.h: Remove
+	byte order mark.
+
+2017-07-18  Werner Koch  <wk@gnupg.org>
+
+	Release 1.8.0.
+	+ commit 850aca744eeda5fd410f478a0778e353045ac962
+
+
+	mac: Add selftests for HMAC-SHA3-xxx.
+	+ commit 95194c550443e8d5558856633f920daec8a975c4
+	* cipher/hmac-tests.c (check_one): Add arg trunc and change all
+	callers to pass false.
+	(selftests_sha3): New.
+	(run_selftests): Call new selftests.
+
+	api: New function gcry_mpi_point_copy.
+	+ commit ecf73dafb7aafed0d0f339d07235b58c2113f94c
+	* src/gcrypt.h.in (gcry_mpi_point_copy): New.
+	(mpi_point_copy): New macro.
+	* src/visibility.c (gcry_mpi_point_copy): New.
+	* src/libgcrypt.def, src/libgcrypt.vers: Add function.
+	* mpi/ec.c (_gcry_mpi_point_copy): New.
+	* tests/t-mpi-point.c (set_get_point): Add test.
+
+2017-07-17  Werner Koch  <wk@gnupg.org>
+
+	random: Minor fix for getting the rndjent version.
+	+ commit 9d99c6b973caa7fdf93b53cf764066214f763803
+	* random/rndjent.c (_gcry_rndjent_get_version): Always set R_ACTIVE.
+	* tests/version.c (test_get_config): Check number of fields for
+	rng-type.
+
+2017-07-07  NIIBE Yutaka  <gniibe@fsij.org>
+
+	mpi: Minor fix of mpi_pow.
+	+ commit 61b0f52c1cc85bf8c3cac9aba40e28682e4e1b8b
+	* mpi/mpi-pow.c (_gcry_mpi_powm): Allocate size fix.
+
+	mpi: Fix mpi_pow alternative implementation.
+	+ commit 66ed4d53789892def7b237756d8a0ab28df9d222
+	* mpi/mpi-pow.c
+	  [USE_ALGORITHM_SIMPLE_EXPONENTIATION] (_gcry_mpi_powm): Use
+	  mpi_set_cond.
+
+	Fix mpi_pow alternative implementation.
+	+ commit 619ebae9847831f43314a95cc3180f4b329b4d3b
+	* mpi/mpi-pow.c [USE_ALGORITHM_SIMPLE_EXPONENTIATION] (_gcry_mpi_powm):
+	Allocate size fix.
+
+2017-07-06  Werner Koch  <wk@gnupg.org>
+
+	rsa: Use modern MPI allocation function.
+	+ commit 208aba6f9a0475ba049f5a66fe02cf9a6214a887
+	* cipher/rsa.c (secret_core_crt): Use modern function _gcry_mpi_snew.
+
+2017-07-05  Werner Koch  <wk@gnupg.org>
+
+	build: Minor API fixes to fix build problems on AIX.
+	+ commit 85a9a913da9ecc6b2cd6f743e90e49983251d706
+	* src/gcrypt.h.in (gcry_error_from_errno): Fix return type.
+	* src/visibility.c (gcry_md_extract): Change return type to match the
+	prototype.
+
+	tools: Add left shift to mpicalc.
+	+ commit 0d30a4a9791d20c8881b5b12bd44611d9f4274cd
+	* src/mpicalc.c (do_lshift): New.
+	(main): Handle '<'.
+
+2017-07-04  NIIBE Yutaka  <gniibe@fsij.org>
+
+	mpi: Fix mpi_set_secure.
+	+ commit 5feaf1cc8f22c1f8d19a34850d86fe190f1432e2
+	* mpi/mpiutil.c (mpi_set_secure): Allocate by ->alloced.
+
+2017-06-29  NIIBE Yutaka  <gniibe@fsij.org>
+	    Werner Koch  <wk@gnupg.org>
+
+	rsa: Add exponent blinding.
+	+ commit 8725c99ffa41778f382ca97233183bcd687bb0ce
+	* cipher/rsa.c (secret_core_crt): Blind secret D with randomized
+	nonce R for mpi_powm computation.
+
+2017-06-28  NIIBE Yutaka  <gniibe@fsij.org>
+
+	Same computation for square and multiply.
+	+ commit 78130828e9a140a9de4dafadbc844dbb64cb709a
+	* mpi/mpi-pow.c (_gcry_mpi_powm): Compare msize for max_u_size.  Move
+	the assignment to base_u into the loop.  Copy content refered by RP to
+	BASE_U except the last of the loop.
+
+2017-06-24  Werner Koch  <wk@gnupg.org>
+
+	rsa: Minor refactoring.
+	+ commit e6a3dc9900433bbc8ad362a595a3837318c28fa9
+	* cipher/rsa.c (secret): Factor code out to ...
+	(secret_core_std, secret_core_crt): new functions.
+
+2017-06-23  Werner Koch  <wk@gnupg.org>
+
+	random: Add missing dependency.
+	+ commit d091610377b2c92cf385282b1adfc30fa6cd5c75
+	* random/Makefile.am (EXTRA_librandom_la_SOURCES): Fix file name.
+	(rndjent.o, rndjent.lo): Depend on jitterentropy-base-user.h.
+
+	random: Update jitterentropy to 2.1.0.
+	+ commit 8dfae89ecd3e9ae0967586cb38d12ef9111fc7cd
+	* random/rndjent.c (jent_get_nstime, jent_zfree)
+	(jent_fips_enabled, jent_zalloc): Move functions and macros to ...
+	* random/jitterentropy-base-user.h: this file.   That files was not
+	used before.
+	* random/Makefile.am (EXTRA_librandom_la_SOURCES): Add
+	jitterentropy-base-user.
+	* random/jitterentropy-base.c: Update to version 2.1.0.
+	* random/jitterentropy.h: Ditto.
+
+2017-06-21  Werner Koch  <wk@gnupg.org>
+
+	api: New function gcry_get_config.
+	+ commit 27148e60ba15b0cb73b47a75c688fcb48a1a3444
+	* src/misc.c (_gcry_log_info_with_dummy_fp): Remove.
+	* src/global.c (print_config): New arg WHAT.  Remove arg FNC and use
+	gpgrt_fprintf directly.
+	(_gcry_get_config): New.
+	(_gcry_vcontrol) <GCRYCTL_PRINT_CONFIG>: Use _gcry_get_config instead
+	of print_config.
+	* src/gcrypt.h.in (gcry_get_config): New.
+	* src/libgcrypt.def, src/libgcrypt.vers: Add new function.
+	* src/visibility.c (gcry_get_config): New.
+	* src/visibility.h: Mark new function.
+
+	* tests/version.c (test_get_config): New.
+	(main): Call new test.
+
+	random: Allow building rndjent on non-x86.
+	+ commit c2319464b03e61aaf34ef6d5f4b59b0c0483a373
+	* random/jitterentropy-base.c (jent_version): Uncomment function.
+	* random/rndjent.c: Include time.h
+	(JENT_USES_RDTSC): New.
+	(JENT_USES_GETTIME): New.
+	(JENT_USES_READ_REAL_TIME): New.
+	(jent_get_nstime): Support clock_gettime and AIX specific
+	function.  Taken from Stephan Müller's code.
+	(is_rng_available): New.
+	(_gcry_rndjent_dump_stats): Use that function.
+	(_gcry_rndjent_poll): Use that fucntion.  Allow an ADD of NULL for an
+	intialize only mode.
+	(_gcry_rndjent_get_version): New.
+
+2017-06-18  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	rijndael-padlock: change asm operands from read-only to read/write.
+	+ commit 32b4ab209067f6f08b87b27bc78ec27dc497b708
+	* cipher/rijndael-padlock.c (do_padlock): Change ESI/EDI/ECX to use
+	read/write operands as XCRYPT instruction modifies these registers.
+
+2017-06-16  Werner Koch  <wk@gnupg.org>
+
+	random: Make rndjent.c NTG.1 compliant.
+	+ commit 82bc052eda5b3897724c7ad11e54f8203e8e88e9
+	* random/rndjent.c (_gcry_rndjent_poll): Hash the retrieved jitter.
+
+	md: Optimize gcry_md_hash_buffers for SHA-256 and SHA-512.
+	+ commit e6f90a392a1fd59b19b16f7a2bc7c439ae369d5f
+	* cipher/sha256.c (_gcry_sha256_hash_buffer): New.
+	(_gcry_sha256_hash_buffers): New.
+	* cipher/sha512.c (_gcry_sha512_hash_buffer): New.
+	(_gcry_sha512_hash_buffers): New.
+	* cipher/md.c (_gcry_md_hash_buffer): Optimize for SHA246 and SHA512.
+	(_gcry_md_hash_buffers): Ditto.
+
+	random: Allow building rndjent.c with stats collecting enabled.
+	+ commit ee3a74f5539cbc5182ce089994e37c16ce612149
+	* random/rndjent.c: Change license to the one used by jitterentropy.h.
+	(jent_init_statistic): New.
+	(jent_bit_count): New.
+	(jent_statistic_copy_stat): new.
+	(jent_calc_statistic): New.
+
+	New global config option "only-urandom".
+	+ commit 8f6082e95f30c1ba68d2de23da90146f87f0c66c
+	* random/rand-internal.h (RANDOM_CONF_ONLY_URANDOM): New.
+	* random/random.c (_gcry_random_read_conf): Add option "only-urandom".
+	* random/rndlinux.c (_gcry_rndlinux_gather_random): Implement that
+	option.
+	* tests/keygen.c (main): Add option --no-quick for better manual
+	tests.
+
+	Implement global config file /etc/gcrypt/random.conf.
+	+ commit b05a4abc358b204dba343d9cfbd59fdc828c1686
+	* src/hwfeatures.c (my_isascii): Move macro to ...
+	* src/g10lib.h: here.
+	* tests/random.c (main): Dump random stats.
+	* random/random.c (RANDOM_CONF_FILE): New.
+	(_gcry_random_read_conf): New.
+	(_gcry_random_dump_stats): Call rndjent stats.
+	* random/rndjent.c (jent_rng_totalcalls, jent_rng_totalbytes): New.
+	(_gcry_rndjent_poll): Take care of config option disable-jent.  Wipe
+	buffer.  Bump counters.
+	(_gcry_rndjent_dump_stats): New.
+
+2017-06-14  Werner Koch  <wk@gnupg.org>
+
+	random: Add jitter RND based entropy collector.
+	+ commit f5e7763ddca59dcd9ac9f2f4d50cb41b14a34a9e
+	* random/rndjent.c: New.
+	* random/rndlinux.c (_gcry_rndlinux_gather_random): Use rndjent.
+	* random/rndw32.c (_gcry_rndw32_gather_random): Use rndjent.
+	(slow_gatherer): Fix compiler warning.
+	* random/Makefile.am (librandom_la_SOURCES): Add rndjent.c
+	(EXTRA_librandom_la_SOURCES): Add jitterentropy-base.c and
+	jitterentropy.h.
+	(rndjent.o, rndjent.lo): New rules.
+	* configure.ac: New option --disbale-jent-support
+	(ENABLE_JENT_SUPPORT): New ac-define.
+
+	cipher: New helper function rol64.
+	+ commit 6c882fb1fdb6c7cba2215fa7391110d63e24b9dc
+	* cipher/bithelp.h (rol64): New inline functions.
+
+	New hardware feature flag HWF_INTEL_RDTSC.
+	+ commit 06f303a633ea2b992259688bef2b023c3f388f73
+	* src/g10lib.h (HWF_INTEL_RDTSC): New.
+	* src/hwfeatures.c (hwflist): Add "intel-rdtsc".
+	* src/hwf-x86.c (detect_x86_gnuc): Get EDX features and test for TSC.
+
+	random: Changes to original Jitter RNG implementation.
+	+ commit a44c45675f8b631e11048a540bb1fbb7a022ebb4
+	* random/jitterentropy-base.c: Change double underscore symbols and
+	make all functions static.
+	* random/jitterentropy.h: Likewise.
+
+2017-06-13  Stephan Mueller  <smueller@chronox.de>
+
+	random: Add original Jitter RNG implementation.
+	+ commit f0ae18ecf48fbe2da0b9fb3f354d0dd3173d91d3
+	* random/jitterentropy-base-user.h: New.
+	* random/jitterentropy-base.c: New.
+	* random/jitterentropy.h: New.
+
+2017-06-08  Werner Koch  <wk@gnupg.org>
+
+	build: Fix ChangeLog building for builds from other worktrees.
+	+ commit cdfd7ea72a44657f037dd0dbba6e5ea0c2b344aa
+	* Makefile.am (gen-ChangeLog): Test for existance of ".git" regardless
+	on whether it is a file or directory.
+
+2017-06-02  NIIBE Yutaka  <gniibe@fsij.org>
+
+	secmem: Fix SEGV and stat calculation.
+	+ commit e0958debe1a7db1bec1283115cdc6a14bf3b43e5
+	* src/secmem (init_pool): Care about the header size.
+	(_gcry_secmem_malloc_internal): Likewise.
+	(_gcry_secmem_malloc_internal): Use mb->size for stats.
+
+2017-06-01  Jo Van Bulck  <jo.vanbulck@cs.kuleuven.be>
+
+	ecc: Store EdDSA session key in secure memory.
+	+ commit 5a22de904a0a366ae79f03ff1e13a1232a89e26b
+	* cipher/ecc-eddsa.c (_gcry_ecc_eddsa_sign): use mpi_snew to allocate
+	session key.
+
+2017-05-31  Werner Koch  <wk@gnupg.org>
+
+	api: Deprecate gcry_md_info.
+	+ commit 45c39340c9926c2c5801dbab7609687c41e9ff1f
+
+
+2017-05-30  Werner Koch  <wk@gnupg.org>
+
+	mpi: Distribute asm files for aarch64 and asm.
+	+ commit c65f9558f12ffa2810538ef616e71b4052dacb81
+	* mpi/aarch64/distfiles: New.
+	* mpi/arm/distfiles: New.
+
+	mpi: Distribute asm definitions for amd64.
+	+ commit 87e481137debabb7f989d7fa9b1c21c336e10c98
+	* mpi/amd64/distfiles: Add mpi-asm-defs.h.
+
+2017-05-23  Werner Koch  <wk@gnupg.org>
+
+	cipher: Fix compiler warnings.
+	+ commit d764c9894013727ff82eb194da6030209c273528
+	* cipher/poly1305.c (poly1305_default_ops): Move to the top.  Add
+	prototypes and compile only if USE_SSE2 is not defined.
+	(poly1305_init_ext_ref32): Compile only if USE_SSE2 is not defined.
+	(poly1305_blocks_ref32): Ditto.
+	(poly1305_finish_ext_ref32): Ditto.
+
+	doc: Comment fixes.
+	+ commit c1bb3d9fdb6fe5f336af1d5a03fc42bfdc1f8b0b
+
+
+2017-05-18  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	rijndael-ssse3: fix functions calls from assembly blocks.
+	+ commit 4cd94994a9abec9b92fa5972869baf089a28fa76
+	* cipher/rijndael-ssse3-amd64.c (PUSH_STACK_PTR, POP_STACK_PTR): New.
+	(vpaes_ssse3_prepare_enc, vpaes_ssse3_prepare_dec)
+	(_gcry_aes_ssse3_do_setkey, _gcry_aes_ssse3_prepare_decryption)
+	(do_vpaes_ssse3_enc, do_vpaes_ssse3_dec): Use PUSH_STACK_PTR and
+	POP_STACK_PTR.
+
+	chacha20-armv7-neon: fix to use fast code path when memory is aligned.
+	+ commit 68861ae5d3e007d7a39f14ea27dc3dd8ef13ba02
+	* cipher/chacha20-armv7-neon.S (UNALIGNED_LDMIA4): Uncomment
+	instruction for jump to aligned code path.
+
+	Move data in AMD64 assembly to text section.
+	+ commit 1a094bc5b2aa730833faf593a931d4e5d7f9ab4d
+	* cipher/camellia-aesni-avx-amd64.S: Move data to .text section to
+	ensure that RIP relative addressing of data will work.
+	* cipher/camellia-aesni-avx2-amd64.S: Ditto.
+	* cipher/chacha20-avx2-amd64.S: Ditto.
+	* cipher/chacha20-ssse3-amd64.S: Ditto.
+	* cipher/des-amd64.S: Ditto.
+	* cipher/serpent-avx2-amd64.S: Ditto.
+	* cipher/sha1-avx-amd64.S: Ditto.
+	* cipher/sha1-avx-bmi2-amd64.S: Ditto.
+	* cipher/sha1-ssse3-amd64.S: Ditto.
+	* cipher/sha256-avx-amd64.S: Ditto.
+	* cipher/sha256-avx2-bmi2-amd64.S: Ditto.
+	* cipher/sha256-ssse3-amd64.S: Ditto.
+	* cipher/sha512-avx-amd64.S: Ditto.
+	* cipher/sha512-avx2-bmi2-amd64.S: Ditto.
+	* cipher/sha512-ssse3-amd64.S: Ditto.
+
+	cast5-amd64: use 64-bit relocation with large PIC memory model.
+	+ commit ff02fca39c83bcf30c79368611ac65e273e77f6c
+	* cipher/cast5-amd64.S [__code_model_large__]
+	(GET_EXTERN_POINTER): New.
+
+2017-05-13  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	Fix building with x86-64 medium and large memory models.
+	+ commit 434d4f2af39033fc626044ba9a060da298522293
+	* cipher/cast5-amd64.S [HAVE_COMPATIBLE_GCC_WIN64_PLATFORM_AS]
+	(GET_EXTERN_POINTER): Load 64-bit address instead of 32-bit.
+	* cipher/rijndael.c (do_encrypt, do_decrypt)
+	[USE_AMD64_ASM && !HAVE_COMPATIBLE_GCC_AMD64_PLATFORM_AS]: Load
+	table pointer through register instead of generic reference.
+
+2017-04-04  NIIBE Yutaka  <gniibe@fsij.org>
+
+	mpi: Simplify mpi_powm.
+	+ commit 719468e53133d3bdf12156c5bfdea2bf15f9f6f1
+	* mpi/mpi-pow.c (_gcry_mpi_powm): Simplify the loop.
+
+2017-03-08  Justus Winter  <justus@g10code.com>
+
+	build: Use macOS' compatibility macros to enable all features.
+	+ commit 654024081cfa103c87bb163b117ea3568171d408
+	* configure.ac: On macOS, use the compatibility macros to expose every
+	feature of the libc.  This is the equivalent of _GNU_SOURCE on GNU
+	libc.
+
+2017-02-27  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	Add BLAKE2b and BLAKE2s hash algorithms (RFC 7693)
+	+ commit 5bd530b8a4624f101b8d42e68f1b28bcc13f4f76
+	* cipher/blake2.c: New.
+	* cipher/Makefile.am: Add 'blake2.c'.
+	* cipher/md.c (digest_list, prepare_macpads): Add BLAKE2.
+	(md_setkey): New.
+	(_gcry_md_setkey): Call 'md_setkey' for non-HMAC md.
+	* configure.ac: Add BLAKE2 digest.
+	* doc/gcrypt.texi: Add BLAKE2.
+	* src/cipher.h (_gcry_blake2_init_with_key)
+	(_gcry_digest_spec_blake2b_512, _gcry_digest_spec_blake2b_384)
+	(_gcry_digest_spec_blake2b_256, _gcry_digest_spec_blake2b_160)
+	(_gcry_digest_spec_blake2s_256, _gcry_digest_spec_blake2s_224)
+	(_gcry_digest_spec_blake2s_160, _gcry_digest_spec_blake2s_128): New.
+	* src/gcrypt.h.in (GCRY_MD_BLAKE2B_512, GCRY_MD_BLAKE2B_384)
+	(GCRY_MD_BLAKE2B_256, GCRY_MD_BLAKE2B_160, GCRY_MD_BLAKE2S_256)
+	(GCRY_MD_BLAKE2S_224, GCRY_MD_BLAKE2S_160, GCRY_MD_BLAKE2S_128): New.
+	* tests/basic.c (check_one_md): Add testing for keyed hashes.
+	(check_digests): Add BLAKE2 test vectors; Add testing for keyed hashes.
+	* tests/blake2b.h: New.
+	* tests/blake2s.h: New.
+	* tests/Makefile.am: Add 'blake2b.h' and 'blake2s.h'.
+
+	Fix building with clang on ARM64/FreeBSD.
+	+ commit da213db2c6cda6f57e5853e8c591d69bfa1cfa74
+	* cipher/cipher-gcm-armv8-aarch64-ce.S: Use '.cpu generic+simd+crypto'
+	instead of '.arch armv8-a+crypto'.
+	* cipher/rijndael-armv8-aarch64-ce.S: Ditto.
+	* cipher/sha1-armv8-aarch64-ce.S: Ditto.
+	* cipher/sha256-armv8-aarch64-ce.S: Ditto.
+	* configure.ac (gcry_cv_gcc_inline_asm_aarch64_neon): Ditto.
+	(gcry_cv_gcc_inline_asm_aarch64_crypto): Ditto; and include NEON
+	instructions to crypto instructions check.
+
+2017-02-07  Justus Winter  <justus@g10code.com>
+
+	Fix building with a pre C99 compiler.
+	+ commit 75d91ffeaf83098ade325bb3b6b2c8a76eb1f6a6
+	* cipher/cipher-cfb.c (_gcry_cipher_cfb8_encrypt): Move the
+	declaration of 'i' out of the loop.
+	(_gcry_cipher_cfb8_decrypt): Likewise.
+
+2017-02-04  Mathias L. Baumann  <mathias.baumann_at_sociomantic.com>
+
+	Implement CFB with 8-bit mode.
+	+ commit d1ee9a660571ce4a998c9ab2299d4f2419f99127
+	* cipher/cipher-cfb.c (_gcry_cipher_cfb8_encrypt)
+	(_gcry_cipher_cfg8_decrypt): Add 8-bit variants of decrypt/encrypt
+	functions.
+	* cipher/cipher-internal.h (_gcry_cipher_cfb8_encrypt)
+	(_gcry_cipher_cfg8_decrypt): Ditto.
+	* cipher/cipher.c: Adjust code flow to work with GCRY_CIPHER_MODE_CFB8.
+	* tests/basic.c: Add tests for cfb8 with AES and 3DES.
+
+2017-02-04  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	rndhw: add missing "memory" clobbers.
+	+ commit c67c728478e8f47b6e8296b643fd35d66d4a1052
+	* random/rndhw.c: (poll_padlock, rdrand_long): Add "memory" to asm
+	clobbers.
+
+	Add UNLIKELY and LIKELY macros.
+	+ commit 4b7451d3e8e7b87d8e407fbbd924ad5b13bd0f00
+	* src/g10lib.h (LIKELY, UNLIKELY): New.
+	(gcry_assert): Use LIKELY for assert check.
+	(fast_wipememory2_unaligned_head): Use UNLIKELY for unaligned
+	branching.
+	* cipher/bufhelp.h (buf_cpy, buf_xor, buf_xor_1, buf_xor_2dst)
+	(buf_xor_n_copy_2): Ditto.
+
+	rndhw: avoid type-punching.
+	+ commit 37b537600f33fcf8e1c8dc2c658a142fbba44199
+	* random/rndhw.c (rdrand_long, rdrand_nlong): Add 'volatile' for
+	pointer.
+	(poll_drng): Convert buffer to 'unsigned long[]' and make use of DIM
+	macro.
+
+2017-01-28  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	hwf-x86: avoid type-punching.
+	+ commit 1407317a6112a23d4fec5827a9d74faef4196f66
+	* src/hwf-x86.c (detect_x86_gnuc): Use union for vendor_id.
+
+	cipher: add explicit blocksize checks to allow better optimization.
+	+ commit efa9042f82ffed3d076b8e26ac62d29e00bb756a
+	* cipher/cipher-cbc.c (_gcry_cipher_cbc_encrypt)
+	(_gcry_cipher_cbc_decrypt): Add explicit check for cipher blocksize of
+	64-bit or 128-bit.
+	* cipher/cipher-cfb.c (_gcry_cipher_cfb_encrypt)
+	(_gcry_cipher_cfb_decrypt): Ditto.
+	* cipher/cipher-cmac.c (cmac_write, cmac_generate_subkeys)
+	(cmac_final): Ditto.
+	* cipher/cipher-ctr.c (_gcry_cipher_ctr_encrypt): Ditto.
+	* cipher/cipher-ofb.c (_gcry_cipher_ofb_encrypt): Ditto.
+
+	bufhelp: use unaligned dword and qword types for endianess helpers.
+	+ commit e7b941c3de9c9b6319298c02f844cc0cadbf8562
+	* cipher/bufhelp.h (BUFHELP_UNALIGNED_ACCESS): New, defined
+	if attributes 'packed', 'aligned' and 'may_alias' are supported.
+	(BUFHELP_FAST_UNALIGNED_ACCESS): Define if have
+	BUFHELP_UNALIGNED_ACCESS.
+
+	rijndael-aesni: fix u128_t strict-aliasing rule breaking.
+	+ commit 92b4a29d2453712192ced2d7226abc49679dcb1e
+	* cipher/rijndael-aesni.c (u128_t): Add attributes to tell GCC and clang
+	that casting from 'char *' to 'u128_t *' is ok.
+
+	cipher-xts: fix pointer casting to wrong alignment and aliasing.
+	+ commit 4f31d816dcc1e95dc647651e92acbdfed53f5c14
+	* cipher/cipher-xts.c (xts_gfmul_byA, xts_inc128): Use buf_get_le64
+	and buf_put_le64 for accessing data; Change parameter pointers to
+	'unsigned char *' type.
+	(_gcry_cipher_xts_crypt): Do not cast buffer pointers to 'u64 *'
+	for helper functions.
+
+	crc-intel-pclmul: fix undefined behavior with unaligned access.
+	+ commit 55cf1b5588705cab5f45e2817c4aa1d204dc0042
+	* cipher/crc-intel-pclmul.c (u16_unaligned_s): New.
+	(crc32_reflected_less_than_16, crc32_less_than_16): Use
+	'u16_unaligned_s' for unaligned memory access.
+
+	configure.ac: fix attribute checks.
+	+ commit b29b1b9f576f501d4b993be0a751567045274a1a
+	* configure.ac: Add -Werror flag for attribute checks.
+
+	configure.ac: fix may_alias attribute check.
+	+ commit 136c8416ea540dd126be3997d94d7063b3aaf577
+	* configure.ac: Test may_alias attribute on type, not on variable.
+
+	bufhelp: add 'may_alias' attribute for properly aligned 'bufhelp_int_t'
+	+ commit d1ae52a0e23308f33b78cffeba56005b687f23c0
+	* cipher/bufhelp.h [!BUFHELP_FAST_UNALIGNED_ACCESS]
+	(bufhelp_int_t): Add 'may_alias' attribute.
+
+2017-01-27  Werner Koch  <wk@gnupg.org>
+
+	w32: New envvar GCRYPT_RNDW32_DBG.
+	+ commit a351fbde8548ce3f57298c618426f043844fbc78
+	* random/rndw32.c (_gcry_rndw32_gather_random): Use getenv to set
+	DEBUG_ME.
+
+2017-01-23  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	rijndael-ssse3-amd64: fix building on x32.
+	+ commit 39b9302da5d08bd52688d20befe626fee0b6c41d
+	* cipher/rijndael-ssse3-amd64.c: Use 64-bit call instructions
+	with 64-bit registers.
+
+	bufhelp: use 'may_alias' attribute unaligned pointer types.
+	+ commit bf9e0b79e620ca2324224893b07522462b125412
+	* configure.ac (gcry_cv_gcc_attribute_may_alias)
+	(HAVE_GCC_ATTRIBUTE_MAY_ALIAS): New check for 'may_alias' attribute.
+	* cipher/bufhelp.h (BUFHELP_FAST_UNALIGNED_ACCESS): Enable only if
+	HAVE_GCC_ATTRIBUTE_MAY_ALIAS is defined.
+	[BUFHELP_FAST_UNALIGNED_ACCESS] (bufhelp_int_t, bufhelp_u32_t)
+	(bufhelp_u64_t): Add 'may_alias' attribute.
+	* src/g10lib.h (fast_wipememory_t): Add HAVE_GCC_ATTRIBUTE_MAY_ALIAS
+	defined check; Add 'may_alias' attribute.
+
 2017-01-18  Werner Koch  <wk@gnupg.org>
 
-	Release 1.7.6.
-	+ commit 64e4808c05894b623f06c526a37ae2b77c31e36d
-	* configure.ac: Set LT version to C21/A1/R6.
+	random: Call getrandom before select and emitting a progress callback.
+	+ commit 623aab8a940ea61afe3fef650ad485a755ed9fe7
+	* random/rndlinux.c (_gcry_rndlinux_gather_random): Move the getrandom
+	call before the select.
 
-	Revert "rijndael-ssse3: move assembly functions to separate source-file"
-	+ commit 5053e0112ee3ef757a3a4ae26eed117dd1fb0211
-	This reverts commit a77c36921bde79418cdf6d7a7543514c39c9796c.
-
-2017-01-18  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+2017-01-06  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
 
 	mpi: amd64: fix too large jump alignment in mpih-rshift.
-	+ commit 1817c9eab5699c097d3713f197e4a3e8b5c1442c
+	+ commit ddcfe31e2425e88b280e7cdaf3f0eaaad8ccc023
 	* mpi/amd64/mpih-rshift.S (_gcry_mpih_rshift): Use 16-byte alignment
 	with 'ALIGN(4)' instead of 256-byte.
 
 	rijndael-ssse3: move assembly functions to separate source-file.
-	+ commit a77c36921bde79418cdf6d7a7543514c39c9796c
+	+ commit 54c57bc49edb5c00e9ed8103cc4837bb72c5e863
 	* cipher/Makefile.am: Add 'rinjdael-ssse3-amd64-asm.S'.
 	* cipher/rinjdael-ssse3-amd64-asm.S: Moved assembly functions
 	here ...
@@ -35,48 +831,155 @@
 	(_gcry_aes_ssse3_ocb_auth): Remove 'aes_const_ptr' variable usage.
 	* configure.ac: Add 'rinjdael-ssse3-amd64-asm.lo'.
 
+	Add AVX2/vpgather bulk implementation of Twofish.
+	+ commit c59a8ce51ceb9a80169c44ef86a67e95cf8528c3
+	* cipher/Makefile.am: Add 'twofish-avx2-amd64.S'.
+	* cipher/twofish-avx2-amd64.S: New.
+	* cipher/twofish.c (USE_AVX2): New.
+	(TWOFISH_context) [USE_AVX2]: Add 'use_avx2' member.
+	(ASM_FUNC_ABI): New.
+	(twofish_setkey): Add check for AVX2 and fast VPGATHER HW features.
+	(_gcry_twofish_avx2_ctr_enc, _gcry_twofish_avx2_cbc_dec)
+	(_gcry_twofish_avx2_cfb_dec, _gcry_twofish_avx2_ocb_enc)
+	(_gcry_twofish_avx2_ocb_dec, _gcry_twofish_avx2_ocb_auth): New.
+	(_gcry_twofish_ctr_enc, _gcry_twofish_cbc_dec, _gcry_twofish_cfb_dec)
+	(_gcry_twofish_ocb_crypt, _gcry_twofish_ocb_auth): Add AVX2 bulk
+	handling.
+	(selftest_ctr, selftest_cbc, selftest_cfb): Increase nblocks from
+	3+X to 16+X.
+	* configure.ac: Add 'twofish-avx2-amd64.lo'.
+	* src/g10lib.h (HWF_INTEL_FAST_VPGATHER): New.
+	* src/hwf-x86.c (detect_x86_gnuc): Add detection for
+	HWF_INTEL_FAST_VPGATHER.
+	* src/hwfeatures.c (HWF_INTEL_FAST_VPGATHER): Add
+	"intel-fast-vpgather" for HWF_INTEL_FAST_VPGATHER.
+
+	Add XTS cipher mode.
+	+ commit 232a129b1f915fc54881506e4b07c89cf84932e6
+	* cipher/Makefile.am: Add 'cipher-xts.c'.
+	* cipher/cipher-internal.h (gcry_cipher_handle): Add 'bulk.xts_crypt'
+	and 'u_mode.xts' members.
+	(_gcry_cipher_xts_crypt): New prototype.
+	* cipher/cipher-xts.c: New.
+	* cipher/cipher.c (_gcry_cipher_open_internal, cipher_setkey)
+	(cipher_reset, cipher_encrypt, cipher_decrypt): Add XTS mode handling.
+	* doc/gcrypt.texi: Add XTS mode to documentation.
+	* src/gcrypt.h.in (GCRY_CIPHER_MODE_XTS, GCRY_XTS_BLOCK_LEN): New.
+	* tests/basic.c (do_check_xts_cipher, check_xts_cipher): New.
+	(check_bulk_cipher_modes): Add XTS test-vectors.
+	(check_one_cipher_core, check_one_cipher, check_ciphers): Add XTS
+	testing support.
+	(check_cipher_modes): Add XTS test.
+	* tests/bench-slope.c (bench_xts_encrypt_init)
+	(bench_xts_encrypt_do_bench, bench_xts_decrypt_do_bench)
+	(xts_encrypt_ops, xts_decrypt_ops): New.
+	(cipher_modes, cipher_bench_one): Add XTS.
+	* tests/benchmark.c (cipher_bench): Add XTS testing.
+
+2017-01-04  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
 	rijndael-ssse3: fix counter operand from read-only to read/write.
-	+ commit 34135cd4128b7d2b288323474a8d05a38022b4fa
+	+ commit aada604594fd42224d366d3cb98f67fd3b989cd6
 	* cipher/rijndael-ssse3-amd64.c (_gcry_aes_ssse3_ctr_enc): Change
 	'ctrlow' operand from read-only to read-write.
 
-2017-01-18  Werner Koch  <wk@gnupg.org>
+2017-01-03  Werner Koch  <wk@gnupg.org>
 
-	random: Call getrandom before select and emitting a progress callback.
-	+ commit e4c0159974b011ddc1979acdec311234d9bc2ea8
-	* random/rndlinux.c (_gcry_rndlinux_gather_random): Move the getrandom
-	call before the select.
+	Extend GCRYCTL_PRINT_CONFIG to print compiler version.
+	+ commit 98b49695b1ffe3c406ae39a45051b8594f903b9d
+	* src/global.c (print_config): Print version of libgpg-error and used
+	compiler.
 
-2016-12-15  Werner Koch  <wk@gnupg.org>
-
-	Release 1.7.5.
-	+ commit 89ec6c103739d41624bb5b899926efc26b215dda
-	* configure.ac: Set LT version to C21/A1/R5.
+	tests: Add option --disable-hwf to the version utility.
+	+ commit 3582641469f1c74078f0d758c4d5458cc0ee5649
+	* src/hwfeatures.c (_gcry_disable_hw_feature): Rewrite to allow
+	passing a colon delimited feature set.
+	(parse_hwf_deny_file): Remove unused var I.
+	* tests/version.c (main): Add options --verbose and --disable-hwf.
 
 2016-12-15  Werner Koch  <wk@gnupg.org>
 	    Nicolas Porcel  <nicolasporcel06@gmail.com>
 
 	Fix regression in broken mlock detection.
-	+ commit b4d1ab824172b8221011680cda00d7623de5c9f5
+	+ commit 0a90f87799903a3fb97189ef7cba19e7b3534e1c
 	* acinclude.m4 (GNUPG_CHECK_MLOCK): Fix typo EGAIN->EAGAIN.
+
+2016-12-10  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	hwfeatures: add 'all' for disabling all hardware features.
+	+ commit c83d0d2a26059cf471d09f5cb8e7fc5d76c4907b
+	* .gitignore: Add 'tests/basic-disable-all-hwf'.
+	* configure.ac: Ditto.
+	* tests/Makefile.am: Ditto.
+	* src/hwfeatures.c (_gcry_disable_hw_feature): Match 'all' for
+	masking all HW features off.
+	(parse_hwf_deny_file): Use '_gcry_disable_hw_feature' for matching.
+	* tests/basic-disable-all-hwf.in: New.
+
+	tests/hashtest-256g: add missing executable extension for Win32.
+	+ commit 2b7b227b8a0bd5ff286258bc187782efac180a7e
+	* tests/hashtest-256g.in: Add @EXEEXT@.
+
+	OCB ARM CE: Move ocb_get_l handling to assembly part.
+	+ commit 5c418e597f0f20a546d953161695e6caf1f57689
+	* cipher/rijndael-armv8-aarch32-ce.S: Add OCB 'L_{ntz(i)}' calculation.
+	* cipher/rijndael-armv8-aarch64-ce.S: Ditto.
+	* cipher/rijndael-armv8-ce.c (_gcry_aes_ocb_enc_armv8_ce)
+	(_gcry_aes_ocb_dec_armv8_ce, _gcry_aes_ocb_auth_armv8_ce)
+	(ocb_cryt_fn_t): Updated arguments.
+	(_gcry_aes_armv8_ce_ocb_crypt, _gcry_aes_armv8_ce_ocb_auth): Remove
+	'ocb_get_l' handling and splitting input to 32 block chunks, instead
+	pass full buffers to assembly.
+
+	OCB: Move large L handling from bottom to upper level.
+	+ commit 2d2e5286d53e1f62fe040dff4c6e01961f00afe2
+	* cipher/cipher-ocb.c (_gcry_cipher_ocb_get_l): Remove.
+	(ocb_get_L_big): New.
+	(_gcry_cipher_ocb_authenticate): L-big handling done in upper
+	processing loop, so that lower level never sees the case where
+	'aad_nblocks % 65536 == 0'; Add missing stack burn.
+	(ocb_aad_finalize): Add missing stack burn.
+	(ocb_crypt): L-big handling done in upper processing loop, so that
+	lower level never sees the case where 'data_nblocks % 65536 == 0'.
+	* cipher/cipher-internal.h (_gcry_cipher_ocb_get_l): Remove.
+	(ocb_get_l): Remove 'l_tmp' usage and simplify since input
+	is more limited now, 'N is not multiple of 65536'.
+	* cipher/rijndael-aesni.c (get_l): Remove.
+	(aesni_ocb_enc, aesni_ocb_dec, _gcry_aes_aesni_ocb_auth): Remove
+	l_tmp; Use 'ocb_get_l'.
+	* cipher/rijndael-ssse3-amd64.c (get_l): Remove.
+	(ssse3_ocb_enc, ssse3_ocb_dec, _gcry_aes_ssse3_ocb_auth): Remove
+	l_tmp; Use 'ocb_get_l'.
+	* cipher/camellia-glue.c: Remove OCB l_tmp usage.
+	* cipher/rijndael-armv8-ce.c: Ditto.
+	* cipher/rijndael.c: Ditto.
+	* cipher/serpent.c: Ditto.
+	* cipher/twofish.c: Ditto.
+
+	OCB: remove 'int64_t' usage.
+	+ commit 161d339f48c03be7fd0f4249d730f7f1767ef8e4
+	* cipher/cipher-ocb.c (double_block): Use alternative way to generate
+	sign-bit mask, without 'int64_t'.
+
+	random-drbg: use bufhelp function for big-endian store.
+	+ commit 0b03b658bebc69a84d87ef13f9b60a27b0c42305
+	* random/random-drbg.c (drbg_cpu_to_be32): Remove.
+	(drbg_ctr_df, drbg_hash_df): Use 'buf_put_be32' instead of
+	'drbg_cpu_to_be32'.
 
 2016-12-09  Werner Koch  <wk@gnupg.org>
 
-	Release 1.7.4.
-	+ commit a72ce0a1fbb3648d80696885d6a7e78b3029bebc
-	* configure.ac: Bump LT version to C21/A1/R4.
-
 	Improve handling of mlock error codes.
-	+ commit d6f84f4fc59235795ae393d8fab0081eb5889120
+	+ commit 618b8978f46f4011c11512fd5f30c15e01652e2e
 	* acinclude.m4 (GNUPG_CHECK_MLOCK): Check also for EAGAIN which is a
 	legitimate return code and does not indicate a broken mlock().
 	* src/secmem.c (lock_pool_pages): Test ERR instead of ERRNO which
 	could have been overwritten by cap_from+text et al.
 
-2016-12-09  Stephan Mueller  <smueller@chronox.de>
+2016-12-08  Stephan Mueller  <smueller@chronox.de>
 
 	random: Eliminate unneeded memcpy invocations in the DRBG.
-	+ commit 008fd92917547981d3c4dc77fd1e8c242bf4a7ea
+	+ commit 656395ba4cf34f42dda3a120bda3ed1220755a3d
 	* random/random-drbg.c (drbg_hash): Remove arg 'outval' and return a
 	pointer instead.
 	(drbg_instantiate): Reduce size of scratchpad.
@@ -87,7 +990,7 @@
 	(drbg_hash_generate): Ditto.
 
 	random: Add performance improvements for the DRBG.
-	+ commit c6b7041bbc11391b7c6b0bf649aa4979ad3d0b52
+	+ commit 20886fdcb841b0bf89bb1d44303d42f1804e38cb
 	* random/random-drbg.c (struct drbg_state_ops_s): New function
 	pointers 'crypto_init' and 'crypto-fini'.
 	(struct drbg_state_s): New fields 'priv_data', 'ctr_handle', and
@@ -110,13 +1013,18 @@
 	(drbg_instantiate): Call init function.
 
 	cipher: New function for reading the counter in CTR mode.
-	+ commit 9678a9f3dcbd2944d62f12c63fa27a8fd72b1201
+	+ commit 227099f179df9dcf083d0ef6be9883c775df0874
 	* cipher/cipher.c (gcry_cipher_getctr): New.
 
 2016-12-07  Werner Koch  <wk@gnupg.org>
 
+	Document the overflow pools and add a stupid test case.
+	+ commit 95bac312644ad45e486c94c2efd25d0748b9a20b
+	* tests/t-secmem.c (test_secmem_overflow): New func.
+	(main): Disable warning and call new function.
+
 	Implement overflow secmem pools for xmalloc style allocators.
-	+ commit 73dca02b9cc6d542af153c527190832f9c421ef3
+	+ commit b6870cf25c0b1eb9c127a94af8326c446421a472
 	* src/secmem.c (pooldesc_s): Add fields next, cur_alloced, and
 	cur_blocks.
 	(cur_alloced, cur_blocks): Remove vars.
@@ -139,7 +1047,7 @@
 	test with a direct call of _gcry_secmem_free to avoid double checking.
 
 	Give the secmem allocators a hint when a xmalloc calls them.
-	+ commit 1433fce11c90bb44ada51071f342ad67b469ea81
+	+ commit b7df907dca4d525f8930c533b763ffce44ceed87
 	* src/secmem.c (_gcry_secmem_malloc): New not yet used arg XHINT.
 	(_gcry_secmem_realloc): Ditto.
 	* src/stdmem.c (_gcry_private_malloc_secure): New arg XHINT to be
@@ -158,8 +1066,28 @@
 	(_gcry_xmalloc_secure): Ditto.
 	(_gcry_xstrdup): Ditto.
 
+	tests: New test t-secmem.
+	+ commit e366c19b34922c770af82cd035fd815680b29dee
+	* src/secmem.c (_gcry_secmem_dump_stats): Add arg EXTENDED and adjust
+	caller.
+	* src/gcrypt-testapi.h (PRIV_CTL_DUMP_SECMEM_STATS): New.
+	* src/global.c (_gcry_vcontrol): Implement that.
+	* tests/t-secmem.c: New.
+	* tests/Makefile.am (tests_bin): Add that test.
+
+2016-12-06  Werner Koch  <wk@gnupg.org>
+
+	Fix compiler warning about possible-NULL-dreference.
+	+ commit 995ce697308320c6a52a307f83dc49eeb8d784b4
+	* src/mpi.h (mpi_is_const, mpi_is_immutable): Do check arg before
+	deref-ing.  The are only used at places where the arg shall not be NULL.
+
+	Fix possible NULL-deref in gcry_log_debugsxp.
+	+ commit 984a97f0750f812f0ad3c343ee6a67560953a504
+	* src/misc.c (_gcry_log_printsxp): Prevent passing NULL to strlen.
+
 	Reorganize code in secmem.c.
-	+ commit 2bc361485d8bc0d8cdb3b4ae6e304885eeaab889
+	+ commit 603f479a919311f720a05da738150c2192d5e562
 	* src/secmem.c (pooldesc_t): New type to collect information about one
 	pool.
 	(pool_size): Remove.  Now a member of pooldesc_t.
@@ -191,46 +1119,61 @@
 2016-11-28  Dmitry Eremin-Solenikov  <dbaryshkov@gmail.com>
 
 	tests: Add PBKDF2 tests for Stribog512.
-	+ commit a8b2d8b502d9cbc9157c261f12e4623ec20b3960
+	+ commit a0580d446fef648a177ca4ab060d0e449780db84
 	* tests/t-kdf.c (check_pbkdf2): Add Stribog512 test cases from TC26's
 	additions to PKCS#5.
 
 	tests: Add Stribog HMAC tests from TC26ALG.
-	+ commit 432eaf2ab83631a4e70ad4ecd20a9b6f81c1c329
+	+ commit fe6077e6ee8565bfcc91bad14a73e68f45b3c32b
 	* tests/basic.c (check_mac): add HMAC test vectors from TC26ALG document
 	for Stribog.
 
 	cipher: Add Stribog OIDs from TC26 space.
-	+ commit d0940e3d194296bc334f06f97ae91b411e1f152f
+	+ commit ccffacaf6c3abe6120a0898db922981d28ab7af2
 	* cipher/stribog.c (oid_spec_stribog256, oid_spec_stribog512): New.
 
-2016-11-28  Justus Winter  <justus@g10code.com>
+2016-11-25  Justus Winter  <justus@g10code.com>
 
 	tests: Fix memory leak.
-	+ commit 4bfec0a52af8c847f558b9ade56d896c224019b3
+	+ commit 5530a8234d703ce9b685f78fb6e951136eb0aeb2
 	* tests/basic.c (check_gost28147_cipher): Free cipher handles.
 
 2016-11-25  Dmitry Eremin-Solenikov  <dbaryshkov@gmail.com>
 
 	Cast oid argument of gcry_cipher_set_sbox to disable compiler warning.
-	+ commit a22d7bb3945cec2d8a6b23d8f2bd2f675bb2f4e6
+	+ commit 1a67e3195896704f8b3ba09e3db1214bab834491
 	* src/gcrypt.h.in (gcry_cipher_set_sbox): Cast oid to (void *).
 
 	gost: Rename tc26 s-box from A to Z.
-	+ commit 298cb926d28ae76ab2af1b028e7b06ae2358a234
+	+ commit dc8ceb8d2dfef949f3afa14fc75f9de8cd07c7ad
 	* cipher/gost-s-box.c (gost_sboxes): Rename TC26_A to TC26_Z as it is
 	the name that ended up in all standards.
 
 	tests: Add test to verify GOST 28147-89 against known results.
-	+ commit 76fa65940ff9d4baf17b42f671191720b9ea96f1
+	+ commit 4f5c26c73c66daf2e4aff966e43c22b2db7e0138
 	* tests/basic.c (check_gost28147_cipher): new test function.
 
 2016-11-17  Dmitry Eremin-Solenikov  <dbaryshkov@gmail.com>
 
 	cipher/gost28147: Fix CryptoPro-B S-BOX.
-	+ commit 15718db54b2888a704b020cb1032954b443c6686
+	+ commit 5ca63c92825453fdb369a97bbc19cb95b49b4296
 	* cipher/gost-s-box.c: CryptoPro_B s-box missed one line, resulting in
 	incorrect encryption/decryption using that s-box.  Add missing data.
+
+2016-11-12  Werner Koch  <wk@gnupg.org>
+
+	Put blocking calls into Libgpg-error's system call clamp.
+	+ commit b829dfe9f0eeff08c956ba3f3a6b559b9d2199dd
+	* src/gcrypt.h.in (GCRYCTL_REINIT_SYSCALL_CLAMP): New.
+	* configure.ac: Require Libgpg-error 1.25.  Set version number to
+	1.8.0.
+	* src/gcrypt-int.h: Remove error code emulation.
+	* src/global.c (pre_syscall_func, post_syscall_func): New.
+	(global_init): Call gpgrt_get_syscall_clamp.
+	(_gcry_vcontrol) <GCRYCTL_REINIT_SYSCALL_CLAMP>: Ditto.
+	(_gcry_pre_syscall, _gcry_post_syscall): New.
+	* random/rndlinux.c (_gcry_rndlinux_gather_random): Use the new
+	functions.
 
 2016-11-01  NIIBE Yutaka  <gniibe@fsij.org>
 
