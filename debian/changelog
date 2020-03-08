@@ -1,3 +1,9 @@
+libgcrypt20 (1.8.4-5pexip1) pexip; urgency=medium
+
+  * Migrate to Buster
+
+ -- Vincent Sanders <vince@pexip.com>  Sun, 08 Mar 2020 21:26:23 +0000
+
 libgcrypt20 (1.8.4-5) unstable; urgency=medium
 
   * 30_doc-Fix-library-initialization-examples.patch from upstream
