@@ -97,15 +97,14 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-TESTS = $(am__EXEEXT_1) $(am__EXEEXT_3) $(am__EXEEXT_2) \
-	$(tests_sh_last)
+TESTS = $(am__EXEEXT_1) $(tests_sh) $(am__EXEEXT_2) $(tests_sh_last)
 EXTRA_PROGRAMS = testapi$(EXEEXT) pkbench$(EXEEXT)
 noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) fipsdrv$(EXEEXT) \
 	rsacvt$(EXEEXT) genhashdata$(EXEEXT) gchash$(EXEEXT)
 subdir = tests
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
-	$(srcdir)/hashtest-256g.in $(top_srcdir)/build-aux/depcomp \
-	$(noinst_HEADERS) README
+	$(srcdir)/hashtest-256g.in $(srcdir)/basic-disable-all-hwf.in \
+	$(top_srcdir)/build-aux/depcomp $(noinst_HEADERS) README
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/gpg-error.m4 \
 	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/ltoptions.m4 \
@@ -118,16 +117,16 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
-CONFIG_CLEAN_FILES = hashtest-256g
+CONFIG_CLEAN_FILES = hashtest-256g basic-disable-all-hwf
 CONFIG_CLEAN_VPATH_FILES =
-am__EXEEXT_1 = version$(EXEEXT) mpitests$(EXEEXT) t-sexp$(EXEEXT) \
-	t-convert$(EXEEXT) t-mpi-bit$(EXEEXT) t-mpi-point$(EXEEXT) \
-	curves$(EXEEXT) t-lock$(EXEEXT) prime$(EXEEXT) basic$(EXEEXT) \
-	keygen$(EXEEXT) pubkey$(EXEEXT) hmac$(EXEEXT) \
-	hashtest$(EXEEXT) t-kdf$(EXEEXT) keygrip$(EXEEXT) \
-	fips186-dsa$(EXEEXT) aeswrap$(EXEEXT) pkcs1v2$(EXEEXT) \
-	random$(EXEEXT) dsa-rfc6979$(EXEEXT) t-ed25519$(EXEEXT) \
-	t-cv25519$(EXEEXT)
+am__EXEEXT_1 = version$(EXEEXT) t-secmem$(EXEEXT) mpitests$(EXEEXT) \
+	t-sexp$(EXEEXT) t-convert$(EXEEXT) t-mpi-bit$(EXEEXT) \
+	t-mpi-point$(EXEEXT) curves$(EXEEXT) t-lock$(EXEEXT) \
+	prime$(EXEEXT) basic$(EXEEXT) keygen$(EXEEXT) pubkey$(EXEEXT) \
+	hmac$(EXEEXT) hashtest$(EXEEXT) t-kdf$(EXEEXT) \
+	keygrip$(EXEEXT) fips186-dsa$(EXEEXT) aeswrap$(EXEEXT) \
+	pkcs1v2$(EXEEXT) random$(EXEEXT) dsa-rfc6979$(EXEEXT) \
+	t-ed25519$(EXEEXT) t-cv25519$(EXEEXT)
 am__EXEEXT_2 = benchmark$(EXEEXT) bench-slope$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 aeswrap_SOURCES = aeswrap.c
@@ -251,6 +250,10 @@ t_mpi_point_SOURCES = t-mpi-point.c
 t_mpi_point_OBJECTS = t-mpi-point.$(OBJEXT)
 t_mpi_point_LDADD = $(LDADD)
 t_mpi_point_DEPENDENCIES = $(am__DEPENDENCIES_2) $(am__DEPENDENCIES_1)
+t_secmem_SOURCES = t-secmem.c
+t_secmem_OBJECTS = t-secmem.$(OBJEXT)
+t_secmem_LDADD = $(LDADD)
+t_secmem_DEPENDENCIES = $(am__DEPENDENCIES_2) $(am__DEPENDENCIES_1)
 t_sexp_SOURCES = t-sexp.c
 t_sexp_OBJECTS = t-sexp.$(OBJEXT)
 t_sexp_LDADD = $(LDADD)
@@ -302,13 +305,13 @@ SOURCES = aeswrap.c basic.c bench-slope.c benchmark.c curves.c \
 	hashtest.c hmac.c keygen.c keygrip.c mpitests.c pkbench.c \
 	pkcs1v2.c prime.c pubkey.c random.c rsacvt.c t-convert.c \
 	t-cv25519.c t-ed25519.c t-kdf.c t-lock.c t-mpi-bit.c \
-	t-mpi-point.c t-sexp.c testapi.c version.c
+	t-mpi-point.c t-secmem.c t-sexp.c testapi.c version.c
 DIST_SOURCES = aeswrap.c basic.c bench-slope.c benchmark.c curves.c \
 	dsa-rfc6979.c fips186-dsa.c fipsdrv.c gchash.c genhashdata.c \
 	hashtest.c hmac.c keygen.c keygrip.c mpitests.c pkbench.c \
 	pkcs1v2.c prime.c pubkey.c random.c rsacvt.c t-convert.c \
 	t-cv25519.c t-ed25519.c t-kdf.c t-lock.c t-mpi-bit.c \
-	t-mpi-point.c t-sexp.c testapi.c version.c
+	t-mpi-point.c t-secmem.c t-sexp.c testapi.c version.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -356,7 +359,6 @@ am__tty_colors = { \
     std='[m'; \
   fi; \
 }
-am__EXEEXT_3 =
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
@@ -520,13 +522,13 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 tests_bin = \
-        version mpitests t-sexp t-convert \
+        version t-secmem mpitests t-sexp t-convert \
 	t-mpi-bit t-mpi-point curves t-lock \
 	prime basic keygen pubkey hmac hashtest t-kdf keygrip \
 	fips186-dsa aeswrap pkcs1v2 random dsa-rfc6979 t-ed25519 t-cv25519
 
 tests_bin_last = benchmark bench-slope
-tests_sh = 
+tests_sh = basic-disable-all-hwf
 tests_sh_last = hashtest-256g
 TESTS_ENVIRONMENT = GCRYPT_IN_REGRESSION_TEST=1
 
@@ -543,7 +545,9 @@ noinst_HEADERS = t-common.h
 EXTRA_DIST = README rsa-16k.key cavs_tests.sh cavs_driver.pl \
 	     pkcs1v2-oaep.h pkcs1v2-pss.h pkcs1v2-v15c.h pkcs1v2-v15s.h \
 	     t-ed25519.inp stopwatch.h hashtest-256g.in \
-	     sha3-224.h sha3-256.h sha3-384.h sha3-512.h
+	     sha3-224.h sha3-256.h sha3-384.h sha3-512.h \
+	     blake2b.h blake2s.h \
+	     basic-disable-all-hwf.in basic_all_hwfeature_combinations.sh
 
 LDADD = $(standard_ldadd) $(GPG_ERROR_LIBS)
 t_lock_LDADD = $(standard_ldadd) $(GPG_ERROR_MT_LIBS)
@@ -583,6 +587,8 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
 hashtest-256g: $(top_builddir)/config.status $(srcdir)/hashtest-256g.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+basic-disable-all-hwf: $(top_builddir)/config.status $(srcdir)/basic-disable-all-hwf.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 clean-noinstPROGRAMS:
@@ -706,6 +712,10 @@ t-mpi-point$(EXEEXT): $(t_mpi_point_OBJECTS) $(t_mpi_point_DEPENDENCIES) $(EXTRA
 	@rm -f t-mpi-point$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(t_mpi_point_OBJECTS) $(t_mpi_point_LDADD) $(LIBS)
 
+t-secmem$(EXEEXT): $(t_secmem_OBJECTS) $(t_secmem_DEPENDENCIES) $(EXTRA_t_secmem_DEPENDENCIES) 
+	@rm -f t-secmem$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(t_secmem_OBJECTS) $(t_secmem_LDADD) $(LIBS)
+
 t-sexp$(EXEEXT): $(t_sexp_OBJECTS) $(t_sexp_DEPENDENCIES) $(EXTRA_t_sexp_DEPENDENCIES) 
 	@rm -f t-sexp$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(t_sexp_OBJECTS) $(t_sexp_LDADD) $(LIBS)
@@ -751,6 +761,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/t-kdf.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/t-mpi-bit.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/t-mpi-point.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/t-secmem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/t-sexp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/t_lock-t-lock.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testapi.Po@am__quote@

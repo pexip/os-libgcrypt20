@@ -14,7 +14,7 @@ which is GNU's library of cryptographic building blocks.
 
 @noindent
 Copyright @copyright{} 2000, 2002, 2003, 2004, 2006, 2007, 2008, 2009, 2011, 2012 Free Software Foundation, Inc. @*
-Copyright @copyright{} 2012, 2013, 2016 g10 Code GmbH
+Copyright @copyright{} 2012, 2013, 2016, 2017 g10 Code GmbH
 
 @quotation
 Permission is granted to copy, distribute and/or modify this document
@@ -95,7 +95,7 @@ section entitled ``GNU General Public License''.
 * Prime numbers::                How to use the Prime number related functions.
 * Utilities::                    Utility functions.
 * Tools::                        Utility tools.
-* Configuration::                Configuration files and evironment variables.
+* Configuration::                Configuration files and environment variables.
 * Architecture::                 How Libgcrypt works internally.
 
 Appendices
@@ -425,7 +425,7 @@ and freed memory, you need to initialize Libgcrypt this way:
   /* Allocate a pool of 16k secure memory.  This makes the secure memory
      available and also drops privileges where needed.  Note that by
      using functions like gcry_xmalloc_secure and gcry_mpi_snew Libgcrypt
-     may extend the secure memory pool with memory which lacks the
+     may expand the secure memory pool with memory which lacks the
      property of not being swapped out to disk.   */
   gcry_control (GCRYCTL_INIT_SECMEM, 16384, 0);
 
@@ -570,6 +570,7 @@ are
 @item intel-rdrand
 @item intel-avx
 @item intel-avx2
+@item intel-rdtsc
 @item arm-neon
 @end table
 
@@ -671,7 +672,7 @@ This command disables the use of the mlock call for secure memory.
 Disabling the use of mlock may for example be done if an encrypted
 swap space is in use.  This command should be executed right after
 @code{gcry_check_version}.  Note that by using functions like
-gcry_xmalloc_secure and gcry_mpi_snew Libgcrypt may extend the secure
+gcry_xmalloc_secure and gcry_mpi_snew Libgcrypt may expand the secure
 memory pool with memory which lacks the property of not being swapped
 out to disk (but will still be zeroed out on free).
 
@@ -687,7 +688,7 @@ code should drop these extra privileges as soon as possible.  If this
 command has been used the caller is responsible for dropping the
 privileges.
 
-@item GCRYCTL_INIT_SECMEM; Arguments: int nbytes
+@item GCRYCTL_INIT_SECMEM; Arguments: unsigned int nbytes
 This command is used to allocate a pool of secure memory and thus
 enabling the use of secure memory.  It also drops all extra privileges
 the process has (i.e. if it is run as setuid (root)).  If the argument
@@ -823,7 +824,8 @@ proper random device.
 This command dumps information pertaining to the configuration of the
 library to the given stream.  If NULL is given for @var{stream}, the log
 system is used.  This command may be used before the initialization has
-been finished but not before a @code{gcry_check_version}.
+been finished but not before a @code{gcry_check_version}.  Note that
+the macro @code{estream_t} can be used instead of @code{gpgrt_stream_t}.
 
 @item GCRYCTL_OPERATIONAL_P; Arguments: none
 This command returns true if the library is in an operational state.
@@ -906,10 +908,29 @@ success or an error code on failure.
 Libgcrypt detects certain features of the CPU at startup time.  For
 performance tests it is sometimes required not to use such a feature.
 This option may be used to disable a certain feature; i.e. Libgcrypt
-behaves as if this feature has not been detected.  Note that the
-detection code might be run if the feature has been disabled.  This
-command must be used at initialization time; i.e. before calling
-@code{gcry_check_version}.
+behaves as if this feature has not been detected.  This call can be
+used several times to disable a set of features, or features may be
+given as a colon or comma delimited string.  The special feature
+"all" can be used to disable all available features.
+
+Note that the detection code might be run if the feature has been
+disabled.  This command must be used at initialization time;
+i.e. before calling @code{gcry_check_version}.
+
+@item GCRYCTL_REINIT_SYSCALL_CLAMP; Arguments: none
+
+Libgcrypt wraps blocking system calls with two functions calls
+(``system call clamp'') to give user land threading libraries a hook
+for re-scheduling.  This works by reading the system call clamp from
+Libgpg-error at initialization time.  However sometimes Libgcrypt
+needs to be initialized before the user land threading systems and at
+that point the system call clamp has not been registered with
+Libgpg-error and in turn Libgcrypt would not use them.  The control
+code can be used to tell Libgcrypt that a system call clamp has now
+been registered with Libgpg-error and advised it to read the clamp
+again.  Obviously this control code may only be used before a second
+thread is started in a process.
+
 
 @end table
 
@@ -1673,6 +1694,23 @@ set to 12 (for 96 bit) or 8 (for 64 bit) provided for the
 
 Note that the use of @code{gcry_cipher_final} is required.
 
+@item  GCRY_CIPHER_MODE_XTS
+@cindex XTS, XTS mode
+XEX-based tweaked-codebook mode with ciphertext stealing (XTS) mode
+is used to implement the AES-XTS as specified in IEEE 1619 Standard
+Architecture for Encrypted Shared Storage Media and NIST SP800-38E.
+
+The XTS mode requires doubling key-length, for example, using 512-bit
+key with AES-256 (@code{GCRY_CIPHER_AES256}). The 128-bit tweak value
+is feed to XTS mode as little-endian byte array using
+@code{gcry_cipher_setiv} function. When encrypting or decrypting,
+full-sized data unit buffers needs to be passed to
+@code{gcry_cipher_encrypt} or @code{gcry_cipher_decrypt}. The tweak
+value is automatically incremented after each call of
+@code{gcry_cipher_encrypt} and @code{gcry_cipher_decrypt}.
+Auto-increment allows avoiding need of setting IV between processing
+of sequential data units.
+
 @end table
 
 @node Working with cipher handles
@@ -1688,7 +1726,7 @@ other cipher functions and returns a handle to it in `hd'.  In case of
 an error, an according error code is returned.
 
 The ID of algorithm to use must be specified via @var{algo}.  See
-@xref{Available ciphers}, for a list of supported ciphers and the
+@ref{Available ciphers}, for a list of supported ciphers and the
 according constants.
 
 Besides using the constants directly, the function
@@ -1696,7 +1734,7 @@ Besides using the constants directly, the function
 an algorithm into the according numeric ID.
 
 The cipher mode to use must be specified via @var{mode}.  See
-@xref{Available cipher modes}, for a list of supported cipher modes
+@ref{Available cipher modes}, for a list of supported cipher modes
 and the according constants.  Note that some modes are incompatible
 with some algorithms - in particular, stream mode
 (@code{GCRY_CIPHER_MODE_STREAM}) only works with stream ciphers.
@@ -1706,9 +1744,9 @@ ChaCha20 stream cipher. The block cipher modes
 @code{GCRY_CIPHER_MODE_CFB}, @code{GCRY_CIPHER_MODE_OFB} and
 @code{GCRY_CIPHER_MODE_CTR}) will work with any block cipher
 algorithm.  GCM mode (@code{GCRY_CIPHER_MODE_CCM}), CCM mode
-(@code{GCRY_CIPHER_MODE_GCM}), and OCB mode
-(@code{GCRY_CIPHER_MODE_OCB}) will only work with block cipher
-algorithms which have the block size of 16 bytes.
+(@code{GCRY_CIPHER_MODE_GCM}), OCB mode (@code{GCRY_CIPHER_MODE_OCB}),
+and XTS mode (@code{GCRY_CIPHER_MODE_XTS}) will only work
+with block cipher algorithms which have the block size of 16 bytes.
 
 The third argument @var{flags} can either be passed as @code{0} or as
 the bit-wise OR of the following constants.
@@ -2613,10 +2651,10 @@ S-expression returned is:
 Where @var{r-mpi} and @var{s-mpi} are the result of the DSA sign
 operation.
 
-For Elgamal signing (which is slow, yields large numbers and probably
-is not as secure as the other algorithms), the same format is used
-with "elg" replacing "dsa"; for ECDSA signing, the same format is used
-with "ecdsa" replacing "dsa".
+For Elgamal signing (which is slow, yields large numbers, hard to use
+correctly and probably is not as secure as the other algorithms), the
+same format is used with "elg" replacing "dsa"; for ECDSA signing, the
+same format is used with "ecdsa" replacing "dsa".
 
 For the EdDSA algorithm (cf. Ed25515) the required input parameters are:
 
@@ -2849,7 +2887,9 @@ Use the given value.
 
 @noindent
 If this parameter is not used, Libgcrypt uses for historic reasons
-65537.
+65537.  Note that the value must fit into a 32 bit unsigned variable
+and that the usual C prefixes are considered (e.g. 017 gives 15).
+
 
 @item qbits @var{n}
 This is only meanigful for DSA keys.  If it is given the DSA key is
@@ -3079,6 +3119,8 @@ are also supported.
 @cindex TIGER, TIGER1, TIGER2
 @cindex HAVAL
 @cindex Whirlpool
+@cindex BLAKE2b-512, BLAKE2b-384, BLAKE2b-256, BLAKE2b-160
+@cindex BLAKE2s-256, BLAKE2s-224, BLAKE2s-160, BLAKE2s-128
 @cindex CRC32
 @table @code
 @item GCRY_MD_NONE
@@ -3203,6 +3245,38 @@ which yields a message digest of 32 bytes.
 This is the 512-bit version of hash algorithm described in GOST R 34.11-2012
 which yields a message digest of 64 bytes.
 
+@item GCRY_MD_BLAKE2B_512
+This is the BLAKE2b-512 algorithm which yields a message digest of 64 bytes.
+See RFC 7693 for the specification.
+
+@item GCRY_MD_BLAKE2B_384
+This is the BLAKE2b-384 algorithm which yields a message digest of 48 bytes.
+See RFC 7693 for the specification.
+
+@item GCRY_MD_BLAKE2B_256
+This is the BLAKE2b-256 algorithm which yields a message digest of 32 bytes.
+See RFC 7693 for the specification.
+
+@item GCRY_MD_BLAKE2B_160
+This is the BLAKE2b-160 algorithm which yields a message digest of 20 bytes.
+See RFC 7693 for the specification.
+
+@item GCRY_MD_BLAKE2S_256
+This is the BLAKE2s-256 algorithm which yields a message digest of 32 bytes.
+See RFC 7693 for the specification.
+
+@item GCRY_MD_BLAKE2S_224
+This is the BLAKE2s-224 algorithm which yields a message digest of 28 bytes.
+See RFC 7693 for the specification.
+
+@item GCRY_MD_BLAKE2S_160
+This is the BLAKE2s-160 algorithm which yields a message digest of 20 bytes.
+See RFC 7693 for the specification.
+
+@item GCRY_MD_BLAKE2S_128
+This is the BLAKE2s-128 algorithm which yields a message digest of 16 bytes.
+See RFC 7693 for the specification.
+
 @end table
 @c end table of hash algorithms
 
@@ -3220,7 +3294,7 @@ may be given as @code{0} if the algorithms to use are later set using
 @code{gcry_md_enable}. @var{hd} is guaranteed to either receive a valid
 handle or NULL.
 
-For a list of supported algorithms, see @xref{Available hash
+For a list of supported algorithms, see @ref{Available hash
 algorithms}.
 
 The flags allowed for @var{mode} are:
@@ -3239,7 +3313,7 @@ algorithm is not an extendable-output function.  Note that the function
 @code{gcry_md_setkey} must be used to set the MAC key.  The size of the
 MAC is equal to the message digest of the underlying hash algorithm.
 If you want CBC message authentication codes based on a cipher,
-see @xref{Working with cipher handles}.
+see @ref{Working with cipher handles}.
 
 @item GCRY_MD_FLAG_BUGEMU1
 @cindex bug emulation
@@ -3281,9 +3355,12 @@ be set using the function:
 
 @deftypefun gcry_error_t gcry_md_setkey (gcry_md_hd_t @var{h}, const void *@var{key}, size_t @var{keylen})
 
-For use with the HMAC feature, set the MAC key to the value of
-@var{key} of length @var{keylen} bytes.  There is no restriction on
-the length of the key.
+For use with the HMAC feature or BLAKE2 keyed hash, set the MAC key to
+the value of @var{key} of length @var{keylen} bytes.  For HMAC, there
+is no restriction on the length of the key.  For keyed BLAKE2b hash,
+length of the key must be 64 bytes or less.  For keyed BLAKE2s hash,
+length of the key must be 32 bytes or less.
+
 @end deftypefun
 
 
@@ -3754,7 +3831,7 @@ bitwise OR of constants described below. @var{hd} is guaranteed to either
 receive a valid handle or NULL. @var{ctx} is context object to associate MAC
 object with. @var{ctx} maybe set to NULL.
 
-For a list of supported algorithms, see @xref{Available MAC algorithms}.
+For a list of supported algorithms, see @ref{Available MAC algorithms}.
 
 The flags allowed for @var{mode} are:
 
@@ -4377,14 +4454,15 @@ an @code{gcry_mpi_t} variable is expected that must be set to
 is expected.  For example
 
 @example
-  _gcry_sexp_extract_param (key, NULL, "n/x+e d-'foo'",
-                            &mpi_n, &mpi_x, &mpi_e, &mpi_foo, NULL)
+  gcry_sexp_extract_param (key, NULL, "n/x+e d-'foo'",
+                           &mpi_n, &mpi_x, &mpi_e, &mpi_d, &mpi_foo, NULL)
 @end example
 
 stores the parameter 'n' from @var{key} as an unsigned MPI into
 @var{mpi_n}, the parameter 'x' as an opaque MPI into @var{mpi_x}, the
-parameter 'e' again as an unsigned MPI into @var{mpi_e}, and the
-parameter 'foo' as a signed MPI.
+parameters 'e' and 'd' again as an unsigned MPI into @var{mpi_e} and
+@var{mpi_d} and finally the parameter 'foo' as a signed MPI into
+@var{mpi_foo}.
 
 @var{path} is an optional string used to locate a token.  The
 exclamation mark separated tokens are used via
@@ -4801,6 +4879,13 @@ Release @var{point} and free all associated resources.  Passing
 @code{NULL} is allowed and ignored.
 @end deftypefun
 
+@deftypefun gcry_mpi_point_t gcry_mpi_point_copy (@w{gcry_mpi_point_t @var{point}})
+
+Allocate and return a new point object and initialize it with
+@var{point}.  If @var{point} is NULL the function is identical to
+@code{gcry_mpi_point_new(0)}.
+@end deftypefun
+
 @deftypefun void gcry_mpi_point_get (@w{gcry_mpi_t @var{x}}, @
  @w{gcry_mpi_t @var{y}}, @w{gcry_mpi_t @var{z}}, @
  @w{gcry_mpi_point_t @var{point}})
@@ -5159,6 +5244,7 @@ wrong.
 * Memory allocation::   Functions related with memory allocation.
 * Context management::  Functions related with context management.
 * Buffer description::  A data type to describe buffers.
+* Config reporting::    How to return Libgcrypt's configuration.
 @end menu
 
 
@@ -5243,6 +5329,27 @@ of this structure are:
   @end table
 @end deftp
 
+@node Config reporting
+@section How to return Libgcrypt's configuration.
+
+Although @code{GCRYCTL_PRINT_CONFIG} can be used to print
+configuration options, it is sometimes necessary to check them in a
+program.  This can be accomplished by using this function:
+
+@deftypefun {char *} gcry_get_config @
+             (@w{int @var{mode}}, @
+             @w{const char *@var{what}})
+
+This function returns a malloced string with colon delimited configure
+options.  With a value of 0 for @var{mode} this string resembles the
+output of @code{GCRYCTL_PRINT_CONFIG}.  However, if @var{what} is not
+NULL, only the line where the first field (e.g. "cpu-arch") matches
+@var{what} is returned.
+
+Other values than 0 for @var{mode} are not defined.  The caller shall
+free the string using @code{gcry_free}.  On error NULL is returned and
+ERRNO is set; if a value for WHAT is unknow ERRNO will be set to 0.
+@end deftypefun
 
 
 @c **********************************************************
@@ -5318,7 +5425,7 @@ Print version of the program and exit.
 @c ****************  Environment Variables  *****************
 @c **********************************************************
 @node Configuration
-@chapter Configuration files and evironment variables
+@chapter Configuration files and environment variables
 
 This chapter describes which files and environment variables can be
 used to change the behaviour of Libgcrypt.
@@ -5352,6 +5459,13 @@ for entropy.  On some older Windows systems this could help to speed
 up the creation of random numbers but also decreases the amount of
 data used to init the random number generator.
 
+@item GCRYPT_RNDW32_DBG
+@cindex GCRYPT_RNDW32_DBG
+Setting the value of this variable to a positive integer logs
+information about the Windows entropy gatherer using the standard log
+interface.
+
+
 @item HOME
 @cindex HOME
 This is used to locate the socket to connect to the EGD random
@@ -5373,6 +5487,28 @@ are:
 @cindex /etc/gcrypt/hwf.deny
 This file can be used to disable the use of hardware based
 optimizations, @pxref{hardware features}.
+
+
+@item /etc/gcrypt/random.conf
+@cindex /etc/gcrypt/random.conf
+This file can be used to globally change parameters of the random
+generator.  The file is a simple text file where empty lines and
+lines with the first non white-space character being '#' are
+ignored.  Supported options are
+
+@table @file
+@item disable-jent
+@cindex disable-jent
+Disable the use of the jitter based entropy generator.
+
+@item only-urandom
+@cindex only-urandom
+Always use the non-blocking /dev/urandom or the respective system call
+instead of the blocking /dev/random.  If Libgcrypt is used early in
+the boot process of the system, this option should only be used if the
+system also supports the getrandom system call.
+
+@end table
 
 @item /etc/gcrypt/fips_enabled
 @itemx /proc/sys/crypto/fips_enabled
@@ -5461,7 +5597,7 @@ self-contained functions.  Due to the wide variety of parameters
 required by different algorithms S-expressions, as flexible way to
 convey these parameters, are used.  There is a set of helper functions
 to work with these S-expressions.
-@c see @xref{S-expression Subsystem Architecture}.
+@c see @ref{S-expression Subsystem Architecture}.
 
 Aside of functions to register new algorithms, map algorithms names to
 algorithms identifiers and to lookup properties of a key, the
@@ -5730,8 +5866,10 @@ Both generators make use of so-called entropy gathering modules:
 
 @table @asis
 @item rndlinux
-Uses the operating system provided
-@file{/dev/random} and @file{/dev/urandom} devices.
+Uses the operating system provided @file{/dev/random} and
+@file{/dev/urandom} devices.  The @file{/dev/gcrypt/random.conf}
+config option @option{only-urandom} can be used to inhibit the use of
+the blocking @file{/dev/random} device.
 
 @item rndunix
 Runs several operating system commands to collect entropy from sources
@@ -5756,6 +5894,12 @@ Extra module to collect additional entropy by utilizing a hardware
 random number generator.  As of now the supported hardware RNG is
 the Padlock engine of VIA (Centaur) CPUs and x86 CPUs with the RDRAND
 instruction.  It is not available in FIPS mode.
+
+@item rndjent
+Extra module to collect additional entropy using a CPU jitter based
+approach.  This is only used on X86 hardware where the RDTSC opcode is
+available.  The @file{/dev/gcrypt/random.conf} config option
+@option{disable-jent} can be used to inhibit the use of this module.
 
 @end table
 
@@ -5789,7 +5933,7 @@ to mix in enough data from the gather modules before returning the
 actual random output.  Process fork detection and protection is
 implemented.
 
-@c FIXME:  The design and implementaion needs a more verbose description.
+@c FIXME:  The design and implementation needs a more verbose description.
 
 The implementation of the nonce generator (for
 @code{gcry_create_nonce}) is a straightforward repeated hash design: A

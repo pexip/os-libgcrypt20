@@ -122,10 +122,11 @@ am_libcipher_la_OBJECTS = cipher.lo cipher-cbc.lo cipher-cfb.lo \
 	cipher-ofb.lo cipher-ctr.lo cipher-aeswrap.lo cipher-ccm.lo \
 	cipher-cmac.lo cipher-gcm.lo cipher-gcm-intel-pclmul.lo \
 	cipher-gcm-armv8-aarch32-ce.lo cipher-gcm-armv8-aarch64-ce.lo \
-	cipher-poly1305.lo cipher-ocb.lo cipher-selftest.lo pubkey.lo \
-	pubkey-util.lo md.lo mac.lo mac-hmac.lo mac-cmac.lo \
-	mac-gmac.lo mac-poly1305.lo poly1305.lo kdf.lo hmac-tests.lo \
-	primegen.lo hash-common.lo dsa-common.lo rsa-common.lo
+	cipher-poly1305.lo cipher-ocb.lo cipher-xts.lo \
+	cipher-selftest.lo pubkey.lo pubkey-util.lo md.lo mac.lo \
+	mac-hmac.lo mac-cmac.lo mac-gmac.lo mac-poly1305.lo \
+	poly1305.lo kdf.lo hmac-tests.lo primegen.lo hash-common.lo \
+	dsa-common.lo rsa-common.lo
 libcipher_la_OBJECTS = $(am_libcipher_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -383,7 +384,7 @@ cipher.c cipher-internal.h \
 cipher-cbc.c cipher-cfb.c cipher-ofb.c cipher-ctr.c cipher-aeswrap.c \
 cipher-ccm.c cipher-cmac.c cipher-gcm.c cipher-gcm-intel-pclmul.c \
   cipher-gcm-armv8-aarch32-ce.S cipher-gcm-armv8-aarch64-ce.S \
-cipher-poly1305.c cipher-ocb.c \
+cipher-poly1305.c cipher-ocb.c cipher-xts.c \
 cipher-selftest.c cipher-selftest.h \
 pubkey.c pubkey-internal.h pubkey-util.c \
 md.c \
@@ -419,7 +420,8 @@ md4.c \
 md5.c \
 poly1305-sse2-amd64.S poly1305-avx2-amd64.S poly1305-armv7-neon.S \
 rijndael.c rijndael-internal.h rijndael-tables.h rijndael-aesni.c \
-  rijndael-padlock.c rijndael-amd64.S rijndael-arm.S rijndael-ssse3-amd64.c \
+  rijndael-padlock.c rijndael-amd64.S rijndael-arm.S \
+  rijndael-ssse3-amd64.c rijndael-ssse3-amd64-asm.S \
   rijndael-armv8-ce.c rijndael-armv8-aarch32-ce.S rijndael-armv8-aarch64-ce.S \
   rijndael-aarch64.S \
 rmd160.c \
@@ -439,9 +441,11 @@ stribog.c \
 tiger.c \
 whirlpool.c whirlpool-sse2-amd64.S \
 twofish.c twofish-amd64.S twofish-arm.S twofish-aarch64.S \
+  twofish-avx2-amd64.S \
 rfc2268.c \
 camellia.c camellia.h camellia-glue.c camellia-aesni-avx-amd64.S \
-  camellia-aesni-avx2-amd64.S camellia-arm.S camellia-aarch64.S
+  camellia-aesni-avx2-amd64.S camellia-arm.S camellia-aarch64.S \
+blake2.c
 
 @ENABLE_O_FLAG_MUNGING_FALSE@o_flag_munging = cat
 @ENABLE_O_FLAG_MUNGING_TRUE@o_flag_munging = sed -e 's/-O\([2-9s][2-9s]*\)/-O1/' -e 's/-Ofast/-O1/g'
@@ -502,6 +506,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/arcfour-amd64.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/arcfour.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/blake2.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/blowfish-amd64.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/blowfish-arm.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/blowfish.Plo@am__quote@
@@ -533,6 +538,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cipher-ofb.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cipher-poly1305.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cipher-selftest.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cipher-xts.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cipher.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/crc-intel-pclmul.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/crc.Plo@am__quote@
@@ -579,6 +585,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rijndael-armv8-aarch64-ce.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rijndael-armv8-ce.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rijndael-padlock.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rijndael-ssse3-amd64-asm.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rijndael-ssse3-amd64.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rijndael.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rmd160.Plo@am__quote@
@@ -617,6 +624,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/twofish-aarch64.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/twofish-amd64.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/twofish-arm.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/twofish-avx2-amd64.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/twofish.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/whirlpool-sse2-amd64.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/whirlpool.Plo@am__quote@
