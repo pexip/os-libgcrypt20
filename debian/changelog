@@ -1,3 +1,9 @@
+libgcrypt20 (1.8.4-5pexip2) pexip; urgency=medium
+
+  * Rebuild in buster environment
+
+ -- Steve McIntyre <steve.mcintyre@pexip.com>  Wed, 15 Jul 2020 23:08:13 +0000
+
 libgcrypt20 (1.8.4-5pexip1) pexip; urgency=medium
 
   * Migrate to Buster
