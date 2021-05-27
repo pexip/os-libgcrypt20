@@ -1,1 +1,1 @@
-debian/tmp/lib/*/lib*.so.* lib
+debian/tmp/usr/lib/*/lib*.so.*

@@ -7,14 +7,14 @@ Uploaders:
  Eric Dorland <eric@debian.org>,
  James Westby <jw+debian@jameswestby.net>,
  Simon Josefsson <simon@josefsson.org>
-Build-Depends: debhelper-compat (= 11), libgpg-error-dev (>= 1.25)
+Build-Depends: debhelper-compat (= 13), libgpg-error-dev (>= 1.25)
 Build-Depends-Indep:
  libgpg-error-mingw-w64-dev,
  mingw-w64,
  texinfo (>= 4.6-0),
- texlive-generic-recommended,
+ texlive-plain-generic,
  texlive-latex-base
-Standards-Version: 4.3.0
+Standards-Version: 4.5.0
 Vcs-Git: https://salsa.debian.org/gnutls-team/libgcrypt.git -b branch1.6
 Vcs-Browser: https://salsa.debian.org/gnutls-team/libgcrypt/tree/branch1.6
 Rules-Requires-Root: no
@@ -27,6 +27,7 @@ Suggests: libgcrypt20-dev
 Conflicts: libgcrypt-doc, libgcrypt11-doc, libgcrypt7-doc
 Replaces: libgcrypt-doc, libgcrypt11-doc, libgcrypt7-doc
 Depends: ${misc:Depends}
+Multi-Arch: foreign
 Description: LGPL Crypto library - documentation
  libgcrypt contains cryptographic functions.  Many important free
  ciphers, hash algorithms and public key signing algorithms have been
@@ -43,7 +44,7 @@ Description: LGPL Crypto library - documentation
 Package: libgcrypt20-dev
 Section: libdevel
 Architecture: any
-Conflicts: libgcrypt-dev, libgcrypt11-dev (<< 1.5.4-3+really1.6.2-4)
+Conflicts: libgcrypt-dev
 Provides: libgcrypt-dev
 Depends:
  libc6-dev | libc-dev,
@@ -102,6 +103,7 @@ Section: libdevel
 Architecture: all
 Depends: libgpg-error-mingw-w64-dev, ${misc:Depends}, ${shlibs:Depends}
 Suggests: wine
+Multi-Arch: foreign
 Description: LGPL Crypto library - Windows development
  libgcrypt contains cryptographic functions.  Many important free
  ciphers, hash algorithms and public key signing algorithms have been

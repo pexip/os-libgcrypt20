@@ -1,0 +1,69 @@
+From 205d841e3ae144044f03f7c28270733301cfae80 Mon Sep 17 00:00:00 2001
+From: Jussi Kivilinna <jussi.kivilinna@iki.fi>
+Date: Sat, 30 Jan 2021 20:11:05 +0200
+Subject: [PATCH 4/6] Fix ubsan warnings for i386 build
+
+* mpi/mpicoder.c (_gcry_mpi_set_buffer) [BYTES_PER_MPI_LIMB == 4]: Cast
+"*p--" values to mpi_limb_t before left shifting.
+* tests/t-lock.c (main): Cast 'time(NULL)' to unsigned type.
+--
+
+Signed-off-by: Jussi Kivilinna <jussi.kivilinna@iki.fi>
+---
+ mpi/mpicoder.c | 16 ++++++++--------
+ tests/t-lock.c |  2 +-
+ 2 files changed, 9 insertions(+), 9 deletions(-)
+
+diff --git a/mpi/mpicoder.c b/mpi/mpicoder.c
+index a133421e..f61f777f 100644
+--- a/mpi/mpicoder.c
++++ b/mpi/mpicoder.c
+@@ -354,10 +354,10 @@ _gcry_mpi_set_buffer (gcry_mpi_t a, const void *buffer_arg,
+   for (i=0, p = buffer+nbytes-1; p >= buffer+BYTES_PER_MPI_LIMB; )
+     {
+ #if BYTES_PER_MPI_LIMB == 4
+-      alimb  = *p--	    ;
+-      alimb |= *p-- <<  8 ;
+-      alimb |= *p-- << 16 ;
+-      alimb |= *p-- << 24 ;
++      alimb  = (mpi_limb_t)*p--	    ;
++      alimb |= (mpi_limb_t)*p-- <<  8 ;
++      alimb |= (mpi_limb_t)*p-- << 16 ;
++      alimb |= (mpi_limb_t)*p-- << 24 ;
+ #elif BYTES_PER_MPI_LIMB == 8
+       alimb  = (mpi_limb_t)*p--	;
+       alimb |= (mpi_limb_t)*p-- <<  8 ;
+@@ -375,13 +375,13 @@ _gcry_mpi_set_buffer (gcry_mpi_t a, const void *buffer_arg,
+   if ( p >= buffer )
+     {
+ #if BYTES_PER_MPI_LIMB == 4
+-      alimb  = *p--;
++      alimb  = (mpi_limb_t)*p--;
+       if (p >= buffer)
+-        alimb |= *p-- <<  8;
++        alimb |= (mpi_limb_t)*p-- <<  8;
+       if (p >= buffer)
+-        alimb |= *p-- << 16;
++        alimb |= (mpi_limb_t)*p-- << 16;
+       if (p >= buffer)
+-        alimb |= *p-- << 24;
++        alimb |= (mpi_limb_t)*p-- << 24;
+ #elif BYTES_PER_MPI_LIMB == 8
+       alimb  = (mpi_limb_t)*p--;
+       if (p >= buffer)
+diff --git a/tests/t-lock.c b/tests/t-lock.c
+index 7e5732e0..bbc83c8b 100644
+--- a/tests/t-lock.c
++++ b/tests/t-lock.c
+@@ -426,7 +426,7 @@ main (int argc, char **argv)
+         }
+     }
+ 
+-  srand (time(NULL)*getpid());
++  srand ((unsigned int)time(NULL)*getpid());
+ 
+   if (debug)
+     xgcry_control (GCRYCTL_SET_DEBUG_FLAGS, 1u, 0);
+-- 
+2.30.0
+
