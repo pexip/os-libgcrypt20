@@ -1,3 +1,9 @@
+libgcrypt20 (1.8.4-5+deb10u1pexip1) pexip; urgency=medium
+
+  * New upstream version.
+
+ -- Mark Hymers <mark.hymers@pexip.com>  Mon, 21 Jun 2021 10:04:33 +0100
+
 libgcrypt20 (1.8.4-5+deb10u1) buster; urgency=medium
 
   * 31_cipher-Fix-ElGamal-encryption-for-other-implementati.patch from
