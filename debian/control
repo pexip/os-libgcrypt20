@@ -20,7 +20,7 @@ Vcs-Git: https://salsa.debian.org/gnutls-team/libgcrypt.git -b branch1.6
 Vcs-Browser: https://salsa.debian.org/gnutls-team/libgcrypt/tree/branch1.6
 Rules-Requires-Root: no
 Homepage: https://directory.fsf.org/project/libgcrypt/
-XS-Pexip-Upstream: http://ftp.debian.org/debian/ buster
+XS-Pexip-Upstream: http://deb.debian.org/debian/ bullseye
 
 Package: libgcrypt20-doc
 Section: doc
