@@ -1,0 +1,17 @@
+Description: Do not link against unneeded libraries
+Author: Andreas Metzler <ametzler@debian.org>
+Origin: vendor
+Forwarded: no
+Last-Update: 2019-08-30
+
+--- libgcrypt20-1.8.5.orig/src/libgcrypt.pc.in
++++ libgcrypt20-1.8.5/src/libgcrypt.pc.in
+@@ -10,7 +10,7 @@ digests="@LIBGCRYPT_DIGESTS@"
+ 
+ Name: libgcrypt
+ Description: General purpose cryptographic library
+-Requires: gpg-error
++Requires.private: gpg-error
+ Version: @PACKAGE_VERSION@
+ Cflags: @LIBGCRYPT_CONFIG_CFLAGS@
+ Libs: @LIBGCRYPT_CONFIG_LIBS@

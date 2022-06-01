@@ -1,6 +1,7 @@
 #! /usr/bin/make -f
 # Build the libgcrypt package for Debian.
 
+export DPKG_GENSYMBOLS_CHECK_LEVEL = 4
 export DEB_BUILD_MAINT_OPTIONS := hardening=+bindnow
 
 include /usr/share/dpkg/pkg-info.mk
@@ -14,12 +15,7 @@ override_dh_auto_configure:
 		fi
 	dh_auto_configure --verbose --builddirectory=build -- \
 		--enable-noexecstack \
-		--enable-ld-version-script --enable-static \
-		--libdir=/lib/$(DEB_HOST_MULTIARCH)
-
-override_dh_makeshlibs:
-	dh_makeshlibs -V 'libgcrypt20 (>=1.8.0-0)' \
-		--add-udeb=libgcrypt20-udeb -- -c4
+		--enable-ld-version-script --enable-static
 
 override_dh_auto_build-indep:
 	# use current version in /usr/share/texmf/tex/texinfo/, see #803081
@@ -51,23 +47,12 @@ override_dh_auto_install-indep:	debian/tmp/usr/include/gcrypt.h
 	done
 	find debian/tmp -name libgcrypt.la -type f -delete
 
-override_dh_auto_install-arch:	debian/tmp/usr/include/gcrypt.h
-	mkdir -p -m755 debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)
-	cd debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH) \
-		&& ln -v -s /lib/$(DEB_HOST_MULTIARCH)/`readlink ../../../lib/*/*.so` libgcrypt.so
-	rm -v debian/tmp/lib/$(DEB_HOST_MULTIARCH)/*.so
-	mv -v debian/tmp/lib/$(DEB_HOST_MULTIARCH)/*.a \
-		debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/
-
 override_dh_installinfo:
 	dh_installinfo
 	if test -e debian/libgcrypt20-doc ; then \
 		cd debian/libgcrypt20-doc/usr/share/info && \
 		sed -i -e 's:image src="\([^"]*.png"\):image src="/usr/share/doc/libgcrypt20-doc/html/\1:g' *.info* ; \
 	fi
-
-override_dh_missing:
-	dh_missing --list-missing
 
 %:
 	dh $@ --builddirectory=build

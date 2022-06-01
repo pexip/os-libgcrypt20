@@ -1,0 +1,57 @@
+From 1d312bc65846916c120506ae237235c8fbbea897 Mon Sep 17 00:00:00 2001
+From: NIIBE Yutaka <gniibe@fsij.org>
+Date: Tue, 2 Feb 2021 10:16:13 +0900
+Subject: [PATCH 3/6] ecc: Add checking key for ECDSA.
+
+* cipher/ecc-ecdsa.c (_gcry_ecc_ecdsa_verify): Validate public key.
+* cipher/ecc-gost.c (_gcry_ecc_gost_verify): Likewise.
+
+--
+
+GnuPG-bug-id: 5282
+Reported-by: Guido Vranken <guidovranken@gmail.com>
+Signed-off-by: NIIBE Yutaka <gniibe@fsij.org>
+
+Backported-from-master: 598d0f3e0294a487e01b88cc714a8cd0a47329bb
+---
+ cipher/ecc-ecdsa.c | 6 ++++++
+ cipher/ecc-gost.c  | 6 ++++++
+ 2 files changed, 12 insertions(+)
+
+diff --git a/cipher/ecc-ecdsa.c b/cipher/ecc-ecdsa.c
+index 56846f44..82b609e5 100644
+--- a/cipher/ecc-ecdsa.c
++++ b/cipher/ecc-ecdsa.c
+@@ -199,6 +199,12 @@ _gcry_ecc_ecdsa_verify (gcry_mpi_t input, ECC_public_key *pkey,
+   ctx = _gcry_mpi_ec_p_internal_new (pkey->E.model, pkey->E.dialect, 0,
+                                      pkey->E.p, pkey->E.a, pkey->E.b);
+ 
++  if (!_gcry_mpi_ec_curve_point (&pkey->Q, ctx))
++    {
++      err = GPG_ERR_BROKEN_PUBKEY;
++      goto leave;
++    }
++
+   /* h  = s^(-1) (mod n) */
+   mpi_invm (h, s, pkey->E.n);
+   /* h1 = hash * s^(-1) (mod n) */
+diff --git a/cipher/ecc-gost.c b/cipher/ecc-gost.c
+index 0362a6c7..a68750fa 100644
+--- a/cipher/ecc-gost.c
++++ b/cipher/ecc-gost.c
+@@ -168,6 +168,12 @@ _gcry_ecc_gost_verify (gcry_mpi_t input, ECC_public_key *pkey,
+   ctx = _gcry_mpi_ec_p_internal_new (pkey->E.model, pkey->E.dialect, 0,
+                                      pkey->E.p, pkey->E.a, pkey->E.b);
+ 
++  if (!_gcry_mpi_ec_curve_point (&pkey->Q, ctx))
++    {
++      err = GPG_ERR_BROKEN_PUBKEY;
++      goto leave;
++    }
++
+   mpi_mod (e, input, pkey->E.n); /* e = hash mod n */
+   if (!mpi_cmp_ui (e, 0))
+     mpi_set_ui (e, 1);
+-- 
+2.30.0
+

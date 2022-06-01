@@ -1,5 +1,14 @@
 12_lessdeps_libgcrypt-config.diff
+13_lessdeps_libgcrypt-pkgconfig.diff
 15_multiarchpath_in_-L.diff
 25_norevisionfromgit.diff
-30_doc-Fix-library-initialization-examples.patch
-31_cipher-Fix-ElGamal-encryption-for-other-implementati.patch
+30_01-Post-release-updates.patch
+30_02-tests-Put-a-work-around-to-tests-random-for-macOS.patch
+30_03-ecc-Add-checking-key-for-ECDSA.patch
+30_04-Fix-ubsan-warnings-for-i386-build.patch
+30_05-Add-handling-for-Og-with-O-flag-munging.patch
+30_06-Make-sure-the-grcy_get_config-string-is-always-null-.patch
+30_07-Fix-previous-commit.patch
+30_08-ecc-Check-the-input-length-for-the-point.patch
+30_09-ecc-Fix-the-previous-commit.patch
+30_10-cipher-Fix-ElGamal-encryption-for-other-implementati.patch
