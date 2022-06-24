@@ -1,3 +1,9 @@
+libgcrypt20 (1.8.7-6pexip2) pexip-bullseye; urgency=medium
+
+  * Main bullseye build
+
+ -- Mark Hymers <mark.hymers@pexip.com>  Fri, 24 Jun 2022 13:55:49 +0100
+
 libgcrypt20 (1.8.7-6pexip1) pexip; urgency=medium
 
   * Initial bullseye build
