@@ -1,3 +1,9 @@
+libgcrypt20 (1.8.7-6pexip3) pexip-bullseye; urgency=medium
+
+  * Bullseye rebuild for ARM64 inclusion
+
+ -- Mark Hymers <mark.hymers@pexip.com>  Mon, 05 Sep 2022 10:32:17 +0100
+
 libgcrypt20 (1.8.7-6pexip2) pexip-bullseye; urgency=medium
 
   * Main bullseye build
