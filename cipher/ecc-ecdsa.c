@@ -38,7 +38,7 @@
  * must have allocated R and S.
  */
 gpg_err_code_t
-_gcry_ecc_ecdsa_sign (gcry_mpi_t input, ECC_secret_key *skey,
+_gcry_ecc_ecdsa_sign (gcry_mpi_t input, gcry_mpi_t k_supplied, mpi_ec_t ec,
                       gcry_mpi_t r, gcry_mpi_t s,
                       int flags, int hashalgo)
 {
@@ -49,28 +49,40 @@ _gcry_ecc_ecdsa_sign (gcry_mpi_t input, ECC_secret_key *skey,
   gcry_mpi_t hash;
   const void *abuf;
   unsigned int abits, qbits;
-  mpi_ec_t ctx;
   gcry_mpi_t b;                /* Random number needed for blinding.  */
   gcry_mpi_t bi;               /* multiplicative inverse of B.        */
+  gcry_mpi_t hash_computed_internally = NULL;
 
   if (DBG_CIPHER)
     log_mpidump ("ecdsa sign hash  ", input );
 
-  qbits = mpi_get_nbits (skey->E.n);
+  qbits = mpi_get_nbits (ec->n);
+
+  if ((flags & PUBKEY_FLAG_PREHASH))
+    {
+      rc = _gcry_dsa_compute_hash (&hash_computed_internally, input, hashalgo);
+      if (rc)
+        return rc;
+      input = hash_computed_internally;
+    }
 
   /* Convert the INPUT into an MPI if needed.  */
   rc = _gcry_dsa_normalize_hash (input, &hash, qbits);
+
   if (rc)
-    return rc;
+    {
+      mpi_free (hash_computed_internally);
+      return rc;
+    }
 
   b  = mpi_snew (qbits);
   bi = mpi_snew (qbits);
   do
     {
       _gcry_mpi_randomize (b, qbits, GCRY_WEAK_RANDOM);
-      mpi_mod (b, b, skey->E.n);
+      mpi_mod (b, b, ec->n);
     }
-  while (!mpi_invm (bi, b, skey->E.n));
+  while (!mpi_invm (bi, b, ec->n));
 
   k = NULL;
   dr = mpi_alloc (0);
@@ -79,67 +91,84 @@ _gcry_ecc_ecdsa_sign (gcry_mpi_t input, ECC_secret_key *skey,
   x = mpi_alloc (0);
   point_init (&I);
 
-  ctx = _gcry_mpi_ec_p_internal_new (skey->E.model, skey->E.dialect, 0,
-                                     skey->E.p, skey->E.a, skey->E.b);
-
   /* Two loops to avoid R or S are zero.  This is more of a joke than
      a real demand because the probability of them being zero is less
      than any hardware failure.  Some specs however require it.  */
-  do
+  while (1)
     {
-      do
+      while (1)
         {
-          mpi_free (k);
-          k = NULL;
-          if ((flags & PUBKEY_FLAG_RFC6979) && hashalgo)
-            {
-              /* Use Pornin's method for deterministic DSA.  If this
-                 flag is set, it is expected that HASH is an opaque
-                 MPI with the to be signed hash.  That hash is also
-                 used as h1 from 3.2.a.  */
-              if (!mpi_is_opaque (input))
-                {
-                  rc = GPG_ERR_CONFLICT;
-                  goto leave;
-                }
-
-              abuf = mpi_get_opaque (input, &abits);
-              rc = _gcry_dsa_gen_rfc6979_k (&k, skey->E.n, skey->d,
-                                            abuf, (abits+7)/8,
-                                            hashalgo, extraloops);
-              if (rc)
-                goto leave;
-              extraloops++;
-            }
+          if (k_supplied)
+            k = k_supplied;
           else
-            k = _gcry_dsa_gen_k (skey->E.n, GCRY_STRONG_RANDOM);
+            {
+              mpi_free (k);
+              k = NULL;
+              if ((flags & PUBKEY_FLAG_RFC6979) && hashalgo)
+                {
+                  /* Use Pornin's method for deterministic DSA.  If this
+                     flag is set, it is expected that HASH is an opaque
+                     MPI with the to be signed hash.  That hash is also
+                     used as h1 from 3.2.a.  */
+                  if (!mpi_is_opaque (input))
+                    {
+                      rc = GPG_ERR_CONFLICT;
+                      goto leave;
+                    }
 
-          mpi_invm (k_1, k, skey->E.n);     /* k_1 = k^(-1) mod n  */
+                  abuf = mpi_get_opaque (input, &abits);
+                  rc = _gcry_dsa_gen_rfc6979_k (&k, ec->n, ec->d,
+                                                abuf, (abits+7)/8,
+                                                hashalgo, extraloops);
+                  if (rc)
+                    goto leave;
+                  extraloops++;
+                }
+              else
+                k = _gcry_dsa_gen_k (ec->n, GCRY_STRONG_RANDOM);
+            }
 
-          _gcry_dsa_modify_k (k, skey->E.n, qbits);
+          mpi_invm (k_1, k, ec->n);     /* k_1 = k^(-1) mod n  */
 
-          _gcry_mpi_ec_mul_point (&I, k, &skey->E.G, ctx);
-          if (_gcry_mpi_ec_get_affine (x, NULL, &I, ctx))
+          _gcry_dsa_modify_k (k, ec->n, qbits);
+
+          _gcry_mpi_ec_mul_point (&I, k, ec->G, ec);
+          if (_gcry_mpi_ec_get_affine (x, NULL, &I, ec))
             {
               if (DBG_CIPHER)
                 log_debug ("ecc sign: Failed to get affine coordinates\n");
               rc = GPG_ERR_BAD_SIGNATURE;
               goto leave;
             }
-          mpi_mod (r, x, skey->E.n);  /* r = x mod n */
+          mpi_mod (r, x, ec->n);  /* r = x mod n */
+
+          if (mpi_cmp_ui (r, 0))
+            break;
+
+          if (k_supplied)
+            {
+              rc = GPG_ERR_INV_VALUE;
+              goto leave;
+            }
         }
-      while (!mpi_cmp_ui (r, 0));
 
       /* Computation of dr, sum, and s are blinded with b.  */
-      mpi_mulm (dr, b, skey->d, skey->E.n);
-      mpi_mulm (dr, dr, r, skey->E.n);      /* dr = d*r mod n */
-      mpi_mulm (sum, b, hash, skey->E.n);
-      mpi_addm (sum, sum, dr, skey->E.n);   /* sum = hash + (d*r) mod n */
-      mpi_mulm (s, k_1, sum, skey->E.n);    /* s = k^(-1)*(hash+(d*r)) mod n */
+      mpi_mulm (dr, b, ec->d, ec->n);
+      mpi_mulm (dr, dr, r, ec->n);      /* dr = d*r mod n */
+      mpi_mulm (sum, b, hash, ec->n);
+      mpi_addm (sum, sum, dr, ec->n);   /* sum = hash + (d*r) mod n */
+      mpi_mulm (s, k_1, sum, ec->n);    /* s = k^(-1)*(hash+(d*r)) mod n */
       /* Undo blinding by b^-1 */
-      mpi_mulm (s, bi, s, skey->E.n);
+      mpi_mulm (s, bi, s, ec->n);
+      if (mpi_cmp_ui (s, 0))
+        break;
+
+      if (k_supplied)
+        {
+          rc = GPG_ERR_INV_VALUE;
+          break;
+        }
     }
-  while (!mpi_cmp_ui (s, 0));
 
   if (DBG_CIPHER)
     {
@@ -150,16 +179,17 @@ _gcry_ecc_ecdsa_sign (gcry_mpi_t input, ECC_secret_key *skey,
  leave:
   mpi_free (b);
   mpi_free (bi);
-  _gcry_mpi_ec_free (ctx);
   point_free (&I);
   mpi_free (x);
   mpi_free (k_1);
   mpi_free (sum);
   mpi_free (dr);
-  mpi_free (k);
+  if (!k_supplied)
+    mpi_free (k);
 
   if (hash != input)
     mpi_free (hash);
+  mpi_free (hash_computed_internally);
 
   return rc;
 }
@@ -169,24 +199,39 @@ _gcry_ecc_ecdsa_sign (gcry_mpi_t input, ECC_secret_key *skey,
  * Check if R and S verifies INPUT.
  */
 gpg_err_code_t
-_gcry_ecc_ecdsa_verify (gcry_mpi_t input, ECC_public_key *pkey,
-                        gcry_mpi_t r, gcry_mpi_t s)
+_gcry_ecc_ecdsa_verify (gcry_mpi_t input, mpi_ec_t ec,
+                        gcry_mpi_t r, gcry_mpi_t s, int flags, int hashalgo)
 {
   gpg_err_code_t err = 0;
   gcry_mpi_t hash, h, h1, h2, x;
   mpi_point_struct Q, Q1, Q2;
-  mpi_ec_t ctx;
   unsigned int nbits;
+  gcry_mpi_t hash_computed_internally = NULL;
 
-  if( !(mpi_cmp_ui (r, 0) > 0 && mpi_cmp (r, pkey->E.n) < 0) )
+  if (!_gcry_mpi_ec_curve_point (ec->Q, ec))
+    return GPG_ERR_BROKEN_PUBKEY;
+
+  if( !(mpi_cmp_ui (r, 0) > 0 && mpi_cmp (r, ec->n) < 0) )
     return GPG_ERR_BAD_SIGNATURE; /* Assertion	0 < r < n  failed.  */
-  if( !(mpi_cmp_ui (s, 0) > 0 && mpi_cmp (s, pkey->E.n) < 0) )
+  if( !(mpi_cmp_ui (s, 0) > 0 && mpi_cmp (s, ec->n) < 0) )
     return GPG_ERR_BAD_SIGNATURE; /* Assertion	0 < s < n  failed.  */
 
-  nbits = mpi_get_nbits (pkey->E.n);
+  nbits = mpi_get_nbits (ec->n);
+  if ((flags & PUBKEY_FLAG_PREHASH))
+    {
+      err = _gcry_dsa_compute_hash (&hash_computed_internally, input,
+                                    hashalgo);
+      if (err)
+        return err;
+      input = hash_computed_internally;
+    }
+
   err = _gcry_dsa_normalize_hash (input, &hash, nbits);
   if (err)
-    return err;
+    {
+      mpi_free (hash_computed_internally);
+      return err;
+    }
 
   h  = mpi_alloc (0);
   h1 = mpi_alloc (0);
@@ -196,21 +241,18 @@ _gcry_ecc_ecdsa_verify (gcry_mpi_t input, ECC_public_key *pkey,
   point_init (&Q1);
   point_init (&Q2);
 
-  ctx = _gcry_mpi_ec_p_internal_new (pkey->E.model, pkey->E.dialect, 0,
-                                     pkey->E.p, pkey->E.a, pkey->E.b);
-
   /* h  = s^(-1) (mod n) */
-  mpi_invm (h, s, pkey->E.n);
+  mpi_invm (h, s, ec->n);
   /* h1 = hash * s^(-1) (mod n) */
-  mpi_mulm (h1, hash, h, pkey->E.n);
+  mpi_mulm (h1, hash, h, ec->n);
   /* Q1 = [ hash * s^(-1) ]G  */
-  _gcry_mpi_ec_mul_point (&Q1, h1, &pkey->E.G, ctx);
+  _gcry_mpi_ec_mul_point (&Q1, h1, ec->G, ec);
   /* h2 = r * s^(-1) (mod n) */
-  mpi_mulm (h2, r, h, pkey->E.n);
+  mpi_mulm (h2, r, h, ec->n);
   /* Q2 = [ r * s^(-1) ]Q */
-  _gcry_mpi_ec_mul_point (&Q2, h2, &pkey->Q, ctx);
+  _gcry_mpi_ec_mul_point (&Q2, h2, ec->Q, ec);
   /* Q  = ([hash * s^(-1)]G) + ([r * s^(-1)]Q) */
-  _gcry_mpi_ec_add_points (&Q, &Q1, &Q2, ctx);
+  _gcry_mpi_ec_add_points (&Q, &Q1, &Q2, ec);
 
   if (!mpi_cmp_ui (Q.z, 0))
     {
@@ -219,14 +261,14 @@ _gcry_ecc_ecdsa_verify (gcry_mpi_t input, ECC_public_key *pkey,
       err = GPG_ERR_BAD_SIGNATURE;
       goto leave;
     }
-  if (_gcry_mpi_ec_get_affine (x, NULL, &Q, ctx))
+  if (_gcry_mpi_ec_get_affine (x, NULL, &Q, ec))
     {
       if (DBG_CIPHER)
         log_debug ("ecc verify: Failed to get affine coordinates\n");
       err = GPG_ERR_BAD_SIGNATURE;
       goto leave;
     }
-  mpi_mod (x, x, pkey->E.n); /* x = x mod E_n */
+  mpi_mod (x, x, ec->n); /* x = x mod E_n */
   if (mpi_cmp (x, r))   /* x != r */
     {
       if (DBG_CIPHER)
@@ -240,7 +282,6 @@ _gcry_ecc_ecdsa_verify (gcry_mpi_t input, ECC_public_key *pkey,
     }
 
  leave:
-  _gcry_mpi_ec_free (ctx);
   point_free (&Q2);
   point_free (&Q1);
   point_free (&Q);
@@ -250,6 +291,7 @@ _gcry_ecc_ecdsa_verify (gcry_mpi_t input, ECC_public_key *pkey,
   mpi_free (h);
   if (hash != input)
     mpi_free (hash);
+  mpi_free (hash_computed_internally);
 
   return err;
 }

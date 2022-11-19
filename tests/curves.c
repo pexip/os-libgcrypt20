@@ -32,8 +32,8 @@
 #define PGM "curves"
 #include "t-common.h"
 
-/* Number of curves defined in ../cipger/ecc.c */
-#define N_CURVES 22
+/* Number of curves defined in ../cipher/ecc-curves.c */
+#define N_CURVES 27
 
 /* A real world sample public key.  */
 static char const sample_key_1[] =
@@ -69,6 +69,7 @@ static char const sample_key_2[] =
 static char const sample_key_2_curve[] = "brainpoolP160r1";
 static unsigned int sample_key_2_nbits = 160;
 
+static int in_fips_mode;
 
 static void
 list_curves (void)
@@ -112,26 +113,159 @@ check_matching (void)
 
   gcry_sexp_release (key);
 
-  err = gcry_sexp_new (&key, sample_key_2, 0, 1);
-  if (err)
-    die ("parsing s-expression string failed: %s\n", gpg_strerror (err));
-  name = gcry_pk_get_curve (key, 0, &nbits);
-  if (!name)
-    fail ("curve name not found for sample_key_2\n");
-  else if (strcmp (name, sample_key_2_curve))
-    fail ("expected curve name %s but got %s for sample_key_2\n",
-          sample_key_2_curve, name);
-  else if (nbits != sample_key_2_nbits)
-    fail ("expected curve size %u but got %u for sample_key_2\n",
-          sample_key_2_nbits, nbits);
+  if (!in_fips_mode)
+    {
+      err = gcry_sexp_new (&key, sample_key_2, 0, 1);
+      if (err)
+        die ("parsing s-expression string failed: %s\n", gpg_strerror (err));
+      name = gcry_pk_get_curve (key, 0, &nbits);
+      if (!name)
+        fail ("curve name not found for sample_key_2\n");
+      else if (strcmp (name, sample_key_2_curve))
+        fail ("expected curve name %s but got %s for sample_key_2\n",
+              sample_key_2_curve, name);
+      else if (nbits != sample_key_2_nbits)
+        fail ("expected curve size %u but got %u for sample_key_2\n",
+              sample_key_2_nbits, nbits);
 
-  gcry_sexp_release (key);
+      gcry_sexp_release (key);
+    }
 }
 
+#define TEST_ERROR_EXPECTED (1 << 0)
+#define TEST_NOFIPS         (1 << 1)
 
 static void
 check_get_params (void)
 {
+  static struct {
+    int algo;
+    const char *name;
+    int flags;
+  } tv[] =
+      {
+       { GCRY_PK_ECC, "Ed25519", TEST_NOFIPS },
+       { GCRY_PK_ECC, "1.3.6.1.4.1.11591.15.1", TEST_NOFIPS },
+       { GCRY_PK_ECC, "1.3.101.112", TEST_NOFIPS },
+
+       { GCRY_PK_ECC, "Curve25519", TEST_NOFIPS },
+       { GCRY_PK_ECC, "1.3.6.1.4.1.3029.1.5.1", TEST_NOFIPS },
+       { GCRY_PK_ECC, "1.3.101.110", TEST_NOFIPS },
+       { GCRY_PK_ECC, "X25519", TEST_NOFIPS },
+
+       { GCRY_PK_ECC, "Ed448", TEST_NOFIPS },
+       { GCRY_PK_ECC, "X448", TEST_NOFIPS  },
+       { GCRY_PK_ECC, "1.3.101.113", TEST_NOFIPS },
+       { GCRY_PK_ECC, "1.3.101.111", TEST_NOFIPS },
+
+       { GCRY_PK_ECC, "NIST P-192", TEST_NOFIPS },
+       { GCRY_PK_ECC, "1.2.840.10045.3.1.1", TEST_NOFIPS },
+       { GCRY_PK_ECC, "prime192v1", TEST_NOFIPS },
+       { GCRY_PK_ECC, "secp192r1", TEST_NOFIPS },
+       { GCRY_PK_ECC, "nistp192", TEST_NOFIPS },
+
+       { GCRY_PK_ECC, "NIST P-224" },
+       { GCRY_PK_ECC, "secp224r1"  },
+       { GCRY_PK_ECC, "1.3.132.0.33" },
+       { GCRY_PK_ECC, "nistp224"   },
+
+       { GCRY_PK_ECC, "NIST P-256" },
+       { GCRY_PK_ECC, "1.2.840.10045.3.1.7" },
+       { GCRY_PK_ECC, "prime256v1" },
+       { GCRY_PK_ECC, "secp256r1" },
+       { GCRY_PK_ECC, "nistp256"  },
+
+       { GCRY_PK_ECC, "NIST P-384" },
+       { GCRY_PK_ECC, "secp384r1" },
+       { GCRY_PK_ECC, "1.3.132.0.34" },
+       { GCRY_PK_ECC, "nistp384"   },
+
+       { GCRY_PK_ECC, "NIST P-521" },
+       { GCRY_PK_ECC, "secp521r1" },
+       { GCRY_PK_ECC, "1.3.132.0.35" },
+       { GCRY_PK_ECC, "nistp521"   },
+
+       { GCRY_PK_ECC, "brainpoolP160r1",       TEST_NOFIPS },
+       { GCRY_PK_ECC, "1.3.36.3.3.2.8.1.1.1",  TEST_NOFIPS },
+       { GCRY_PK_ECC, "brainpoolP192r1",       TEST_NOFIPS },
+       { GCRY_PK_ECC, "1.3.36.3.3.2.8.1.1.3",  TEST_NOFIPS },
+       { GCRY_PK_ECC, "brainpoolP224r1",       TEST_NOFIPS },
+       { GCRY_PK_ECC, "1.3.36.3.3.2.8.1.1.5",  TEST_NOFIPS },
+       { GCRY_PK_ECC, "brainpoolP256r1",       TEST_NOFIPS },
+       { GCRY_PK_ECC, "1.3.36.3.3.2.8.1.1.7",  TEST_NOFIPS },
+       { GCRY_PK_ECC, "brainpoolP320r1",       TEST_NOFIPS },
+       { GCRY_PK_ECC, "1.3.36.3.3.2.8.1.1.9",  TEST_NOFIPS },
+       { GCRY_PK_ECC, "brainpoolP384r1",       TEST_NOFIPS },
+       { GCRY_PK_ECC, "1.3.36.3.3.2.8.1.1.11", TEST_NOFIPS },
+       { GCRY_PK_ECC, "brainpoolP512r1",       TEST_NOFIPS },
+       { GCRY_PK_ECC, "1.3.36.3.3.2.8.1.1.13", TEST_NOFIPS },
+
+       { GCRY_PK_ECC, "GOST2001-test", TEST_NOFIPS },
+       { GCRY_PK_ECC, "1.2.643.2.2.35.0", TEST_NOFIPS },
+       { GCRY_PK_ECC, "GOST2001-CryptoPro-A", TEST_NOFIPS },
+       { GCRY_PK_ECC, "1.2.643.2.2.35.1", TEST_NOFIPS },
+       { GCRY_PK_ECC, "GOST2001-CryptoPro-B", TEST_NOFIPS },
+       { GCRY_PK_ECC, "1.2.643.2.2.35.2", TEST_NOFIPS },
+       { GCRY_PK_ECC, "GOST2001-CryptoPro-C", TEST_NOFIPS },
+       { GCRY_PK_ECC, "1.2.643.2.2.35.3", TEST_NOFIPS },
+       { GCRY_PK_ECC, "GOST2001-CryptoPro-A", TEST_NOFIPS },
+       { GCRY_PK_ECC, "GOST2001-CryptoPro-XchA", TEST_NOFIPS },
+       { GCRY_PK_ECC, "GOST2001-CryptoPro-C", TEST_NOFIPS },
+       { GCRY_PK_ECC, "GOST2001-CryptoPro-XchB", TEST_NOFIPS },
+       { GCRY_PK_ECC, "GOST2001-CryptoPro-A", TEST_NOFIPS },
+       { GCRY_PK_ECC, "1.2.643.2.2.36.0", TEST_NOFIPS },
+       { GCRY_PK_ECC, "GOST2001-CryptoPro-C", TEST_NOFIPS },
+       { GCRY_PK_ECC, "1.2.643.2.2.36.1", TEST_NOFIPS },
+
+       /* Noet that GOST2012-256-tc26-A" is only in the curve alias
+        * list but has no parameter entry.  */
+       { GCRY_PK_ECC, "GOST2001-CryptoPro-A", TEST_NOFIPS },
+       { GCRY_PK_ECC, "1.2.643.7.1.2.1.1.2", TEST_NOFIPS },
+       { GCRY_PK_ECC, "GOST2001-CryptoPro-A", TEST_NOFIPS },
+       { GCRY_PK_ECC, "GOST2012-256-tc26-B", TEST_NOFIPS },
+       { GCRY_PK_ECC, "GOST2001-CryptoPro-B", TEST_NOFIPS },
+       { GCRY_PK_ECC, "1.2.643.7.1.2.1.1.3", TEST_NOFIPS },
+       { GCRY_PK_ECC, "GOST2001-CryptoPro-B", TEST_NOFIPS },
+       { GCRY_PK_ECC, "GOST2012-256-tc26-C", TEST_NOFIPS },
+       { GCRY_PK_ECC, "GOST2001-CryptoPro-C", TEST_NOFIPS },
+       { GCRY_PK_ECC, "1.2.643.7.1.2.1.1.4", TEST_NOFIPS },
+       { GCRY_PK_ECC, "GOST2001-CryptoPro-C", TEST_NOFIPS },
+       { GCRY_PK_ECC, "GOST2012-256-tc26-D", TEST_NOFIPS },
+
+       { GCRY_PK_ECC, "GOST2012-512-test", TEST_NOFIPS },
+       { GCRY_PK_ECC, "GOST2012-test", TEST_NOFIPS },
+       { GCRY_PK_ECC, "GOST2012-512-test", TEST_NOFIPS },
+       { GCRY_PK_ECC, "1.2.643.7.1.2.1.2.0", TEST_NOFIPS },
+       { GCRY_PK_ECC, "GOST2012-512-tc26-A", TEST_NOFIPS },
+       { GCRY_PK_ECC, "GOST2012-tc26-A", TEST_NOFIPS },
+       { GCRY_PK_ECC, "GOST2012-512-tc26-B", TEST_NOFIPS },
+       { GCRY_PK_ECC, "GOST2012-tc26-B", TEST_NOFIPS },
+       { GCRY_PK_ECC, "GOST2012-512-tc26-A", TEST_NOFIPS },
+       { GCRY_PK_ECC, "1.2.643.7.1.2.1.2.1", TEST_NOFIPS },
+       { GCRY_PK_ECC, "GOST2012-512-tc26-B", TEST_NOFIPS },
+       { GCRY_PK_ECC, "1.2.643.7.1.2.1.2.2", TEST_NOFIPS },
+       { GCRY_PK_ECC, "GOST2012-512-tc26-C", TEST_NOFIPS },
+       { GCRY_PK_ECC, "1.2.643.7.1.2.1.2.3", TEST_NOFIPS },
+
+       { GCRY_PK_ECC, "secp256k1", TEST_NOFIPS },
+       { GCRY_PK_ECC, "1.3.132.0.10", TEST_NOFIPS },
+
+       { GCRY_PK_ECC, "sm2p256v1", TEST_NOFIPS },
+       { GCRY_PK_ECC, "1.2.156.10197.1.301", TEST_NOFIPS },
+
+       /* Check also the ECC algo mapping.  */
+       { GCRY_PK_ECDSA, "Ed25519", TEST_NOFIPS },
+       { GCRY_PK_EDDSA, "Ed25519", TEST_NOFIPS },
+       { GCRY_PK_ECDH,  "Ed25519", TEST_NOFIPS },
+       { GCRY_PK_ECDSA, "Curve25519", TEST_NOFIPS },
+       { GCRY_PK_EDDSA, "Curve25519", TEST_NOFIPS },
+       { GCRY_PK_ECDH,  "Curve25519", TEST_NOFIPS },
+       { GCRY_PK_ECC,   "NoSuchCurve", TEST_ERROR_EXPECTED },
+       { GCRY_PK_RSA,   "rsa", TEST_ERROR_EXPECTED },
+       { GCRY_PK_ELG,   "elg", TEST_ERROR_EXPECTED },
+       { GCRY_PK_DSA,   "dsa", TEST_ERROR_EXPECTED }
+      };
+  int idx;
   gcry_sexp_t param;
   const char *name;
 
@@ -148,22 +282,47 @@ check_get_params (void)
 
   gcry_sexp_release (param);
 
-  /* Brainpool curves are not supported in fips mode */
-  if (gcry_fips_mode_active())
-    return;
+  if (!in_fips_mode)
+    {
+      param = gcry_pk_get_param (GCRY_PK_ECDSA, sample_key_2_curve);
+      if (!param)
+        fail ("error gerring parameters for `%s'\n", sample_key_2_curve);
 
-  param = gcry_pk_get_param (GCRY_PK_ECDSA, sample_key_2_curve);
-  if (!param)
-    fail ("error gerring parameters for `%s'\n", sample_key_2_curve);
+      name = gcry_pk_get_curve (param, 0, NULL);
+      if (!name)
+        fail ("get_param: curve name not found for sample_key_2\n");
+      else if (strcmp (name, sample_key_2_curve))
+        fail ("get_param: expected curve name %s but got %s for sample_key_2\n",
+              sample_key_2_curve, name);
 
-  name = gcry_pk_get_curve (param, 0, NULL);
-  if (!name)
-    fail ("get_param: curve name not found for sample_key_2\n");
-  else if (strcmp (name, sample_key_2_curve))
-    fail ("get_param: expected curve name %s but got %s for sample_key_2\n",
-          sample_key_2_curve, name);
+      gcry_sexp_release (param);
+    }
 
-  gcry_sexp_release (param);
+  /* Some simple tests */
+  for (idx=0; idx < DIM (tv); idx++)
+    {
+      param = gcry_pk_get_param (tv[idx].algo, tv[idx].name);
+      if (in_fips_mode && tv[idx].flags & TEST_NOFIPS)
+        {
+          if (param)
+            fail ("get_param: test %d (%s) should have failed in fips mode\n",
+                  idx, tv[idx].name);
+        }
+      else {
+        if (!param)
+          {
+            if (!(tv[idx].flags & TEST_ERROR_EXPECTED))
+              fail ("get_param: test %d (%s) failed\n", idx, tv[idx].name);
+          }
+        else
+          {
+            if (tv[idx].flags & TEST_ERROR_EXPECTED)
+              fail ("get_param: test %d (%s) failed (error expected)\n",
+                    idx, tv[idx].name);
+          }
+        }
+      gcry_sexp_release (param);
+    }
 }
 
 
@@ -178,10 +337,14 @@ main (int argc, char **argv)
   if (!gcry_check_version (GCRYPT_VERSION))
     die ("version mismatch\n");
 
-  xgcry_control (GCRYCTL_DISABLE_SECMEM, 0);
-  xgcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
+  xgcry_control ((GCRYCTL_DISABLE_SECMEM, 0));
+  xgcry_control ((GCRYCTL_INITIALIZATION_FINISHED, 0));
   if (debug)
-    xgcry_control (GCRYCTL_SET_DEBUG_FLAGS, 1u, 0);
+    xgcry_control ((GCRYCTL_SET_DEBUG_FLAGS, 1u, 0));
+
+  if (gcry_fips_mode_active ())
+    in_fips_mode = 1;
+
   list_curves ();
   check_matching ();
   check_get_params ();

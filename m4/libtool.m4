@@ -34,7 +34,7 @@ m4_define([_LT_COPYING], [dnl
 #
 # You should have received a copy of the GNU General Public License
 # along with GNU Libtool; see the file COPYING.  If not, a copy
-# can be downloaded from http://www.gnu.org/licenses/gpl.html, or
+# can be downloaded from https://www.gnu.org/licenses/gpl.html, or
 # obtained by writing to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 ])
@@ -1045,16 +1045,11 @@ _LT_EOF
       _lt_dar_allow_undefined='${wl}-undefined ${wl}suppress' ;;
     darwin1.*)
       _lt_dar_allow_undefined='${wl}-flat_namespace ${wl}-undefined ${wl}suppress' ;;
-    darwin*) # darwin 5.x on
-      # if running on 10.5 or later, the deployment target defaults
-      # to the OS version, if on x86, and 10.4, the deployment
-      # target defaults to 10.4. Don't you love it?
-      case ${MACOSX_DEPLOYMENT_TARGET-10.0},$host in
-	10.0,*86*-darwin8*|10.0,*-darwin[[91]]*)
-	  _lt_dar_allow_undefined='${wl}-undefined ${wl}dynamic_lookup' ;;
-	10.[[012]]*)
+    darwin*)
+      case ${MACOSX_DEPLOYMENT_TARGET},$host in
+	10.[[012]]*,*|,*powerpc*)
 	  _lt_dar_allow_undefined='${wl}-flat_namespace ${wl}-undefined ${wl}suppress' ;;
-	10.*)
+	*)
 	  _lt_dar_allow_undefined='${wl}-undefined ${wl}dynamic_lookup' ;;
       esac
     ;;
@@ -7474,7 +7469,7 @@ AC_LANG_POP
 # to write the compiler configuration to `libtool'.
 m4_defun([_LT_LANG_GCJ_CONFIG],
 [AC_REQUIRE([LT_PROG_GCJ])dnl
-AC_LANG_SAVE
+AC_LANG_PUSH([Java])
 
 # Source file extension for Java test sources.
 ac_ext=java
@@ -7530,7 +7525,7 @@ if test -n "$compiler"; then
   _LT_CONFIG($1)
 fi
 
-AC_LANG_RESTORE
+AC_LANG_POP
 
 GCC=$lt_save_GCC
 CC=$lt_save_CC
@@ -7545,7 +7540,7 @@ CFLAGS=$lt_save_CFLAGS
 # to write the compiler configuration to `libtool'.
 m4_defun([_LT_LANG_GO_CONFIG],
 [AC_REQUIRE([LT_PROG_GO])dnl
-AC_LANG_SAVE
+AC_LANG_PUSH([Go])
 
 # Source file extension for Go test sources.
 ac_ext=go
@@ -7601,7 +7596,7 @@ if test -n "$compiler"; then
   _LT_CONFIG($1)
 fi
 
-AC_LANG_RESTORE
+AC_LANG_POP
 
 GCC=$lt_save_GCC
 CC=$lt_save_CC
@@ -7616,7 +7611,9 @@ CFLAGS=$lt_save_CFLAGS
 # to write the compiler configuration to `libtool'.
 m4_defun([_LT_LANG_RC_CONFIG],
 [AC_REQUIRE([LT_PROG_RC])dnl
-AC_LANG_SAVE
+
+dnl Here, something like AC_LANG_PUSH([RC]) is expected.
+dnl But Resource Compiler is not supported as a language by autoconf
 
 # Source file extension for RC test sources.
 ac_ext=rc
@@ -7655,8 +7652,10 @@ if test -n "$compiler"; then
   _LT_CONFIG($1)
 fi
 
+dnl Here, AC_LANG_POP is expected.
 GCC=$lt_save_GCC
-AC_LANG_RESTORE
+dnl Back to C
+AC_LANG([C])
 CC=$lt_save_CC
 CFLAGS=$lt_save_CFLAGS
 ])# _LT_LANG_RC_CONFIG

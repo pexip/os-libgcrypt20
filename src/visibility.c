@@ -26,6 +26,7 @@
 #include "cipher-proto.h"
 #include "context.h"
 #include "mpi.h"
+#include "ec-context.h"
 
 const char *
 gcry_strerror (gcry_error_t err)
@@ -308,7 +309,7 @@ gcry_mpi_set_ui (gcry_mpi_t w, unsigned long u)
 }
 
 gcry_error_t
-gcry_mpi_get_ui (gcry_mpi_t w, unsigned long *u)
+gcry_mpi_get_ui (unsigned int *w, gcry_mpi_t u)
 {
   return gpg_error (_gcry_mpi_get_ui (w, u));
 }
@@ -570,23 +571,47 @@ gcry_mpi_ec_get_affine (gcry_mpi_t x, gcry_mpi_t y, gcry_mpi_point_t point,
 void
 gcry_mpi_ec_dup (gcry_mpi_point_t w, gcry_mpi_point_t u, gcry_ctx_t ctx)
 {
-  _gcry_mpi_ec_dup_point (w, u, _gcry_ctx_get_pointer (ctx, CONTEXT_TYPE_EC));
+  mpi_ec_t ec = _gcry_ctx_get_pointer (ctx, CONTEXT_TYPE_EC);
+
+  if (ec->model == MPI_EC_EDWARDS || ec->model == MPI_EC_MONTGOMERY)
+    {
+      mpi_point_resize (w, ec);
+      mpi_point_resize (u, ec);
+    }
+
+  _gcry_mpi_ec_dup_point (w, u, ec);
 }
 
 void
 gcry_mpi_ec_add (gcry_mpi_point_t w,
                  gcry_mpi_point_t u, gcry_mpi_point_t v, gcry_ctx_t ctx)
 {
-  _gcry_mpi_ec_add_points (w, u, v,
-                           _gcry_ctx_get_pointer (ctx, CONTEXT_TYPE_EC));
+  mpi_ec_t ec = _gcry_ctx_get_pointer (ctx, CONTEXT_TYPE_EC);
+
+  if (ec->model == MPI_EC_EDWARDS || ec->model == MPI_EC_MONTGOMERY)
+    {
+      mpi_point_resize (w, ec);
+      mpi_point_resize (u, ec);
+      mpi_point_resize (v, ec);
+    }
+
+  _gcry_mpi_ec_add_points (w, u, v, ec);
 }
 
 void
 gcry_mpi_ec_sub (gcry_mpi_point_t w,
                  gcry_mpi_point_t u, gcry_mpi_point_t v, gcry_ctx_t ctx)
 {
-  _gcry_mpi_ec_sub_points (w, u, v,
-                           _gcry_ctx_get_pointer (ctx, CONTEXT_TYPE_EC));
+  mpi_ec_t ec = _gcry_ctx_get_pointer (ctx, CONTEXT_TYPE_EC);
+
+  if (ec->model == MPI_EC_EDWARDS || ec->model == MPI_EC_MONTGOMERY)
+    {
+      mpi_point_resize (w, ec);
+      mpi_point_resize (u, ec);
+      mpi_point_resize (v, ec);
+    }
+
+  _gcry_mpi_ec_sub_points (w, u, v, ec);
 }
 
 void
@@ -898,7 +923,7 @@ gcry_mac_get_algo_keylen (int algo)
 
 gcry_error_t
 gcry_mac_open (gcry_mac_hd_t *handle, int algo, unsigned int flags,
-	       gcry_ctx_t ctx)
+               gcry_ctx_t ctx)
 {
   if (!fips_is_operational ())
     {
@@ -1003,11 +1028,31 @@ gcry_pk_sign (gcry_sexp_t *result, gcry_sexp_t data, gcry_sexp_t skey)
 }
 
 gcry_error_t
+gcry_pk_hash_sign (gcry_sexp_t *result, const char *data_tmpl, gcry_sexp_t skey,
+                   gcry_md_hd_t hd, gcry_ctx_t ctx)
+{
+  return gpg_error (_gcry_pk_sign_md (result, data_tmpl, hd, skey, ctx));
+}
+
+gcry_error_t
 gcry_pk_verify (gcry_sexp_t sigval, gcry_sexp_t data, gcry_sexp_t pkey)
 {
   if (!fips_is_operational ())
     return gpg_error (fips_not_operational ());
   return gpg_error (_gcry_pk_verify (sigval, data, pkey));
+}
+
+gcry_error_t
+gcry_pk_hash_verify (gcry_sexp_t sigval, const char *data_tmpl, gcry_sexp_t pkey,
+                     gcry_md_hd_t hd, gcry_ctx_t ctx)
+{
+  return gpg_error (_gcry_pk_verify_md (sigval, data_tmpl, hd, pkey, ctx));
+}
+
+gcry_error_t
+gcry_pk_random_override_new (gcry_ctx_t *r_ctx, const unsigned char *p, size_t len)
+{
+  return gpg_error (_gcry_pk_random_override_new (r_ctx, p, len));
 }
 
 gcry_error_t
@@ -1110,6 +1155,19 @@ gcry_pubkey_get_sexp (gcry_sexp_t *r_sexp, int mode, gcry_ctx_t ctx)
       return gpg_error (fips_not_operational ());
     }
   return gpg_error (_gcry_pubkey_get_sexp (r_sexp, mode, ctx));
+}
+
+unsigned int
+gcry_ecc_get_algo_keylen (int curveid)
+{
+  return _gcry_ecc_get_algo_keylen (curveid);
+}
+
+gpg_error_t
+gcry_ecc_mul_point (int curveid, unsigned char *result,
+                    const unsigned char *scalar, const unsigned char *point)
+{
+  return _gcry_ecc_mul_point (curveid, result, scalar, point);
 }
 
 gcry_error_t
@@ -1294,9 +1352,48 @@ gcry_kdf_derive (const void *passphrase, size_t passphraselen,
                  unsigned long iterations,
                  size_t keysize, void *keybuffer)
 {
+  if (!fips_is_operational ())
+    return gpg_error (fips_not_operational ());
   return gpg_error (_gcry_kdf_derive (passphrase, passphraselen, algo, hashalgo,
                                       salt, saltlen, iterations,
                                       keysize, keybuffer));
+}
+
+gpg_error_t
+gcry_kdf_open (gcry_kdf_hd_t *hd, int algo, int subalgo,
+               const unsigned long *param, unsigned int paramlen,
+               const void *passphrase, size_t passphraselen,
+               const void *salt, size_t saltlen,
+               const void *key, size_t keylen,
+               const void *ad, size_t adlen)
+{
+  if (!fips_is_operational ())
+    return gpg_error (fips_not_operational ());
+  return gpg_error (_gcry_kdf_open (hd, algo, subalgo, param, paramlen,
+                                    passphrase, passphraselen, salt, saltlen,
+                                    key, keylen, ad, adlen));
+}
+
+gcry_error_t
+gcry_kdf_compute (gcry_kdf_hd_t h, const struct gcry_kdf_thread_ops *ops)
+{
+  if (!fips_is_operational ())
+    return gpg_error (fips_not_operational ());
+  return gpg_error (_gcry_kdf_compute (h, ops));
+}
+
+gcry_error_t
+gcry_kdf_final (gcry_kdf_hd_t h, size_t resultlen, void *result)
+{
+  if (!fips_is_operational ())
+    return gpg_error (fips_not_operational ());
+  return gpg_error (_gcry_kdf_final (h, resultlen, result));
+}
+
+void
+gcry_kdf_close (gcry_kdf_hd_t h)
+{
+  _gcry_kdf_close (h);
 }
 
 void
@@ -1349,6 +1446,13 @@ void
 gcry_mpi_randomize (gcry_mpi_t w,
                     unsigned int nbits, enum gcry_random_level level)
 {
+  if (!fips_is_operational ())
+    {
+      (void)fips_not_operational ();
+      fips_signal_fatal_error ("called in non-operational state");
+      fips_noreturn ();
+    }
+
   _gcry_mpi_randomize (w, nbits, level);
 }
 
@@ -1374,6 +1478,8 @@ gcry_prime_generate (gcry_mpi_t *prime,
                      gcry_random_level_t random_level,
                      unsigned int flags)
 {
+  if (!fips_is_operational ())
+    return gpg_error (fips_not_operational ());
   return gpg_error (_gcry_prime_generate (prime, prime_bits, factor_bits,
                                           factors, cb_func, cb_arg,
                                           random_level, flags));
@@ -1384,6 +1490,8 @@ gcry_prime_group_generator (gcry_mpi_t *r_g,
                             gcry_mpi_t prime, gcry_mpi_t *factors,
                             gcry_mpi_t start_g)
 {
+  if (!fips_is_operational ())
+    return gpg_error (fips_not_operational ());
   return gpg_error (_gcry_prime_group_generator (r_g, prime, factors, start_g));
 }
 

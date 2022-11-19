@@ -35,7 +35,7 @@
      WORDS_BIGENDIAN       Defined to 1 on big endian systems.
      inline                If defined, it should yield the keyword used
                            to inline a function.
-     HAVE_U32_TYPEDEF      Defined if the u32 type is available.
+     HAVE_TYPE_U32         Defined if the u32 type is available.
      SIZEOF_UNSIGNED_INT   Defined to the size in bytes of an unsigned int.
      SIZEOF_UNSIGNED_LONG  Defined to the size in bytes of an unsigned long.
 
@@ -46,8 +46,11 @@
  */
 
 #ifdef STANDALONE
+# ifndef KEY_FOR_BINARY_CHECK
+# define KEY_FOR_BINARY_CHECK "What am I, a doctor or a moonshuttle conductor?"
+# endif
 #include <stdint.h>
-#define HAVE_U32_TYPEDEF 1
+#define HAVE_TYPE_U32 1
 typedef uint32_t u32;
 #define VERSION "standalone"
 /* For GCC, we can detect endianness.  If not GCC, please define manually.  */
@@ -70,6 +73,7 @@ typedef uint32_t u32;
 #ifdef STANDALONE
 #define xtrymalloc(a) malloc((a))
 #define gpg_err_set_errno(a) (errno = (a))
+#define xfree(a) free((a))
 #else
 #include "g10lib.h"
 #endif
@@ -78,7 +82,7 @@ typedef uint32_t u32;
 
 
 
-#ifndef HAVE_U32_TYPEDEF
+#ifndef HAVE_TYPE_U32
 # undef u32 /* Undef a possible macro with that name.  */
 # if SIZEOF_UNSIGNED_INT == 4
    typedef unsigned int u32;
@@ -87,7 +91,7 @@ typedef uint32_t u32;
 # else
 #  error no typedef for u32
 # endif
-# define HAVE_U32_TYPEDEF
+# define HAVE_TYPE_U32
 #endif
 
 
@@ -341,7 +345,7 @@ _gcry_hmac256_new (const void *key, size_t keylen)
           tmphd = _gcry_hmac256_new (NULL, 0);
           if (!tmphd)
             {
-              free (hd);
+              xfree (hd);
               return NULL;
             }
           _gcry_hmac256_update (tmphd, key, keylen);
@@ -373,7 +377,7 @@ _gcry_hmac256_release (hmac256_context_t ctx)
       /* Note: We need to take care not to modify errno.  */
       if (ctx->use_hmac)
         my_wipememory (ctx->opad, 64);
-      free (ctx);
+      xfree (ctx);
     }
 }
 
@@ -489,7 +493,7 @@ _gcry_hmac256_file (void *result, size_t resultsize, const char *filename,
   while ( (nread = fread (buffer, 1, buffer_size, fp)))
     _gcry_hmac256_update (hd, buffer, nread);
 
-  free (buffer);
+  xfree (buffer);
 
   if (ferror (fp))
     {
@@ -706,9 +710,9 @@ main (int argc, char **argv)
         }
     }
 
-  if (argc < 1)
+  if (argc < 1 && !use_stdkey)
     {
-      fprintf (stderr, "usage: %s [--binary] [--stdkey] key [filename]\n", pgm);
+      fprintf (stderr, "usage: %s [--binary] [--stdkey|key] [filename]\n", pgm);
       exit (1);
     }
 
@@ -717,8 +721,13 @@ main (int argc, char **argv)
     setmode (fileno (stdout), O_BINARY);
 #endif
 
-  key = use_stdkey? "What am I, a doctor or a moonshuttle conductor?" : *argv;
-  argc--, argv++;
+  if (use_stdkey)
+    key = KEY_FOR_BINARY_CHECK;
+  else
+    {
+      key = *argv;
+      argc--, argv++;
+    }
   keylen = strlen (key);
   use_stdin = !argc;
 
@@ -771,6 +780,7 @@ main (int argc, char **argv)
                        pgm, strerror (errno));
               exit (1);
             }
+          _gcry_hmac256_release (hd);
           if (use_stdin)
             break;
         }

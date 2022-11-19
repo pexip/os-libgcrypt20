@@ -66,7 +66,7 @@ static const char *elg_names[] =
 
 
 static int test_keys (ELG_secret_key *sk, unsigned int nbits, int nodie);
-static gcry_mpi_t gen_k (gcry_mpi_t p, int small_k);
+static gcry_mpi_t gen_k (gcry_mpi_t p);
 static gcry_err_code_t generate (ELG_secret_key *sk, unsigned nbits,
                                  gcry_mpi_t **factors);
 static int  check_secret_key (ELG_secret_key *sk);
@@ -189,11 +189,10 @@ test_keys ( ELG_secret_key *sk, unsigned int nbits, int nodie )
 
 /****************
  * Generate a random secret exponent k from prime p, so that k is
- * relatively prime to p-1.  With SMALL_K set, k will be selected for
- * better encryption performance - this must never be used signing!
+ * relatively prime to p-1.
  */
 static gcry_mpi_t
-gen_k( gcry_mpi_t p, int small_k )
+gen_k( gcry_mpi_t p )
 {
   gcry_mpi_t k = mpi_alloc_secure( 0 );
   gcry_mpi_t temp = mpi_alloc( mpi_get_nlimbs(p) );
@@ -202,18 +201,7 @@ gen_k( gcry_mpi_t p, int small_k )
   unsigned int nbits, nbytes;
   char *rndbuf = NULL;
 
-  if (small_k)
-    {
-      /* Using a k much lesser than p is sufficient for encryption and
-       * it greatly improves the encryption performance.  We use
-       * Wiener's table and add a large safety margin. */
-      nbits = wiener_map( orig_nbits ) * 3 / 2;
-      if( nbits >= orig_nbits )
-        BUG();
-    }
-  else
-    nbits = orig_nbits;
-
+  nbits = orig_nbits;
 
   nbytes = (nbits+7)/8;
   if( DBG_CIPHER )
@@ -492,7 +480,7 @@ do_encrypt(gcry_mpi_t a, gcry_mpi_t b, gcry_mpi_t input, ELG_public_key *pkey )
    * error code.
    */
 
-  k = gen_k( pkey->p, 1 );
+  k = gen_k( pkey->p );
   mpi_powm (a, pkey->g, k, pkey->p);
 
   /* b = (y^k * input) mod p
@@ -522,8 +510,9 @@ do_encrypt(gcry_mpi_t a, gcry_mpi_t b, gcry_mpi_t input, ELG_public_key *pkey )
 static void
 decrypt (gcry_mpi_t output, gcry_mpi_t a, gcry_mpi_t b, ELG_secret_key *skey )
 {
-  gcry_mpi_t t1, t2, r;
+  gcry_mpi_t t1, t2, r, r1, h;
   unsigned int nbits = mpi_get_nbits (skey->p);
+  gcry_mpi_t x_blind;
 
   mpi_normalize (a);
   mpi_normalize (b);
@@ -534,20 +523,33 @@ decrypt (gcry_mpi_t output, gcry_mpi_t a, gcry_mpi_t b, ELG_secret_key *skey )
 
   t2 = mpi_snew (nbits);
   r  = mpi_new (nbits);
+  r1 = mpi_new (nbits);
+  h  = mpi_new (nbits);
+  x_blind = mpi_snew (nbits);
 
   /* We need a random number of about the prime size.  The random
      number merely needs to be unpredictable; thus we use level 0.  */
   _gcry_mpi_randomize (r, nbits, GCRY_WEAK_RANDOM);
 
+  /* Also, exponent blinding: x_blind = x + (p-1)*r1 */
+  _gcry_mpi_randomize (r1, nbits, GCRY_WEAK_RANDOM);
+  mpi_set_highbit (r1, nbits - 1);
+  mpi_sub_ui (h, skey->p, 1);
+  mpi_mul (x_blind, h, r1);
+  mpi_add (x_blind, skey->x, x_blind);
+
   /* t1 = r^x mod p */
-  mpi_powm (t1, r, skey->x, skey->p);
+  mpi_powm (t1, r, x_blind, skey->p);
   /* t2 = (a * r)^-x mod p */
   mpi_mulm (t2, a, r, skey->p);
-  mpi_powm (t2, t2, skey->x, skey->p);
+  mpi_powm (t2, t2, x_blind, skey->p);
   mpi_invm (t2, t2, skey->p);
   /* t1 = (t1 * t2) mod p*/
   mpi_mulm (t1, t1, t2, skey->p);
 
+  mpi_free (x_blind);
+  mpi_free (h);
+  mpi_free (r1);
   mpi_free (r);
   mpi_free (t2);
 
@@ -594,7 +596,7 @@ sign(gcry_mpi_t a, gcry_mpi_t b, gcry_mpi_t input, ELG_secret_key *skey )
     *
     */
     mpi_sub_ui(p_1, p_1, 1);
-    k = gen_k( skey->p, 0 /* no small K ! */ );
+    k = gen_k( skey->p );
     mpi_powm( a, skey->g, k, skey->p );
     mpi_mul(t, skey->x, a );
     mpi_subm(t, input, t, p_1 );

@@ -1179,7 +1179,7 @@ whirlpool_init (void *ctx, unsigned int flags)
 
   memset (context, 0, sizeof (*context));
 
-  context->bctx.blocksize = BLOCK_SIZE;
+  context->bctx.blocksize_shift = _gcry_ctz(BLOCK_SIZE);
   context->bctx.bwrite = whirlpool_transform;
   if ((flags & GCRY_MD_FLAG_BUGEMU1))
     {
@@ -1494,12 +1494,16 @@ whirlpool_final (void *ctx)
   if (context->bctx.count > 32)
     {
       /* An extra block is necessary.  */
-      while (context->bctx.count < 64)
-	context->bctx.buf[context->bctx.count++] = 0;
+      if (context->bctx.count < 64)
+	memset (&context->bctx.buf[context->bctx.count], 0,
+	        64 - context->bctx.count);
+      context->bctx.count = 64;
       whirlpool_write (context, NULL, 0);
     }
-  while (context->bctx.count < 32)
-    context->bctx.buf[context->bctx.count++] = 0;
+  if (context->bctx.count < 32)
+    memset (&context->bctx.buf[context->bctx.count], 0,
+	    32 - context->bctx.count);
+  context->bctx.count = 32;
 
   /* Add length of message.  */
   length = context->bctx.buf + context->bctx.count;
@@ -1521,10 +1525,11 @@ whirlpool_read (void *ctx)
   return context->bctx.buf;
 }
 
-gcry_md_spec_t _gcry_digest_spec_whirlpool =
+const gcry_md_spec_t _gcry_digest_spec_whirlpool =
   {
     GCRY_MD_WHIRLPOOL, {0, 0},
     "WHIRLPOOL", NULL, 0, NULL, 64,
     whirlpool_init, whirlpool_write, whirlpool_final, whirlpool_read, NULL,
+    NULL,
     sizeof (whirlpool_context_t)
   };

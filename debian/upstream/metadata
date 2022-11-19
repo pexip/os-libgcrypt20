@@ -1,2 +1,4 @@
 ---
 Repository: git://git.gnupg.org/libgcrypt.git
+Bug-Database: https://dev.gnupg.org/
+Bug-Submit: https://www.gnupg.org/documentation/bts.html

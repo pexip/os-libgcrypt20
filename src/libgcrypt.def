@@ -118,7 +118,7 @@ EXPORTS
       gcry_mpi_set_flag  @88
       gcry_mpi_clear_flag  @89
       gcry_mpi_get_flag  @90
-
+      gcry_mpi_get_ui    @91
 
       gcry_cipher_open  @92
       gcry_cipher_close  @93
@@ -285,5 +285,17 @@ EXPORTS
       gcry_get_config           @247
 
       gcry_mpi_point_copy       @248
+
+      gcry_ecc_get_algo_keylen  @249
+      gcry_ecc_mul_point        @250
+
+      gcry_pk_hash_sign         @255
+      gcry_pk_hash_verify       @256
+      gcry_pk_random_override_new @257
+
+      gcry_kdf_open             @258
+      gcry_kdf_compute          @259
+      gcry_kdf_final            @260
+      gcry_kdf_close            @261
 
 ;; end of file with public symbols for Windows.

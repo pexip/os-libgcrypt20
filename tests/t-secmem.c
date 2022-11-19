@@ -37,6 +37,7 @@
 #define MINIMUM_POOL_SIZE 16384
 static size_t pool_size;
 static size_t chunk_size;
+static int in_fips_mode;
 
 static void
 test_secmem (void)
@@ -44,12 +45,16 @@ test_secmem (void)
   void *a[28];
   void *b;
   int i;
+  int i_max;
 
   memset (a, 0, sizeof a);
 
   /* Allocating 28*512=14k should work in the default 16k pool even
-   * with extra alignment requirements.  */
-  for (i=0; i < DIM(a); i++)
+   * with extra alignment requirements.
+   */
+  i_max = DIM(a);
+
+  for (i=0; i < i_max; i++)
     a[i] = gcry_xmalloc_secure (chunk_size);
 
   /* Allocating another 2k should fail for the default 16k pool.  */
@@ -76,13 +81,13 @@ test_secmem_overflow (void)
     {
       a[i] = gcry_xmalloc_secure (chunk_size);
       if (verbose && !(i %40))
-        xgcry_control (GCRYCTL_DUMP_SECMEM_STATS, 0 , 0);
+        xgcry_control ((GCRYCTL_DUMP_SECMEM_STATS, 0 , 0));
     }
 
   if (debug)
-    xgcry_control (PRIV_CTL_DUMP_SECMEM_STATS, 0 , 0);
+    xgcry_control ((PRIV_CTL_DUMP_SECMEM_STATS, 0 , 0));
   if (verbose)
-    xgcry_control (GCRYCTL_DUMP_SECMEM_STATS, 0 , 0);
+    xgcry_control ((GCRYCTL_DUMP_SECMEM_STATS, 0 , 0));
   for (i=0; i < DIM(a); i++)
     xfree (a[i]);
 }
@@ -103,7 +108,7 @@ outofcore_handler (void *opaque, size_t req_n, unsigned int flags)
   been_here = 1;
 
   info ("outofcore handler invoked");
-  xgcry_control (PRIV_CTL_DUMP_SECMEM_STATS, 0 , 0);
+  xgcry_control ((PRIV_CTL_DUMP_SECMEM_STATS, 0 , 0));
   fail ("out of core%s while allocating %lu bytes",
        (flags & 1)?" in secure memory":"", (unsigned long)req_n);
 
@@ -119,6 +124,14 @@ main (int argc, char **argv)
   int last_argc = -1;
   long int pgsize_val = -1;
   size_t pgsize;
+
+  if (getenv ("GCRYPT_IN_ASAN_TEST"))
+    {
+      /* 'mlock' is not available when build with address sanitizer,
+       * so skip test. */
+      fputs ("Note: " PGM " skipped because running with ASAN.\n", stdout);
+      return 0;
+    }
 
 #if HAVE_MMAP
 # if defined(HAVE_SYSCONF) && defined(_SC_PAGESIZE)
@@ -171,31 +184,35 @@ main (int argc, char **argv)
     die ("version mismatch; pgm=%s, library=%s\n",
          GCRYPT_VERSION, gcry_check_version (NULL));
   if (debug)
-    xgcry_control (GCRYCTL_SET_DEBUG_FLAGS, 1u , 0);
-  xgcry_control (GCRYCTL_ENABLE_QUICK_RANDOM, 0);
-  xgcry_control (GCRYCTL_INIT_SECMEM, pool_size, 0);
+    xgcry_control ((GCRYCTL_SET_DEBUG_FLAGS, 1u , 0));
+  xgcry_control ((GCRYCTL_ENABLE_QUICK_RANDOM, 0));
+  xgcry_control ((GCRYCTL_INIT_SECMEM, pool_size, 0));
+  /* This is ignored in FIPS Mode */
   gcry_set_outofcore_handler (outofcore_handler, NULL);
-  xgcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
+  xgcry_control ((GCRYCTL_INITIALIZATION_FINISHED, 0));
+  if (gcry_fips_mode_active ())
+    in_fips_mode = 1;
 
   /* Libgcrypt prints a warning when the first overflow is allocated;
    * we do not want to see that.  */
   if (!verbose)
-    xgcry_control (GCRYCTL_DISABLE_SECMEM_WARN, 0);
+    xgcry_control ((GCRYCTL_DISABLE_SECMEM_WARN, 0));
 
 
   test_secmem ();
-  test_secmem_overflow ();
+  if (!in_fips_mode)
+    test_secmem_overflow ();
   /* FIXME: We need to improve the tests, for example by registering
    * our own log handler and comparing the output of
    * PRIV_CTL_DUMP_SECMEM_STATS to expected pattern.  */
 
   if (verbose)
     {
-      xgcry_control (PRIV_CTL_DUMP_SECMEM_STATS, 0 , 0);
-      xgcry_control (GCRYCTL_DUMP_SECMEM_STATS, 0 , 0);
+      xgcry_control ((PRIV_CTL_DUMP_SECMEM_STATS, 0 , 0));
+      xgcry_control ((GCRYCTL_DUMP_SECMEM_STATS, 0 , 0));
     }
 
   info ("All tests completed.  Errors: %d\n", error_count);
-  xgcry_control (GCRYCTL_TERM_SECMEM, 0 , 0);
+  xgcry_control ((GCRYCTL_TERM_SECMEM, 0 , 0));
   return !!error_count;
 }

@@ -6,15 +6,17 @@ Uploaders:
  Andreas Metzler <ametzler@debian.org>,
  Eric Dorland <eric@debian.org>,
  James Westby <jw+debian@jameswestby.net>,
- Simon Josefsson <simon@josefsson.org>
-Build-Depends: debhelper-compat (= 13), libgpg-error-dev (>= 1.25)
+ Simon Josefsson <simon@josefsson.org>,
+Build-Depends:
+ debhelper-compat (= 13),
+ libgpg-error-dev,
 Build-Depends-Indep:
  libgpg-error-mingw-w64-dev,
  mingw-w64,
- texinfo (>= 4.6-0),
+ texinfo,
+ texlive-latex-base,
  texlive-plain-generic,
- texlive-latex-base
-Standards-Version: 4.5.0
+Standards-Version: 4.6.0
 Vcs-Git: https://salsa.debian.org/gnutls-team/libgcrypt.git -b branch1.6
 Vcs-Browser: https://salsa.debian.org/gnutls-team/libgcrypt/tree/branch1.6
 Rules-Requires-Root: no
@@ -23,10 +25,18 @@ Homepage: https://directory.fsf.org/project/libgcrypt/
 Package: libgcrypt20-doc
 Section: doc
 Architecture: all
-Suggests: libgcrypt20-dev
-Conflicts: libgcrypt-doc, libgcrypt11-doc, libgcrypt7-doc
-Replaces: libgcrypt-doc, libgcrypt11-doc, libgcrypt7-doc
-Depends: ${misc:Depends}
+Suggests:
+ libgcrypt20-dev,
+Conflicts:
+ libgcrypt-doc,
+ libgcrypt11-doc,
+ libgcrypt7-doc,
+Replaces:
+ libgcrypt-doc,
+ libgcrypt11-doc,
+ libgcrypt7-doc,
+Depends:
+ ${misc:Depends},
 Multi-Arch: foreign
 Description: LGPL Crypto library - documentation
  libgcrypt contains cryptographic functions.  Many important free
@@ -34,9 +44,9 @@ Description: LGPL Crypto library - documentation
  implemented:
  .
  Arcfour, Blowfish, CAST5, DES, AES, Twofish, Serpent, rfc2268 (rc2), SEED,
- Poly1305, Camellia, ChaCha20, IDEA, Salsa, Blake-2, CRC, MD2, MD4, MD5,
- RIPE-MD160, SHA-1, SHA-256, SHA-512, SHA3-224, SHA3-256, SHA3-384, SHA3-512,
- SHAKE128, SHAKE256, Tiger, Whirlpool, DSA, DSA2, ElGamal, RSA, ECC
+ Poly1305, Camellia, ChaCha20, IDEA, Salsa, SM4, Blake-2, CRC, MD2, MD4, MD5,
+ RIPE-MD160, SM3, SHA-1, SHA-256, SHA-512, SHA3-224, SHA3-256, SHA3-384,
+ SHA3-512, SHAKE128, SHAKE256, Tiger, Whirlpool, DSA, DSA2, ElGamal, RSA, ECC
  (Curve25519, sec256k1, GOST R 34.10-2001 and GOST R 34.10-2012, etc.)
  .
  This package contains developer documentation.
@@ -44,32 +54,39 @@ Description: LGPL Crypto library - documentation
 Package: libgcrypt20-dev
 Section: libdevel
 Architecture: any
-Conflicts: libgcrypt-dev
-Provides: libgcrypt-dev
+Conflicts:
+ libgcrypt-dev,
+Provides:
+ libgcrypt-dev,
 Depends:
  libc6-dev | libc-dev,
  libgcrypt20 (= ${binary:Version}),
  libgpg-error-dev,
- ${misc:Depends}
-Suggests: libgcrypt20-doc
+ ${misc:Depends},
+Suggests:
+ libgcrypt20-doc,
 Description: LGPL Crypto library - development files
  libgcrypt contains cryptographic functions.  Many important free
  ciphers, hash algorithms and public key signing algorithms have been
  implemented:
  .
  Arcfour, Blowfish, CAST5, DES, AES, Twofish, Serpent, rfc2268 (rc2), SEED,
- Poly1305, Camellia, ChaCha20, IDEA, Salsa, Blake-2, CRC, MD2, MD4, MD5,
- RIPE-MD160, SHA-1, SHA-256, SHA-512, SHA3-224, SHA3-256, SHA3-384, SHA3-512,
- SHAKE128, SHAKE256, Tiger, Whirlpool, DSA, DSA2, ElGamal, RSA, ECC
+ Poly1305, Camellia, ChaCha20, IDEA, Salsa, SM4, Blake-2, CRC, MD2, MD4, MD5,
+ RIPE-MD160, SM3, SHA-1, SHA-256, SHA-512, SHA3-224, SHA3-256, SHA3-384,
+ SHA3-512, SHAKE128, SHAKE256, Tiger, Whirlpool, DSA, DSA2, ElGamal, RSA, ECC
  (Curve25519, sec256k1, GOST R 34.10-2001 and GOST R 34.10-2012, etc.)
  .
  This package contains header files and libraries for static linking.
 
 Package: libgcrypt20
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}
-Suggests: rng-tools
-Pre-Depends: ${misc:Pre-Depends}
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
+Suggests:
+ rng-tools,
+Pre-Depends:
+ ${misc:Pre-Depends},
 Multi-Arch: same
 Description: LGPL Crypto library - runtime library
  libgcrypt contains cryptographic functions.  Many important free
@@ -77,32 +94,38 @@ Description: LGPL Crypto library - runtime library
  implemented:
  .
  Arcfour, Blowfish, CAST5, DES, AES, Twofish, Serpent, rfc2268 (rc2), SEED,
- Poly1305, Camellia, ChaCha20, IDEA, Salsa, Blake-2, CRC, MD2, MD4, MD5,
- RIPE-MD160, SHA-1, SHA-256, SHA-512, SHA3-224, SHA3-256, SHA3-384, SHA3-512,
- SHAKE128, SHAKE256, Tiger, Whirlpool, DSA, DSA2, ElGamal, RSA, ECC
+ Poly1305, Camellia, ChaCha20, IDEA, Salsa, SM4, Blake-2, CRC, MD2, MD4, MD5,
+ RIPE-MD160, SM3, SHA-1, SHA-256, SHA-512, SHA3-224, SHA3-256, SHA3-384,
+ SHA3-512, SHAKE128, SHAKE256, Tiger, Whirlpool, DSA, DSA2, ElGamal, RSA, ECC
  (Curve25519, sec256k1, GOST R 34.10-2001 and GOST R 34.10-2012, etc.)
 
 Package: libgcrypt20-udeb
 Section: debian-installer
 Package-Type: udeb
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
 Description: LGPL Crypto library - runtime library
  libgcrypt contains cryptographic functions.  Many important free
  ciphers, hash algorithms and public key signing algorithms have been
  implemented:
  .
  Arcfour, Blowfish, CAST5, DES, AES, Twofish, Serpent, rfc2268 (rc2), SEED,
- Poly1305, Camellia, ChaCha20, IDEA, Salsa, Blake-2, CRC, MD2, MD4, MD5,
- RIPE-MD160, SHA-1, SHA-256, SHA-512, SHA3-224, SHA3-256, SHA3-384, SHA3-512,
- SHAKE128, SHAKE256, Tiger, Whirlpool, DSA, DSA2, ElGamal, RSA, ECC
+ Poly1305, Camellia, ChaCha20, IDEA, Salsa, SM4, Blake-2, CRC, MD2, MD4, MD5,
+ RIPE-MD160, SM3, SHA-1, SHA-256, SHA-512, SHA3-224, SHA3-256, SHA3-384,
+ SHA3-512, SHAKE128, SHAKE256, Tiger, Whirlpool, DSA, DSA2, ElGamal, RSA, ECC
  (Curve25519, sec256k1, GOST R 34.10-2001 and GOST R 34.10-2012, etc.)
 
 Package: libgcrypt-mingw-w64-dev
 Section: libdevel
 Architecture: all
-Depends: libgpg-error-mingw-w64-dev, ${misc:Depends}, ${shlibs:Depends}
-Suggests: wine
+Depends:
+ libgpg-error-mingw-w64-dev,
+ ${misc:Depends},
+ ${shlibs:Depends},
+Suggests:
+ wine,
 Multi-Arch: foreign
 Description: LGPL Crypto library - Windows development
  libgcrypt contains cryptographic functions.  Many important free
@@ -110,9 +133,9 @@ Description: LGPL Crypto library - Windows development
  implemented:
  .
  Arcfour, Blowfish, CAST5, DES, AES, Twofish, Serpent, rfc2268 (rc2), SEED,
- Poly1305, Camellia, ChaCha20, IDEA, Salsa, Blake-2, CRC, MD2, MD4, MD5,
- RIPE-MD160, SHA-1, SHA-256, SHA-512, SHA3-224, SHA3-256, SHA3-384, SHA3-512,
- SHAKE128, SHAKE256, Tiger, Whirlpool, DSA, DSA2, ElGamal, RSA, ECC
+ Poly1305, Camellia, ChaCha20, IDEA, Salsa, SM4, Blake-2, CRC, MD2, MD4, MD5,
+ RIPE-MD160, SM3, SHA-1, SHA-256, SHA-512, SHA3-224, SHA3-256, SHA3-384,
+ SHA3-512, SHAKE128, SHAKE256, Tiger, Whirlpool, DSA, DSA2, ElGamal, RSA, ECC
  (Curve25519, sec256k1, GOST R 34.10-2001 and GOST R 34.10-2012, etc.)
  .
  This is a Windows version of libgcrypt.  It's meant to be used when

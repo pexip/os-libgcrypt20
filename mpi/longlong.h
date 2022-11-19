@@ -168,7 +168,7 @@ MA 02111-1307, USA. */
   do {									\
     UDItype __m0 = (m0), __m1 = (m1);					\
     __asm__ ("umulh %r1,%2,%0"                                          \
-	     : "=r" ((UDItype) ph)                                      \
+	     : "=r" ((UDItype)(ph))                                     \
 	     : "%rJ" (__m0),                                            \
 	       "rI" (__m1));                                            \
     (pl) = __m0 * __m1; 						\
@@ -305,9 +305,13 @@ extern UDItype __udiv_qrnnd ();
     (ph) = __ph; \
   } while (0)
 # define count_leading_zeros(count, x) \
-  __asm__ ("clz %0, %1\n"                                               \
-           : "=r" ((count))                                             \
-           : "r" ((UDItype)(x)))
+  do {                                                                  \
+    UDItype __co;                                                       \
+    __asm__ ("clz %0, %1\n"                                             \
+             : "=r" (__co)                                              \
+             : "r" ((UDItype)(x)));                                     \
+    (count) = __co;                                                     \
+  } while (0)
 #endif /* __aarch64__ */
 
 /***************************************
@@ -494,7 +498,7 @@ extern USItype __udiv_qrnnd ();
     union {DItype __ll; 						\
 	   struct {USItype __h, __l;} __i;				\
 	  } __xx;							\
-    __xx.__i.__h = n1; __xx.__i.__l = n0;				\
+    __xx.__i.__h = (n1); __xx.__i.__l = (n0);				\
     __asm__ ("dr %0,%2"                                                 \
 	     : "=r" (__xx.__ll)                                         \
 	     : "0" (__xx.__ll), "r" (d));                               \
@@ -860,10 +864,10 @@ extern USItype __udiv_qrnnd ();
                                                __GNUC_MINOR__ >= 4)
 #  define umul_ppmm(w1, w0, u, v) \
   do {                                                                  \
-    UDItype _r;                                                         \
-    _r = (UDItype) u * v;                                               \
-    (w1) = _r >> 32;                                                    \
-    (w0) = (USItype) _r;                                                \
+    UDItype __r;                                                        \
+    __r = (UDItype)(u) * (v);                                           \
+    (w1) = __r >> 32;                                                   \
+    (w0) = (USItype) __r;                                               \
   } while (0)
 # elif __GNUC__ > 2 || __GNUC_MINOR__ >= 7
 #  define umul_ppmm(w1, w0, u, v) \
@@ -876,7 +880,7 @@ extern USItype __udiv_qrnnd ();
 #  define umul_ppmm(w1, w0, u, v) \
   __asm__ ("multu %2,%3 \n" \
 	   "mflo %0 \n"     \
-	   "mfhi %1"                                                        \
+	   "mfhi %1"                                                    \
 	   : "=d" ((USItype)(w0)),                                      \
 	     "=d" ((USItype)(w1))                                       \
 	   : "d" ((USItype)(u)),                                        \
@@ -894,11 +898,11 @@ extern USItype __udiv_qrnnd ();
                                                __GNUC_MINOR__ >= 4)
 typedef unsigned int UTItype __attribute__ ((mode (TI)));
 #  define umul_ppmm(w1, w0, u, v) \
-  do {                                                                 \
-    UTItype _r;                                                        \
-    _r = (UTItype) u * v;                                              \
-    (w1) = _r >> 64;                                                   \
-    (w0) = (UDItype) _r;                                               \
+  do {                                                                  \
+    UTItype __r;                                                        \
+    __r = (UTItype)(u) * (v);                                           \
+    (w1) = __r >> 64;                                                   \
+    (w0) = (UDItype) __r;                                               \
   } while (0)
 # elif __GNUC__ > 2 || __GNUC_MINOR__ >= 7
 #  define umul_ppmm(w1, w0, u, v) \
@@ -911,7 +915,7 @@ typedef unsigned int UTItype __attribute__ ((mode (TI)));
 #  define umul_ppmm(w1, w0, u, v) \
   __asm__ ("dmultu %2,%3 \n"    \
 	   "mflo %0 \n"         \
-	   "mfhi %1"                                                        \
+	   "mfhi %1"                                                    \
 	   : "=d" ((UDItype)(w0)),                                      \
 	     "=d" ((UDItype)(w1))                                       \
 	   : "d" ((UDItype)(u)),                                        \
@@ -1088,7 +1092,6 @@ typedef unsigned int UTItype __attribute__ ((mode (TI)));
 /* Powerpc 64 bit support taken from gmp-4.1.2. */
 /* We should test _IBMR2 here when we add assembly support for the system
    vendor compilers.  */
-#if 0 /* Not yet enabled because we don't have hardware for a test. */
 #if (defined (_ARCH_PPC) || defined (__powerpc__)) && W_TYPE_SIZE == 64
 #define add_ssaaaa(sh, sl, ah, al, bh, bl) \
   do {									\
@@ -1141,7 +1144,6 @@ typedef unsigned int UTItype __attribute__ ((mode (TI)));
 #define SMUL_TIME 14  /* ??? */
 #define UDIV_TIME 120 /* ??? */
 #endif /* 64-bit PowerPC.  */
-#endif /* if 0 */
 
 /***************************************
  **************  PYR  ******************
@@ -1492,7 +1494,7 @@ extern USItype __udiv_qrnnd ();
     union {DItype __ll; 						\
 	   struct {SItype __l, __h;} __i;				\
 	  } __xx;							\
-    __xx.__i.__h = n1; __xx.__i.__l = n0;				\
+    __xx.__i.__h = (n1); __xx.__i.__l = (n0);				\
     __asm__ ("ediv %3,%2,%0,%1"                                         \
 	     : "=g" (q), "=g" (r)                                       \
 	     : "g" (__xx.__ll), "g" (d));                               \
@@ -1536,6 +1538,54 @@ extern USItype __udiv_qrnnd ();
 	     + (((signed int) __m1 >> 15) & __m0));			\
   } while (0)
 #endif /* __z8000__ */
+
+
+/***************************************
+ *********** s390x/zSeries  ************
+ ***************************************/
+#if defined (__s390x__) && W_TYPE_SIZE == 64 && __GNUC__ >= 4
+# define add_ssaaaa(sh, sl, ah, al, bh, bl) \
+  __asm__ ("algr %1,%5\n"                                               \
+	   "alcgr %0,%3\n"                                              \
+	   : "=r" ((sh)),                                               \
+	     "=&r" ((sl))                                               \
+	   : "0" ((UDItype)(ah)),                                       \
+	     "r"  ((UDItype)(bh)),                                      \
+	     "1" ((UDItype)(al)),                                       \
+	     "r"  ((UDItype)(bl))                                       \
+	   __CLOBBER_CC)
+# define sub_ddmmss(sh, sl, ah, al, bh, bl) \
+  __asm__ ("slgr %1,%5\n"                                               \
+	   "slbgr %0,%3\n"                                              \
+	   : "=r" ((sh)),                                               \
+	     "=&r" ((sl))                                               \
+	   : "0" ((UDItype)(ah)),                                       \
+	     "r" ((UDItype)(bh)),                                       \
+	     "1" ((UDItype)(al)),                                       \
+	     "r" ((UDItype)(bl))                                        \
+	   __CLOBBER_CC)
+typedef unsigned int UTItype __attribute__ ((mode (TI)));
+#  define umul_ppmm(w1, w0, u, v) \
+  do {                                                                  \
+    UTItype ___r;                                                       \
+    __asm__ ("mlgr %0,%2"                                               \
+	     : "=r" (___r)                                              \
+	     : "0" ((UDItype)(u)),                                      \
+	       "r" ((UDItype)(v)));                                     \
+    (w1) = ___r >> 64;                                                  \
+    (w0) = (UDItype) ___r;                                              \
+  } while (0)
+# define udiv_qrnnd(q, r, n1, n0, d) \
+  do {                                                                  \
+    UTItype ___r = ((UTItype)n1 << 64) | n0;                            \
+    __asm__ ("dlgr %0,%2"                                               \
+	     : "=r" (___r)                                              \
+	     : "0" (___r),                                              \
+	       "r" ((UDItype)(d)));                                     \
+    (r) = ___r >> 64;                                                   \
+    (q) = (UDItype) ___r;                                               \
+  } while (0)
+#endif /* __s390x__ */
 
 
 /***************************************
@@ -1677,6 +1727,26 @@ extern USItype __udiv_qrnnd ();
 #if !defined (udiv_qrnnd)
 #  define UDIV_NEEDS_NORMALIZATION 1
 #  define udiv_qrnnd __udiv_qrnnd_c
+#endif
+
+#if !defined (count_leading_zeros)
+#  if defined (HAVE_BUILTIN_CLZL) && SIZEOF_UNSIGNED_LONG * 8 == W_TYPE_SIZE
+#    define count_leading_zeros(count, x) (count = __builtin_clzl(x))
+#    undef COUNT_LEADING_ZEROS_0 /* Input X=0 is undefined for the builtin. */
+#  elif defined (HAVE_BUILTIN_CLZ) && SIZEOF_UNSIGNED_INT * 8 == W_TYPE_SIZE
+#    define count_leading_zeros(count, x) (count = __builtin_clz(x))
+#    undef COUNT_LEADING_ZEROS_0 /* Input X=0 is undefined for the builtin. */
+#  endif
+#endif
+
+#if !defined (count_trailing_zeros)
+#  if defined (HAVE_BUILTIN_CTZL) && SIZEOF_UNSIGNED_LONG * 8 == W_TYPE_SIZE
+#    define count_trailing_zeros(count, x) (count = __builtin_ctzl(x))
+#    undef COUNT_LEADING_ZEROS_0 /* Input X=0 is undefined for the builtin. */
+#  elif defined (HAVE_BUILTIN_CTZ) && SIZEOF_UNSIGNED_INT * 8 == W_TYPE_SIZE
+#    define count_trailing_zeros(count, x) (count = __builtin_ctz(x))
+#    undef COUNT_LEADING_ZEROS_0 /* Input X=0 is undefined for the builtin. */
+#  endif
 #endif
 
 #if !defined (count_leading_zeros)

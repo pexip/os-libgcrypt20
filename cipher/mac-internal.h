@@ -20,6 +20,8 @@
 #include <config.h>
 
 #include "g10lib.h"
+#include "cipher-proto.h"
+#include "gost.h"
 
 
 /* The data object used to hold a handle to an encryption object.  */
@@ -37,8 +39,8 @@ struct poly1305mac_context_s;
 
 
 /* Magic values for the context structure.  */
-#define CTX_MAGIC_NORMAL 0x59d9b8af
-#define CTX_MAGIC_SECURE 0x12c27cd0
+#define CTX_MAC_MAGIC_NORMAL 0x59d9b8af
+#define CTX_MAC_MAGIC_SECURE 0x12c27cd0
 
 
 /* MAC module functions. */
@@ -63,6 +65,9 @@ typedef gcry_err_code_t (*gcry_mac_verify_func_t)(gcry_mac_hd_t h,
 typedef unsigned int (*gcry_mac_get_maclen_func_t)(int algo);
 typedef unsigned int (*gcry_mac_get_keylen_func_t)(int algo);
 
+/* The type used to convey additional information to a MAC.  */
+typedef gpg_err_code_t (*gcry_mac_set_extra_info_t)
+     (gcry_mac_hd_t h, int what, const void *buffer, size_t buflen);
 
 typedef struct gcry_mac_spec_ops
 {
@@ -76,6 +81,8 @@ typedef struct gcry_mac_spec_ops
   gcry_mac_verify_func_t verify;
   gcry_mac_get_maclen_func_t get_maclen;
   gcry_mac_get_keylen_func_t get_keylen;
+  gcry_mac_set_extra_info_t set_extra_info;
+  selftest_func_t selftest;
 } gcry_mac_spec_ops_t;
 
 
@@ -90,7 +97,6 @@ typedef struct gcry_mac_spec
   const char *name;
   const gcry_mac_spec_ops_t *ops;
 } gcry_mac_spec_t;
-
 
 /* The handle structure.  */
 struct gcry_mac_handle
@@ -116,6 +122,13 @@ struct gcry_mac_handle
     struct {
       struct poly1305mac_context_s *ctx;
     } poly1305mac;
+    struct {
+      GOST28147_context ctx;
+      u32 n1, n2;
+      unsigned int unused;
+      unsigned int count;
+      unsigned char lastiv[8]; /* IMIT blocksize */
+    } imit;
   } u;
 };
 
@@ -124,117 +137,139 @@ struct gcry_mac_handle
  * The HMAC algorithm specifications (mac-hmac.c).
  */
 #if USE_SHA1
-extern gcry_mac_spec_t _gcry_mac_type_spec_hmac_sha1;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_hmac_sha1;
 #endif
 #if USE_SHA256
-extern gcry_mac_spec_t _gcry_mac_type_spec_hmac_sha256;
-extern gcry_mac_spec_t _gcry_mac_type_spec_hmac_sha224;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_hmac_sha256;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_hmac_sha224;
 #endif
 #if USE_SHA512
-extern gcry_mac_spec_t _gcry_mac_type_spec_hmac_sha512;
-extern gcry_mac_spec_t _gcry_mac_type_spec_hmac_sha384;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_hmac_sha512;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_hmac_sha384;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_hmac_sha512_224;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_hmac_sha512_256;
 #endif
 #if USE_SHA3
-extern gcry_mac_spec_t _gcry_mac_type_spec_hmac_sha3_224;
-extern gcry_mac_spec_t _gcry_mac_type_spec_hmac_sha3_256;
-extern gcry_mac_spec_t _gcry_mac_type_spec_hmac_sha3_384;
-extern gcry_mac_spec_t _gcry_mac_type_spec_hmac_sha3_512;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_hmac_sha3_224;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_hmac_sha3_256;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_hmac_sha3_384;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_hmac_sha3_512;
 #endif
-#ifdef USE_GOST_R_3411_94
-extern gcry_mac_spec_t _gcry_mac_type_spec_hmac_gost3411_94;
+#if USE_GOST_R_3411_94
+extern const gcry_mac_spec_t _gcry_mac_type_spec_hmac_gost3411_94;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_hmac_gost3411_cp;
 #endif
-#ifdef USE_GOST_R_3411_12
-extern gcry_mac_spec_t _gcry_mac_type_spec_hmac_stribog256;
-extern gcry_mac_spec_t _gcry_mac_type_spec_hmac_stribog512;
+#if USE_GOST_R_3411_12
+extern const gcry_mac_spec_t _gcry_mac_type_spec_hmac_stribog256;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_hmac_stribog512;
 #endif
 #if USE_WHIRLPOOL
-extern gcry_mac_spec_t _gcry_mac_type_spec_hmac_whirlpool;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_hmac_whirlpool;
 #endif
 #if USE_RMD160
-extern gcry_mac_spec_t _gcry_mac_type_spec_hmac_rmd160;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_hmac_rmd160;
 #endif
 #if USE_TIGER
-extern gcry_mac_spec_t _gcry_mac_type_spec_hmac_tiger1;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_hmac_tiger1;
 #endif
 #if USE_MD5
-extern gcry_mac_spec_t _gcry_mac_type_spec_hmac_md5;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_hmac_md5;
 #endif
 #if USE_MD4
-extern gcry_mac_spec_t _gcry_mac_type_spec_hmac_md4;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_hmac_md4;
+#endif
+#if USE_BLAKE2
+extern const gcry_mac_spec_t _gcry_mac_type_spec_hmac_blake2b_512;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_hmac_blake2b_384;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_hmac_blake2b_256;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_hmac_blake2b_160;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_hmac_blake2s_256;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_hmac_blake2s_224;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_hmac_blake2s_160;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_hmac_blake2s_128;
+#endif
+#if USE_SM3
+extern const gcry_mac_spec_t _gcry_mac_type_spec_hmac_sm3;
 #endif
 
 /*
  * The CMAC algorithm specifications (mac-cmac.c).
  */
 #if USE_BLOWFISH
-extern gcry_mac_spec_t _gcry_mac_type_spec_cmac_blowfish;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_cmac_blowfish;
 #endif
 #if USE_DES
-extern gcry_mac_spec_t _gcry_mac_type_spec_cmac_tripledes;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_cmac_tripledes;
 #endif
 #if USE_CAST5
-extern gcry_mac_spec_t _gcry_mac_type_spec_cmac_cast5;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_cmac_cast5;
 #endif
 #if USE_AES
-extern gcry_mac_spec_t _gcry_mac_type_spec_cmac_aes;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_cmac_aes;
 #endif
 #if USE_TWOFISH
-extern gcry_mac_spec_t _gcry_mac_type_spec_cmac_twofish;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_cmac_twofish;
 #endif
 #if USE_SERPENT
-extern gcry_mac_spec_t _gcry_mac_type_spec_cmac_serpent;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_cmac_serpent;
 #endif
 #if USE_RFC2268
-extern gcry_mac_spec_t _gcry_mac_type_spec_cmac_rfc2268;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_cmac_rfc2268;
 #endif
 #if USE_SEED
-extern gcry_mac_spec_t _gcry_mac_type_spec_cmac_seed;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_cmac_seed;
 #endif
 #if USE_CAMELLIA
-extern gcry_mac_spec_t _gcry_mac_type_spec_cmac_camellia;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_cmac_camellia;
 #endif
-#ifdef USE_IDEA
-extern gcry_mac_spec_t _gcry_mac_type_spec_cmac_idea;
+#if USE_IDEA
+extern const gcry_mac_spec_t _gcry_mac_type_spec_cmac_idea;
 #endif
 #if USE_GOST28147
-extern gcry_mac_spec_t _gcry_mac_type_spec_cmac_gost28147;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_cmac_gost28147;
+#endif
+#if USE_GOST28147
+extern const gcry_mac_spec_t _gcry_mac_type_spec_gost28147_imit;
+#endif
+#if USE_SM4
+extern const gcry_mac_spec_t _gcry_mac_type_spec_cmac_sm4;
 #endif
 
 /*
  * The GMAC algorithm specifications (mac-gmac.c).
  */
 #if USE_AES
-extern gcry_mac_spec_t _gcry_mac_type_spec_gmac_aes;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_gmac_aes;
 #endif
 #if USE_TWOFISH
-extern gcry_mac_spec_t _gcry_mac_type_spec_gmac_twofish;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_gmac_twofish;
 #endif
 #if USE_SERPENT
-extern gcry_mac_spec_t _gcry_mac_type_spec_gmac_serpent;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_gmac_serpent;
 #endif
 #if USE_SEED
-extern gcry_mac_spec_t _gcry_mac_type_spec_gmac_seed;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_gmac_seed;
 #endif
 #if USE_CAMELLIA
-extern gcry_mac_spec_t _gcry_mac_type_spec_gmac_camellia;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_gmac_camellia;
 #endif
 
 /*
  * The Poly1305 MAC algorithm specifications (mac-poly1305.c).
  */
-extern gcry_mac_spec_t _gcry_mac_type_spec_poly1305mac;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_poly1305mac;
 #if USE_AES
-extern gcry_mac_spec_t _gcry_mac_type_spec_poly1305mac_aes;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_poly1305mac_aes;
 #endif
 #if USE_CAMELLIA
-extern gcry_mac_spec_t _gcry_mac_type_spec_poly1305mac_camellia;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_poly1305mac_camellia;
 #endif
 #if USE_TWOFISH
-extern gcry_mac_spec_t _gcry_mac_type_spec_poly1305mac_twofish;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_poly1305mac_twofish;
 #endif
 #if USE_SERPENT
-extern gcry_mac_spec_t _gcry_mac_type_spec_poly1305mac_serpent;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_poly1305mac_serpent;
 #endif
 #if USE_SEED
-extern gcry_mac_spec_t _gcry_mac_type_spec_poly1305mac_seed;
+extern const gcry_mac_spec_t _gcry_mac_type_spec_poly1305mac_seed;
 #endif

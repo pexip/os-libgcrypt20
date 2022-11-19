@@ -39,31 +39,42 @@ random-system.c \
 rndjent.c \
 rndhw.c
 
-if USE_RANDOM_DAEMON
-librandom_la_SOURCES += random-daemon.c
-endif USE_RANDOM_DAEMON
-
-
 EXTRA_librandom_la_SOURCES = \
-rndlinux.c \
+rndgetentropy.c \
+rndoldlinux.c \
 rndegd.c \
 rndunix.c \
 rndw32.c  \
 rndw32ce.c \
+jitterentropy-gcd.c jitterentropy-gcd.h \
+jitterentropy-health.c jitterentropy-health.h \
+jitterentropy-noise.c jitterentropy-noise.h \
+jitterentropy-sha3.c jitterentropy-sha3.h \
+jitterentropy-timer.c jitterentropy-timer.h \
+jitterentropy-base.h \
 jitterentropy-base.c jitterentropy.h jitterentropy-base-user.h
-
 
 # The rndjent module needs to be compiled without optimization.  */
 if ENABLE_O_FLAG_MUNGING
-o_flag_munging = sed -e 's/-O\([1-9s][1-9s]*\)/-O0/g' -e 's/-Ofast/-O0/g'
+o_flag_munging = sed -e 's/-O\([1-9sg][1-9sg]*\)/-O0/g' -e 's/-Ofast/-O0/g'
 else
 o_flag_munging = cat
 endif
 
 rndjent.o: $(srcdir)/rndjent.c jitterentropy-base-user.h \
+           $(srcdir)/jitterentropy-gcd.c $(srcdir)/jitterentropy-gcd.h \
+           $(srcdir)/jitterentropy-health.c $(srcdir)/jitterentropy-health.h \
+           $(srcdir)/jitterentropy-noise.c $(srcdir)/jitterentropy-noise.h \
+           $(srcdir)/jitterentropy-sha3.c $(srcdir)/jitterentropy-sha3.h \
+           $(srcdir)/jitterentropy-timer.c $(srcdir)/jitterentropy-timer.h \
            $(srcdir)/jitterentropy-base.c $(srcdir)/jitterentropy.h
 	`echo $(COMPILE) -c $(srcdir)/rndjent.c | $(o_flag_munging) `
 
 rndjent.lo: $(srcdir)/rndjent.c jitterentropy-base-user.h \
+           $(srcdir)/jitterentropy-gcd.c $(srcdir)/jitterentropy-gcd.h \
+           $(srcdir)/jitterentropy-health.c $(srcdir)/jitterentropy-health.h \
+           $(srcdir)/jitterentropy-noise.c $(srcdir)/jitterentropy-noise.h \
+           $(srcdir)/jitterentropy-sha3.c $(srcdir)/jitterentropy-sha3.h \
+           $(srcdir)/jitterentropy-timer.c $(srcdir)/jitterentropy-timer.h \
             $(srcdir)/jitterentropy-base.c $(srcdir)/jitterentropy.h
 	`echo $(LTCOMPILE) -c $(srcdir)/rndjent.c | $(o_flag_munging) `

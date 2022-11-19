@@ -1,7 +1,169 @@
+libgcrypt20 (1.10.1-3) unstable; urgency=medium
+
+  * 32-build-Prefer-gpgrt-config-when-available.patch from
+    LIBGCRYPT-1.10-BRANCH updates libgcrypt.m4 to prefer gpgrt-config over
+    libgcrypt-config even when --with-libgcrypt-prefix is set.
+  + 35-keccak-Use-size_t-to-avoid-integer-overflow.patch: Fix wrong result for
+    SHA3 functions > 4GB invoked in one-shot.
+  + 37-doc-Update-document-for-pkg-config-and-libgcrypt.m4.patch: Suggest
+    pkg-config instead of libgcrypt-config.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sat, 19 Nov 2022 17:59:10 +0100
+
+libgcrypt20 (1.10.1-2) unstable; urgency=low
+
+  * Upload to unstable.
+  * Update from upstream LIBGCRYPT-1.10-BRANCH, renaming the patch in the
+    previous upload and adding another fix
+    (31_0003-hwf-ppc-fix-missing-HWF_PPC_ARCH_3_10-in-HW-feature.patch).
+
+ -- Andreas Metzler <ametzler@debian.org>  Sun, 03 Apr 2022 18:32:32 +0200
+
+libgcrypt20 (1.10.1-1) experimental; urgency=low
+
+  * New upstream version.
+    + Drop cherrypicked patches.
+    + Add post-release fix 31_0001-kdf-argon2-Fix-for-the-case-output-64.patch
+
+ -- Andreas Metzler <ametzler@debian.org>  Wed, 30 Mar 2022 18:44:02 +0200
+
+libgcrypt20 (1.10.0-2) experimental; urgency=low
+
+  [ Debian Janitor ]
+  * Remove constraints unnecessary since buster:
+    + Build-Depends: Drop versioned constraint on libgpg-error-dev.
+    + Build-Depends-Indep: Drop versioned constraint on texinfo.
+
+  [ Andreas Metzler ]
+  * Upgrade to head of LIBGCRYPT-1.10-BRANCH.
+    + 30_0001-Post-release-updates.patch
+    + 30_0002-jitterentropy-Include-fcntl.h-and-limits.h.patch
+    + 30_0003-kdf-Use-u64.patch
+    + 30_0004-Register-DCO-for-Clemens-Lang.patch
+    + 30_0005-fips-Fix-memory-leaks-in-FIPS-mode.patch
+    + 30_0006-hmac-Fix-memory-leak.patch
+    + 30_0007-build-Fix-m4-gpg-error.m4.patch
+    + 30_0008-Silence-compiler-warnings-for-possible-alignment-pro.patch
+    + 30_0009-fips-Use-ELF-header-to-find-hmac-file-offset.patch
+    + 30_0010-fips-Fix-previous-commit.patch
+    + 30_0011-fips-Integrity-check-improvement-with-only-loadable-.patch
+    + 30_0012-fips-More-portable-integrity-check.patch
+    + 30_0013-fips-Fix-gen-note-integrity.sh-script-not-to-use-cmp.patch
+    + 30_0014-fips-Clarify-what-to-be-hashed-for-the-integrity-che.patch
+  * Point vcs-* to experimental branch.
+
+  [ Johannes Schauer Marin Rodrigues ]
+  * debian/libgcrypt20.postinst: only run clean-up-unmanaged-libraries on
+    upgrades and not on new installations. Closes: #1007754
+
+ -- Andreas Metzler <ametzler@debian.org>  Sun, 20 Mar 2022 07:27:23 +0100
+
+libgcrypt20 (1.10.0-1) experimental; urgency=low
+
+  * Run wrap-and-sort -ast.
+  * New upstream version.
+    + Drop 30_01-poly1305-fix-building-with-arm-linux-gnueabihf-gcc-1.patch.
+    + Add new symbols to symbol file, bump versioned dependency info of all
+      symbols to 1.10.0. (Many enums extended, most notably gcry_ctl_cmds, i.e.
+      the arguments for gcry_control()).
+
+ -- Andreas Metzler <ametzler@debian.org>  Sun, 06 Feb 2022 15:48:15 +0100
+
+libgcrypt20 (1.9.4-5) unstable; urgency=medium
+
+  * Pull 30_01-poly1305-fix-building-with-arm-linux-gnueabihf-gcc-1.patch from
+    upstream GIT master branch, fixing FTBFS on armhf. Closes: #1001675
+
+ -- Andreas Metzler <ametzler@debian.org>  Tue, 14 Dec 2021 17:56:04 +0100
+
+libgcrypt20 (1.9.4-4) unstable; urgency=low
+
+  * Import clean-up-unmanaged-libraries from the debian glib salsa repository.
+  * Work around unreproducible (possibly fixed) dpkg bug 949395 and use
+    clean-up-unmanaged-libraries to remove leftover libgcrypt versions in
+    /lib. (Thanks, Simon McVittie!) Closes: #984884
+  * Fix references for CVE-2021-40528 and CVE-2021-33560 in previous
+    changelogs.
+  * Add lintian override for false positive
+    debian-rules-sets-dpkg-architecture-variable.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sun, 28 Nov 2021 13:33:35 +0100
+
+libgcrypt20 (1.9.4-3) unstable; urgency=medium
+
+  * Fix libgcrypt-config wrapper to use 'command -v' instead of 'which'.
+    (Thanks, Emmanuel Bouthenot)
+    Closes: #993244
+
+ -- Andreas Metzler <ametzler@debian.org>  Sat, 11 Sep 2021 13:43:26 +0200
+
+libgcrypt20 (1.9.4-2) unstable; urgency=medium
+
+  * Upload to unstable.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sat, 04 Sep 2021 07:29:03 +0200
+
+libgcrypt20 (1.9.4-1) experimental; urgency=medium
+
+  * New upstream release. (Also includes fix for Elgamal encryption for
+    other implementations. CVE-2021-40528, formerly know as CVE-2021-33560,
+    this number now points to a local side channel attack which is
+    fixed by libgcrypt 1.9.4, too.)
+
+ -- Andreas Metzler <ametzler@debian.org>  Sun, 29 Aug 2021 19:17:04 +0200
+
+libgcrypt20 (1.9.3-1) experimental; urgency=medium
+
+  * New upstream release.
+
+ -- Andreas Metzler <ametzler@debian.org>  Wed, 21 Apr 2021 18:22:56 +0200
+
+libgcrypt20 (1.9.2-1) experimental; urgency=low
+
+  * New upstream release.
+
+ -- Andreas Metzler <ametzler@debian.org>  Thu, 18 Feb 2021 18:00:38 +0100
+
+libgcrypt20 (1.9.2~beta16-1) experimental; urgency=low
+
+  * Simplify ./configure for Windows build, do not disable optimization and
+    assembly, set timestamp=$(SOURCE_DATE_EPOCH) instead of disabling the
+    timestamp.
+  * New upstream release.
+    + Drop 30_Revert-Define-HW-feature-flags-per-architecture.patch.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sat, 13 Feb 2021 08:08:19 +0100
+
+libgcrypt20 (1.9.1-1) experimental; urgency=low
+
+  * Add Bug-Database and Bug-Submit to upstream/metadata.
+  * New upstream version.
+    + Fixes heap buffer overflow introduced in 1.9.0.
+      https://dev.gnupg.org/T5275. CVE-2021-3345 Closes: #981336
+  * 30_Revert-Define-HW-feature-flags-per-architecture.patch Fix w* build
+    error.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sat, 30 Jan 2021 13:51:54 +0100
+
+libgcrypt20 (1.9.0-1) experimental; urgency=low
+
+  * New upstream version.
+   + Drop 13_lessdeps_libgcrypt-pkgconfig.diff
+   + Update 25_norevisionfromgit.diff.
+   + List new symbols, bump all version requirements in libgcrypt20.symbols.
+     (New args for gcry_control, new algorithms.)
+   + Update copyright file.
+   + Update algorithm list in package descriptions.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sun, 24 Jan 2021 08:39:32 +0100
+
 libgcrypt20 (1.8.7-6) unstable; urgency=medium
 
   * Update from LIBGCRYPT-1.8-BRANCH:
     + 30_10-cipher-Fix-ElGamal-encryption-for-other-implementati.patch
+      This is nowadays registered as CVE-2021-40528 but was at the time of
+      this upload identified as CVE-2021-33560; however
+      this number now points to a local side channel attack.
 
  -- Andreas Metzler <ametzler@debian.org>  Thu, 27 May 2021 18:07:38 +0200
 

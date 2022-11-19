@@ -35,6 +35,7 @@
 #include "g10lib.h"
 #include "types.h"
 #include "cipher.h"
+#include "cipher-internal.h"
 
 #define RFC2268_BLOCKSIZE 8
 
@@ -227,6 +228,9 @@ setkey_core (void *context, const unsigned char *key, unsigned int keylen, int w
   if (keylen < 40 / 8)	/* We want at least 40 bits. */
     return GPG_ERR_INV_KEYLEN;
 
+  if (keylen > 128)
+    return GPG_ERR_INV_KEYLEN;
+
   S = (unsigned char *) ctx->S;
 
   for (i = 0; i < keylen; i++)
@@ -262,8 +266,10 @@ setkey_core (void *context, const unsigned char *key, unsigned int keylen, int w
 }
 
 static gpg_err_code_t
-do_setkey (void *context, const unsigned char *key, unsigned int keylen)
+do_setkey (void *context, const unsigned char *key, unsigned int keylen,
+           cipher_bulk_ops_t *bulk_ops)
 {
+  (void)bulk_ops;
   return setkey_core (context, key, keylen, 1);
 }
 
@@ -343,7 +349,7 @@ selftest (void)
 
 
 
-static gcry_cipher_oid_spec_t oids_rfc2268_40[] =
+static const gcry_cipher_oid_spec_t oids_rfc2268_40[] =
   {
     /*{ "1.2.840.113549.3.2", GCRY_CIPHER_MODE_CBC },*/
     /* pbeWithSHAAnd40BitRC2_CBC */
@@ -351,7 +357,7 @@ static gcry_cipher_oid_spec_t oids_rfc2268_40[] =
     { NULL }
   };
 
-static gcry_cipher_oid_spec_t oids_rfc2268_128[] =
+static const gcry_cipher_oid_spec_t oids_rfc2268_128[] =
   {
     /* pbeWithSHAAnd128BitRC2_CBC */
     { "1.2.840.113549.1.12.1.5", GCRY_CIPHER_MODE_CBC },

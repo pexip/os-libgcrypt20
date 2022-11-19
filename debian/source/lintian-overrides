@@ -1,0 +1,2 @@
+# false positive, we do not set unconditionally
+libgcrypt20 source: debian-rules-sets-dpkg-architecture-variable DEB_HOST_MULTIARCH *

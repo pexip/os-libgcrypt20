@@ -1,0 +1,32 @@
+From e073f0ed446601bffe787912462119a98e797fa3 Mon Sep 17 00:00:00 2001
+From: Jussi Kivilinna <jussi.kivilinna@iki.fi>
+Date: Fri, 1 Apr 2022 09:49:20 +0300
+Subject: [PATCH 3/3] hwf-ppc: fix missing HWF_PPC_ARCH_3_10 in HW feature
+
+* src/hwf-ppc.c (ppc_features): Add HWF_PPC_ARCH_3_10.
+--
+
+Cherry-picked master commit of:
+  df7879a86b1de8eaf2d784687155c4274574b120
+
+GnuPG-bug-id: T5913
+Signed-off-by: Jussi Kivilinna <jussi.kivilinna@iki.fi>
+---
+ src/hwf-ppc.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/src/hwf-ppc.c b/src/hwf-ppc.c
+index 7801f8b0..11d14dc1 100644
+--- a/src/hwf-ppc.c
++++ b/src/hwf-ppc.c
+@@ -103,6 +103,7 @@ static const struct feature_map_s ppc_features[] =
+     { 0, PPC_FEATURE2_VEC_CRYPTO, HWF_PPC_VCRYPTO },
+ #endif
+     { 0, PPC_FEATURE2_ARCH_3_00, HWF_PPC_ARCH_3_00 },
++    { 0, PPC_FEATURE2_ARCH_3_10, HWF_PPC_ARCH_3_10 },
+   };
+ #endif
+ 
+-- 
+2.35.1
+
