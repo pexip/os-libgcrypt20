@@ -235,6 +235,8 @@
 #define DRBG_DEFAULT_TYPE    DRBG_NOPR_HMACSHA256
 
 
+#define DRBG_CTR_NULL_LEN 128
+
 
 /******************************************************************
  * Common data structures
@@ -313,8 +315,6 @@ struct drbg_state_s
 				 * operation -- allocated during init */
   void *priv_data;		/* Cipher handle */
   gcry_cipher_hd_t ctr_handle;	/* CTR mode cipher handle */
-#define DRBG_CTR_NULL_LEN 128
-  unsigned char *ctr_null;	/* CTR mode zero buffer */
   int seeded:1;			/* DRBG fully seeded? */
   int pr:1;			/* Prediction resistance enabled? */
   /* Taken from libgcrypt ANSI X9.31 DRNG: We need to keep track of the
@@ -618,9 +618,12 @@ drbg_get_entropy (drbg_state_t drbg, unsigned char *buffer,
   read_cb_buffer = buffer;
   read_cb_size = len;
   read_cb_len = 0;
-#if USE_RNDLINUX
-  rc = _gcry_rndlinux_gather_random (drbg_read_cb, 0, len,
-				     GCRY_VERY_STRONG_RANDOM);
+#if USE_RNDGETENTROPY
+  rc = _gcry_rndgetentropy_gather_random (drbg_read_cb, 0, len,
+                                          GCRY_VERY_STRONG_RANDOM);
+#elif USE_RNDOLDLINUX
+  rc = _gcry_rndoldlinux_gather_random (drbg_read_cb, 0, len,
+                                        GCRY_VERY_STRONG_RANDOM);
 #elif USE_RNDUNIX
   rc = _gcry_rndunix_gather_random (drbg_read_cb, 0, len,
 				    GCRY_VERY_STRONG_RANDOM);
@@ -951,6 +954,7 @@ drbg_ctr_generate (drbg_state_t drbg,
                    unsigned char *buf, unsigned int buflen,
                    drbg_string_t *addtl)
 {
+  static const unsigned char drbg_ctr_null[DRBG_CTR_NULL_LEN] = { 0, };
   gpg_err_code_t ret = 0;
 
   memset (drbg->scratchpad, 0, drbg_blocklen (drbg));
@@ -965,7 +969,7 @@ drbg_ctr_generate (drbg_state_t drbg,
     }
 
   /* 10.2.1.5.2 step 4.1 */
-  ret = drbg_sym_ctr (drbg, drbg->ctr_null, DRBG_CTR_NULL_LEN, buf, buflen);
+  ret = drbg_sym_ctr (drbg, drbg_ctr_null, sizeof(drbg_ctr_null), buf, buflen);
   if (ret)
     goto out;
 
@@ -1859,16 +1863,26 @@ _gcry_rngdrbg_reinit (const char *flagstr, gcry_buffer_t *pers, int npers)
   return ret;
 }
 
-/* Try to close the FDs of the random gather module.  This is
- * currently only implemented for rndlinux. */
+/* Release resources used by this DRBG module.  That is, close the FDs
+ * of the random gather module (if any), and release memory used.
+ */
 void
 _gcry_rngdrbg_close_fds (void)
 {
-#if USE_RNDLINUX
   drbg_lock ();
-  _gcry_rndlinux_gather_random (NULL, 0, 0, 0);
-  drbg_unlock ();
+#if USE_RNDGETENTROPY
+  _gcry_rndgetentropy_gather_random (NULL, 0, 0, 0);
 #endif
+#if USE_RNDOLDLINUX
+  _gcry_rndoldlinux_gather_random (NULL, 0, 0, 0);
+#endif
+  if (drbg_state)
+    {
+      drbg_uninstantiate (drbg_state);
+      xfree (drbg_state);
+      drbg_state = NULL;
+    }
+  drbg_unlock ();
 }
 
 /* Print some statistics about the RNG.  */
@@ -2582,8 +2596,6 @@ drbg_sym_fini (drbg_state_t drbg)
     _gcry_cipher_close (hd);
   if (drbg->ctr_handle)
     _gcry_cipher_close (drbg->ctr_handle);
-  if (drbg->ctr_null)
-    free(drbg->ctr_null);
 }
 
 static gpg_err_code_t
@@ -2591,10 +2603,6 @@ drbg_sym_init (drbg_state_t drbg)
 {
   gcry_cipher_hd_t hd;
   gpg_error_t err;
-
-  drbg->ctr_null = calloc(1, DRBG_CTR_NULL_LEN);
-  if (!drbg->ctr_null)
-    return GPG_ERR_ENOMEM;
 
   err = _gcry_cipher_open (&hd, drbg->core->backend_cipher,
 			   GCRY_CIPHER_MODE_ECB, 0);

@@ -1,7 +1,8 @@
 This is gcrypt.info, produced by makeinfo version 6.5 from gcrypt.texi.
 
-This manual is for Libgcrypt (version 1.8.7, 30 July 2020), which is
-GNU's library of cryptographic building blocks.
+This manual is for Libgcrypt version 1.10.1 and was last updated 28
+March 2022.  Libgcrypt is GNU's library of cryptographic building
+blocks.
 
 Copyright (C) 2000, 2002, 2003, 2004, 2006, 2007, 2008, 2009, 2011, 2012
 Free Software Foundation, Inc.
@@ -24,8 +25,9 @@ File: gcrypt.info,  Node: Top,  Next: Introduction,  Up: (dir)
 The Libgcrypt Library
 *********************
 
-This manual is for Libgcrypt (version 1.8.7, 30 July 2020), which is
-GNU's library of cryptographic building blocks.
+This manual is for Libgcrypt version 1.10.1 and was last updated 28
+March 2022.  Libgcrypt is GNU's library of cryptographic building
+blocks.
 
 Copyright (C) 2000, 2002, 2003, 2004, 2006, 2007, 2008, 2009, 2011, 2012
 Free Software Foundation, Inc.
@@ -123,7 +125,7 @@ It's Free Software
      GNU Lesser General Public License (*note Library Copying::).  Note,
      that some parts (which are in general not needed by applications)
      are subject to the terms of the GNU General Public License (*note
-     Copying::); please see the README file of the distribution for of
+     Copying::); please see the README file of the distribution for the
      list of these parts.
 
 It encapsulates the low level cryptography
@@ -166,6 +168,7 @@ verified.
 * Initializing the library::    How to initialize the library.
 * Multi-Threading::             How Libgcrypt can be used in a MT environment.
 * Enabling FIPS mode::          How to enable the FIPS mode.
+* Disabling FIPS mode::         How to disable the FIPS mode.
 * Hardware features::           How to disable hardware features.
 
 
@@ -219,7 +222,7 @@ how it can be used at the command line:
 
      gcc -c foo.c `libgcrypt-config --cflags`
 
-   Adding the output of 'libgcrypt-config --cflags' to the compiler’s
+   Adding the output of 'libgcrypt-config --cflags' to the compiler's
 command line will ensure that the compiler can find the Libgcrypt header
 file.
 
@@ -260,8 +263,8 @@ extension to Automake that does all the work for you.
      needed for compilation of the program to find the 'gcrypt.h' header
      file, and 'LIBGCRYPT_LIBS' to the linker flags needed to link the
      program to the Libgcrypt library.  If the used helper script does
-     not match the target type you are building for a warning is printed
-     and the string 'libgcrypt' is appended to the variable
+     not match the target type you are building for, a warning is
+     printed and the string 'libgcrypt' is appended to the variable
      'gpg_config_script_warn'.
 
      This macro searches for 'libgcrypt-config' along the PATH. If you
@@ -426,19 +429,19 @@ definition of the term "Memory Synchronization".  For other thread
 packages, more relaxed or more strict rules may apply.
 
 
-File: gcrypt.info,  Node: Enabling FIPS mode,  Next: Hardware features,  Prev: Multi-Threading,  Up: Preparation
+File: gcrypt.info,  Node: Enabling FIPS mode,  Next: Disabling FIPS mode,  Prev: Multi-Threading,  Up: Preparation
 
 2.6 How to enable the FIPS mode
 ===============================
 
-Libgcrypt may be used in a FIPS 140-2 mode.  Note, that this does not
-necessary mean that Libcgrypt is an appoved FIPS 140-2 module.  Check
+Libgcrypt may be used in a FIPS 140-3 mode.  Note, that this does not
+necessary mean that Libcgrypt is an appoved FIPS 140-3 module.  Check
 the NIST database at <http://csrc.nist.gov/groups/STM/cmvp/> to see what
 versions of Libgcrypt are approved.
 
    Because FIPS 140 has certain restrictions on the use of cryptography
 which are not always wanted, Libgcrypt needs to be put into FIPS mode
-explicitly.  Three alternative mechanisms are provided to switch
+explicitly.  Four alternative mechanisms are provided to switch
 Libgcrypt into this mode:
 
    * If the file '/proc/sys/crypto/fips_enabled' exists and contains a
@@ -450,30 +453,36 @@ Libgcrypt into this mode:
      into FIPS mode at initialization time.  Note that this filename is
      hardwired and does not depend on any configuration options.
 
+   * By setting the environment variable 'LIBGCRYPT_FORCE_FIPS_MODE',
+     Libgcrypt is put into FIPS mode at initialization time.
+
    * If the application requests FIPS mode using the control command
      'GCRYCTL_FORCE_FIPS_MODE'.  This must be done prior to any
      initialization (i.e.  before 'gcry_check_version').
 
-   In addition to the standard FIPS mode, Libgcrypt may also be put into
-an Enforced FIPS mode by writing a non-zero value into the file
-'/etc/gcrypt/fips_enabled' or by using the control command
-'GCRYCTL_SET_ENFORCED_FIPS_FLAG' before any other calls to libgcrypt.
-The Enforced FIPS mode helps to detect applications which don't fulfill
-all requirements for using Libgcrypt in FIPS mode (*note FIPS Mode::).
+
+File: gcrypt.info,  Node: Disabling FIPS mode,  Next: Hardware features,  Prev: Enabling FIPS mode,  Up: Preparation
 
-   Once Libgcrypt has been put into FIPS mode, it is not possible to
-switch back to standard mode without terminating the process first.  If
-the logging verbosity level of Libgcrypt has been set to at least 2, the
-state transitions and the self-tests are logged.
+2.7 How to disable the FIPS mode
+================================
+
+When the system is configured using libgcrypt in FIPS mode (by file or
+environement variable), but an application wants to use non-FIPS
+features, Libgcrypt needs to be gotten out of FIPS mode.  A mechanism is
+provided to switch Libgcrypt into non-FIPS mode:
+
+   * If the application requests non-FIPS mode using the control command
+     'GCRYCTL_NO_FIPS_MODE'.  This must be done prior to any
+     initialization (i.e.  before 'gcry_check_version').
 
 
-File: gcrypt.info,  Node: Hardware features,  Prev: Enabling FIPS mode,  Up: Preparation
+File: gcrypt.info,  Node: Hardware features,  Prev: Disabling FIPS mode,  Up: Preparation
 
-2.7 How to disable hardware features
+2.8 How to disable hardware features
 ====================================
 
 Libgcrypt makes use of certain hardware features.  If the use of a
-feature is not desired it may be either be disabled by a program or
+feature is not desired, it may be disabled either by a program or
 globally using a configuration file.  The currently supported features
 are
 
@@ -485,20 +494,37 @@ are
 'intel-fast-shld'
 'intel-bmi2'
 'intel-ssse3'
+'intel-sse4.1'
 'intel-pclmul'
 'intel-aesni'
 'intel-rdrand'
 'intel-avx'
 'intel-avx2'
+'intel-fast-vpgather'
 'intel-rdtsc'
+'intel-shaext'
+'intel-vaes-vpclmul'
 'arm-neon'
+'arm-aes'
+'arm-sha1'
+'arm-sha2'
+'arm-pmull'
+'ppc-vcrypto'
+'ppc-arch_3_00'
+'ppc-arch_2_07'
+'ppc-arch_3_10'
+'s390x-msa'
+'s390x-msa-4'
+'s390x-msa-8'
+'s390x-msa-9'
+'s390x-vx'
 
    To disable a feature for all processes using Libgcrypt 1.6 or newer,
 create the file '/etc/gcrypt/hwf.deny' and put each feature not to be
 used on a single line.  Empty lines, white space, and lines prefixed
 with a hash mark are ignored.  The file should be world readable.
 
-   To disable a feature specifically for a program that program must
+   To disable a feature specifically for a program, that program must
 tell it Libgcrypt before before calling 'gcry_check_version'.
 Example:(1)
 
@@ -511,8 +537,8 @@ To print the list of active features you may use this command:
    ---------- Footnotes ----------
 
    (1) NB. Libgcrypt uses the RDRAND feature only as one source of
-entropy.  A CPU with a broken RDRAND will thus not compromise of the
-random number generator
+entropy.  A CPU with a broken RDRAND will thus not compromise the random
+number generator
 
 
 File: gcrypt.info,  Node: Generalities,  Next: Handler Functions,  Prev: Preparation,  Up: Top
@@ -576,10 +602,8 @@ File: gcrypt.info,  Node: Controlling the library,  Next: Error Handling,  Up: G
           'GCRYCTL_DISABLE_SECMEM' right after initialization.
 
      'GCRYCTL_DISABLE_SECMEM; Arguments: none'
-          This command disables the use of secure memory.  If this
-          command is used in FIPS mode, FIPS mode will be disabled and
-          the function 'gcry_fips_mode_active' returns false.  However,
-          in Enforced FIPS mode this command has no effect at all.
+          This command disables the use of secure memory.  In FIPS mode
+          this command has no effect at all.
 
           Many applications do not require secure memory, so they should
           disable it right away.  This command should be executed right
@@ -590,10 +614,10 @@ File: gcrypt.info,  Node: Controlling the library,  Next: Error Handling,  Up: G
           memory.  Disabling the use of mlock may for example be done if
           an encrypted swap space is in use.  This command should be
           executed right after 'gcry_check_version'.  Note that by using
-          functions like gcry_xmalloc_secure and gcry_mpi_snew Libgcrypt
-          may expand the secure memory pool with memory which lacks the
-          property of not being swapped out to disk (but will still be
-          zeroed out on free).
+          functions like 'gcry_xmalloc_secure' and 'gcry_mpi_snew'
+          Libgcrypt may expand the secure memory pool with memory which
+          lacks the property of not being swapped out to disk (but will
+          still be zeroed out on free).
 
      'GCRYCTL_DISABLE_PRIV_DROP; Arguments: none'
           This command sets a global flag to tell the secure memory
@@ -617,10 +641,22 @@ File: gcrypt.info,  Node: Controlling the library,  Next: Error Handling,  Up: G
           currently 16384 bytes; you may thus use a value of 1 to
           request that default size.
 
+     'GCRYCTL_AUTO_EXPAND_SECMEM; Arguments: unsigned int chunksize'
+          This command enables on-the-fly expanding of the secure memory
+          area.  Note that by using functions like 'gcry_xmalloc_secure'
+          and 'gcry_mpi_snew' will do this auto expanding anyway.  The
+          argument to this option is the suggested size for new secure
+          memory areas.  A larger size improves performance of all
+          memory allocation and releasing functions.  The given
+          chunksize is rounded up to the next 32KiB. The drawback of
+          auto expanding is that memory might be swapped out to disk;
+          this can be fixed by configuring the system to use an
+          encrypted swap space.
+
      'GCRYCTL_TERM_SECMEM; Arguments: none'
           This command zeroises the secure memory and destroys the
           handler.  The secure memory pool may not be used anymore after
-          running this command.  If the secure memory pool as already
+          running this command.  If the secure memory pool has already
           been destroyed, this command has no effect.  Applications
           might want to run this command from their exit handler to make
           sure that the secure memory gets properly destroyed.  This
@@ -676,10 +712,10 @@ File: gcrypt.info,  Node: Controlling the library,  Next: Error Handling,  Up: G
           system's entropy pool to reduce the "up to 16 bytes" above to
           0.  Then the dependencies of the initial states of the pools
           are completely known.  Note that this is not an issue if
-          random of 'GCRY_VERY_STRONG_RANDOM' quality is requested as in
-          this case enough extra entropy gets mixed.  It is also not an
-          issue when using Linux (rndlinux driver), because this one
-          guarantees to read full 16 bytes from /dev/urandom and thus
+          random of 'GCRY_VERY_STRONG_RANDOM' quality is requested, as
+          in this case enough extra entropy gets mixed.  It is also not
+          an issue when using rndgetentropy or rndoldlinux module,
+          because the module guarantees to read full 16 bytes and thus
           there is no way for an attacker without kernel access to
           control these 16 bytes.
 
@@ -694,7 +730,7 @@ File: gcrypt.info,  Node: Controlling the library,  Next: Error Handling,  Up: G
 
      'GCRYCTL_SET_VERBOSITY; Arguments: int level'
           This command sets the verbosity of the logging.  A level of 0
-          disables all extra logging whereas positive numbers enable
+          disables all extra logging, whereas positive numbers enable
           more verbose logging.  The level may be changed at any time
           but be aware that no memory synchronization is done so the
           effect of this command might not immediately show up in other
@@ -703,11 +739,11 @@ File: gcrypt.info,  Node: Controlling the library,  Next: Error Handling,  Up: G
 
      'GCRYCTL_SET_DEBUG_FLAGS; Arguments: unsigned int flags'
           Set the debug flag bits as given by the argument.  Be aware
-          that that no memory synchronization is done so the effect of
-          this command might not immediately show up in other threads.
-          The debug flags are not considered part of the API and thus
-          may change without notice.  As of now bit 0 enables debugging
-          of cipher functions and bit 1 debugging of
+          that no memory synchronization is done so the effect of this
+          command might not immediately show up in other threads.  The
+          debug flags are not considered part of the API and thus may
+          change without notice.  As of now bit 0 enables debugging of
+          cipher functions and bit 1 debugging of
           multi-precision-integers.  This command may even be used prior
           to 'gcry_check_version'.
 
@@ -726,7 +762,7 @@ File: gcrypt.info,  Node: Controlling the library,  Next: Error Handling,  Up: G
           initialized.  Such a basic initialization happens implicitly
           with many commands to get certain internal subsystems running.
           The common and suggested way to do this basic initialization
-          is by calling gcry_check_version.
+          is by calling 'gcry_check_version'.
 
      'GCRYCTL_INITIALIZATION_FINISHED; Arguments: none'
           This command tells the library that the application has
@@ -734,7 +770,7 @@ File: gcrypt.info,  Node: Controlling the library,  Next: Error Handling,  Up: G
 
      'GCRYCTL_INITIALIZATION_FINISHED_P; Arguments: none'
           This command returns true if the command
-          GCRYCTL_INITIALIZATION_FINISHED has already been run.
+          'GCRYCTL_INITIALIZATION_FINISHED' has already been run.
 
      'GCRYCTL_SET_THREAD_CBS; Arguments: struct ath_ops *ath_ops'
           This command is obsolete since version 1.6.
@@ -754,7 +790,7 @@ File: gcrypt.info,  Node: Controlling the library,  Next: Error Handling,  Up: G
 
      'GCRYCTL_PRINT_CONFIG; Arguments: FILE *stream'
           This command dumps information pertaining to the configuration
-          of the library to the given stream.  If NULL is given for
+          of the library to the given stream.  If 'NULL' is given for
           STREAM, the log system is used.  This command may be used
           before the initialization has been finished but not before a
           'gcry_check_version'.  Note that the macro 'estream_t' can be
@@ -762,7 +798,7 @@ File: gcrypt.info,  Node: Controlling the library,  Next: Error Handling,  Up: G
 
      'GCRYCTL_OPERATIONAL_P; Arguments: none'
           This command returns true if the library is in an operational
-          state.  This information makes only sense in FIPS mode.  In
+          state.  This information makes sense only in FIPS mode.  In
           contrast to other functions, this is a pure test function and
           won't put the library into FIPS mode or change the internal
           state.  This command may be used before the initialization has
@@ -789,18 +825,19 @@ File: gcrypt.info,  Node: Controlling the library,  Next: Error Handling,  Up: G
           command may be used before a call to 'gcry_check_version' and
           that is actually the recommended way to let an application
           switch the library into FIPS mode.  Note that Libgcrypt will
-          reject an attempt to switch to fips mode during or after the
+          reject an attempt to switch to FIPS mode during or after the
           initialization.
 
+     'GCRYCTL_NO_FIPS_MODE; Arguments: none'
+          Running this command puts the library into non-FIPS mode.
+          This command may be used before a call to 'gcry_check_version'
+          and that is actually the recommended way to let an application
+          switch the library into non-FIPS mode.  Note that Libgcrypt
+          will reject an attempt to switch to non-FIPS mode during or
+          after the initialization.
+
      'GCRYCTL_SET_ENFORCED_FIPS_FLAG; Arguments: none'
-          Running this command sets the internal flag that puts the
-          library into the enforced FIPS mode during the FIPS mode
-          initialization.  This command does not affect the library if
-          the library is not put into the FIPS mode and it must be used
-          before any other libgcrypt library calls that initialize the
-          library such as 'gcry_check_version'.  Note that Libgcrypt
-          will reject an attempt to switch to the enforced fips mode
-          during or after the initialization.
+          This command is obsolete and has no effect; do not use it.
 
      'GCRYCTL_SET_PREFERRED_RNG_TYPE; Arguments: int'
           These are advisory commands to select a certain random number
@@ -808,7 +845,7 @@ File: gcrypt.info,  Node: Controlling the library,  Next: Error Handling,  Up: G
           know what an application actually wants or vice versa.  Thus
           Libgcrypt employs a priority check to select the actually used
           RNG. If an applications selects a lower priority RNG but a
-          library requests a higher priority RNG Libgcrypt will switch
+          library requests a higher priority RNG, Libgcrypt will switch
           to the higher priority RNG. Applications and libraries should
           use these control codes before 'gcry_check_version'.  The
           available generators are:
@@ -817,7 +854,7 @@ File: gcrypt.info,  Node: Controlling the library,  Next: Error Handling,  Up: G
                "Continuously Seeded Pseudo Random Number Generator"
                designed by Peter Gutmann.
           'GCRY_RNG_TYPE_FIPS'
-               A deterministic random number generator conforming to he
+               A deterministic random number generator conforming to the
                document "NIST-Recommended Random Number Generator Based
                on ANSI X9.31 Appendix A.2.4 Using the 3-Key Triple DES
                and AES Algorithms" (2005-01-31).  This implementation
@@ -865,9 +902,24 @@ File: gcrypt.info,  Node: Controlling the library,  Next: Error Handling,  Up: G
           has not been registered with Libgpg-error and in turn
           Libgcrypt would not use them.  The control code can be used to
           tell Libgcrypt that a system call clamp has now been
-          registered with Libgpg-error and advised it to read the clamp
-          again.  Obviously this control code may only be used before a
-          second thread is started in a process.
+          registered with Libgpg-error and advise Libgcrypt to read the
+          clamp again.  Obviously this control code may only be used
+          before a second thread is started in a process.
+
+     'GCRYCTL_FIPS_SERVICE_INDICATOR_CIPHER; Arguments: enum gcry_cipher_algos [, enum gcry_cipher_modes]'
+
+          Check if the given symmetric cipher and optional cipher mode
+          combination is approved under the current FIPS 140-3
+          certification.  If the combination is approved, this function
+          returns 'GPG_ERR_NO_ERROR'.  Otherwise 'GPG_ERR_NOT_SUPPORTED'
+          is returned.
+
+     'GCRYCTL_FIPS_SERVICE_INDICATOR_KDF; Arguments: enum gcry_kdf_algos'
+
+          Check if the given KDF is approved under the current FIPS
+          140-3 certification.  If the KDF is approved, this function
+          returns 'GPG_ERR_NO_ERROR'.  Otherwise 'GPG_ERR_NOT_SUPPORTED'
+          is returned.
 
 
 File: gcrypt.info,  Node: Error Handling,  Prev: Controlling the library,  Up: Generalities
@@ -883,7 +935,7 @@ the user and cancelling the operation.
 
    Some error values do not indicate a system error or an error in the
 operation, but the result of an operation that failed properly.  For
-example, if you try to decrypt a tempered message, the decryption will
+example, if you try to decrypt a tampered message, the decryption will
 fail.  Another error value actually means that the end of a data buffer
 or list has been reached.  The following descriptions explain for many
 error codes what they mean usually.  Some error values have specific
@@ -947,7 +999,7 @@ File: gcrypt.info,  Node: Error Values,  Next: Error Sources,  Up: Error Handlin
 
  -- Data type: gcry_error_t
      The 'gcry_error_t' type is an alias for the 'libgpg-error' type
-     'gpg_error_t'.  An error value like this has always two components,
+     'gpg_error_t'.  An error value like this has always two components:
      an error code and an error source.  Both together form the error
      value.
 
@@ -1305,7 +1357,7 @@ this purpose.
                ':'
                     Restart with a new random value.
                '+'
-                    Rabin Miller test passed.
+                    Rabin-Miller test passed.
 
 
 File: gcrypt.info,  Node: Allocation handler,  Next: Error handler,  Prev: Progress handler,  Up: Handler Functions
@@ -1343,7 +1395,7 @@ following function:
      functions are guaranteed to zeroize memory if needed.
 
      This function may be used only during initialization and may not be
-     used in fips mode.
+     used in FIPS mode.
 
 
 File: gcrypt.info,  Node: Error handler,  Next: Logging handler,  Prev: Allocation handler,  Up: Handler Functions
@@ -1428,16 +1480,16 @@ File: gcrypt.info,  Node: Available ciphers,  Next: Available cipher modes,  Up:
      This is the IDEA algorithm.
 
 'GCRY_CIPHER_3DES'
-     Triple-DES with 3 Keys as EDE. The key size of this algorithm is
-     168 but you have to pass 192 bits because the most significant bits
-     of each byte are ignored.
+     Triple-DES with 3 keys as EDE. The key size of this algorithm is
+     168 bits but you have to pass 192 bits because the most significant
+     bits of each byte are ignored.
 
 'GCRY_CIPHER_CAST5'
      CAST128-5 block cipher algorithm.  The key size is 128 bits.
 
 'GCRY_CIPHER_BLOWFISH'
-     The blowfish algorithm.  The current implementation allows only for
-     a key size of 128 bits.
+     The blowfish algorithm.  The supported key sizes are 8 to 576 bits
+     in 8 bit increments.
 
 'GCRY_CIPHER_SAFER_SK128'
      Reserved and not currently implemented.
@@ -1471,7 +1523,7 @@ File: gcrypt.info,  Node: Available ciphers,  Next: Available cipher modes,  Up:
      carefully to avoid a couple of weaknesses.
 
 'GCRY_CIPHER_DES'
-     Standard DES with a 56 bit key.  You need to pass 64 bit but the
+     Standard DES with a 56 bit key.  You need to pass 64 bits but the
      high bits of each byte are ignored.  Note, that this is a weak
      algorithm which can be broken in reasonable time using a brute
      force approach.
@@ -1505,8 +1557,18 @@ File: gcrypt.info,  Node: Available ciphers,  Next: Available cipher modes,  Up:
      The GOST 28147-89 cipher, defined in the respective GOST standard.
      Translation of this GOST into English is provided in the RFC-5830.
 
+'GCRY_CIPHER_GOST28147_MESH'
+     The GOST 28147-89 cipher, defined in the respective GOST standard.
+     Translation of this GOST into English is provided in the RFC-5830.
+     This cipher will use CryptoPro keymeshing as defined in RFC 4357 if
+     it has to be used for the selected parameter set.
+
 'GCRY_CIPHER_CHACHA20'
      This is the ChaCha20 stream cipher.
+
+'GCRY_CIPHER_SM4'
+     A 128 bit cipher by the State Cryptography Administration of China
+     (SCA). See <https://tools.ietf.org/html/draft-ribose-cfrg-sm4-10>.
 
 
 File: gcrypt.info,  Node: Available cipher modes,  Next: Working with cipher handles,  Prev: Available ciphers,  Up: Symmetric cryptography
@@ -1525,10 +1587,10 @@ File: gcrypt.info,  Node: Available cipher modes,  Next: Working with cipher han
 
 'GCRY_CIPHER_MODE_CFB'
 'GCRY_CIPHER_MODE_CFB8'
-     Cipher Feedback mode.  For GCRY_CIPHER_MODE_CFB the shift size
+     Cipher Feedback mode.  For 'GCRY_CIPHER_MODE_CFB' the shift size
      equals the block size of the cipher (e.g.  for AES it is CFB-128).
-     For GCRY_CIPHER_MODE_CFB8 the shift size is 8 bit but that variant
-     is not yet available.
+     For 'GCRY_CIPHER_MODE_CFB8' the shift size is 8 bits but that
+     variant is not yet available.
 
 'GCRY_CIPHER_MODE_CBC'
      Cipher Block Chaining mode.
@@ -1546,14 +1608,14 @@ File: gcrypt.info,  Node: Available cipher modes,  Next: Working with cipher han
      This mode is used to implement the AES-Wrap algorithm according to
      RFC-3394.  It may be used with any 128 bit block length algorithm,
      however the specs require one of the 3 AES algorithms.  These
-     special conditions apply: If 'gcry_cipher_setiv' has not been used
-     the standard IV is used; if it has been used the lower 64 bit of
+     special conditions apply: If 'gcry_cipher_setiv' has not been used,
+     the standard IV is used; if it has been used, the lower 64 bits of
      the IV are used as the Alternative Initial Value.  On encryption
-     the provided output buffer must be 64 bit (8 byte) larger than the
-     input buffer; in-place encryption is still allowed.  On decryption
-     the output buffer may be specified 64 bit (8 byte) shorter than
-     then input buffer.  As per specs the input length must be at least
-     128 bits and the length must be a multiple of 64 bits.
+     the provided output buffer must be 64 bits (8 bytes) larger than
+     the input buffer; in-place encryption is still allowed.  On
+     decryption the output buffer may be specified 64 bits (8 bytes)
+     shorter than then input buffer.  As per specs the input length must
+     be at least 128 bits and the length must be a multiple of 64 bits.
 
 'GCRY_CIPHER_MODE_CCM'
      Counter with CBC-MAC mode is an Authenticated Encryption with
@@ -1567,17 +1629,17 @@ File: gcrypt.info,  Node: Available cipher modes,  Next: Working with cipher han
 
 'GCRY_CIPHER_MODE_POLY1305'
      This mode implements the Poly1305 Authenticated Encryption with
-     Associated Data (AEAD) mode according to RFC-7539.  This mode can
+     Associated Data (AEAD) mode according to RFC-8439.  This mode can
      be used with ChaCha20 stream cipher.
 
 'GCRY_CIPHER_MODE_OCB'
      OCB is an Authenticated Encryption with Associated Data (AEAD)
      block cipher mode, which is specified in RFC-7253.  Supported tag
-     lengths are 128, 96, and 64 bit with the default being 128 bit.  To
-     switch to a different tag length 'gcry_cipher_ctl' using the
+     lengths are 128, 96, and 64 bits with the default being 128 bits.
+     To switch to a different tag length, 'gcry_cipher_ctl' using the
      command 'GCRYCTL_SET_TAGLEN' and the address of an 'int' variable
-     set to 12 (for 96 bit) or 8 (for 64 bit) provided for the 'buffer'
-     argument and 'sizeof(int)' for 'buflen'.
+     set to 12 (for 96 bits) or 8 (for 64 bits) provided for the
+     'buffer' argument and 'sizeof(int)' for 'buflen'.
 
      Note that the use of 'gcry_cipher_final' is required.
 
@@ -1596,6 +1658,48 @@ File: gcrypt.info,  Node: Available cipher modes,  Next: Working with cipher han
      and 'gcry_cipher_decrypt'.  Auto-increment allows avoiding need of
      setting IV between processing of sequential data units.
 
+'GCRY_CIPHER_MODE_EAX'
+     EAX is an Authenticated Encryption with Associated Data (AEAD)
+     block cipher mode by Bellare, Rogaway, and Wagner (see
+     <http://web.cs.ucdavis.edu/~rogaway/papers/eax.html>).
+
+'GCRY_CIPHER_MODE_SIV'
+     Synthetic Initialization Vector (SIV) is an Authenticated
+     Encryption with Associated Data (AEAD) block cipher mode, which is
+     specified in RFC-5297.  This mode works with block ciphers with
+     block size of 128 bits and uses tag length of 128 bits.  Depending
+     on how it is used, SIV achieves either the goal of deterministic
+     authenticated encryption or the goal of nonce-based,
+     misuse-resistant authenticated encryption.
+
+     The SIV mode requires doubling key-length, for example, using
+     512-bit key with AES-256 ('GCRY_CIPHER_AES256').  Multiple AD
+     instances can be passed to SIV mode with separate calls to
+     'gcry_cipher_authenticate'.  Nonce may be passed either through
+     'gcry_cipher_setiv' or in the last call to
+     'gcry_cipher_authenticate'.  Note that use of 'gcry_cipher_setiv'
+     blocks any further calls to 'gcry_cipher_authenticate' as nonce
+     needs to be the last AD element with the SIV mode.  When encrypting
+     or decrypting, full-sized plaintext or ciphertext needs to be
+     passed to 'gcry_cipher_encrypt' or 'gcry_cipher_decrypt'.
+     Decryption tag needs to be given to SIV mode before decryption
+     using 'gcry_cipher_set_decryption_tag'.
+
+'GCRY_CIPHER_MODE_GCM_SIV'
+     This mode implements is GCM-SIV Authenticated Encryption with
+     Associated Data (AEAD) block cipher mode specified in RFC-5297
+     (AES-GCM-SIV: Nonce Misuse-Resistant Authenticated Encryption).
+     This implementations works with block ciphers with block size of
+     128 bits and uses tag length of 128 bits.  Supported key lengths by
+     the mode are 128 bits and 256 bits.  GCM-SIV is specified as nonce
+     misuse resistant, so that it does not fail catastrophically if a
+     nonce is repeated.
+
+     When encrypting or decrypting, full-sized plaintext or ciphertext
+     needs to be passed to 'gcry_cipher_encrypt' or
+     'gcry_cipher_decrypt'.  Decryption tag needs to be given to GCM-SIV
+     mode before decryption using 'gcry_cipher_set_decryption_tag'.
+
 
 File: gcrypt.info,  Node: Working with cipher handles,  Next: General cipher functions,  Prev: Available cipher modes,  Up: Symmetric cryptography
 
@@ -1613,7 +1717,7 @@ This is to be done using the open function:
      of an error, an according error code is returned.
 
      The ID of algorithm to use must be specified via ALGO.  See *note
-     Available ciphers::, for a list of supported ciphers and the
+     Available ciphers:: for a list of supported ciphers and the
      according constants.
 
      Besides using the constants directly, the function
@@ -1621,18 +1725,20 @@ This is to be done using the open function:
      an algorithm into the according numeric ID.
 
      The cipher mode to use must be specified via MODE.  See *note
-     Available cipher modes::, for a list of supported cipher modes and
+     Available cipher modes:: for a list of supported cipher modes and
      the according constants.  Note that some modes are incompatible
      with some algorithms - in particular, stream mode
      ('GCRY_CIPHER_MODE_STREAM') only works with stream ciphers.
      Poly1305 AEAD mode ('GCRY_CIPHER_MODE_POLY1305') only works with
      ChaCha20 stream cipher.  The block cipher modes
      ('GCRY_CIPHER_MODE_ECB', 'GCRY_CIPHER_MODE_CBC',
-     'GCRY_CIPHER_MODE_CFB', 'GCRY_CIPHER_MODE_OFB' and
-     'GCRY_CIPHER_MODE_CTR') will work with any block cipher algorithm.
-     GCM mode ('GCRY_CIPHER_MODE_CCM'), CCM mode
-     ('GCRY_CIPHER_MODE_GCM'), OCB mode ('GCRY_CIPHER_MODE_OCB'), and
-     XTS mode ('GCRY_CIPHER_MODE_XTS') will only work with block cipher
+     'GCRY_CIPHER_MODE_CFB', 'GCRY_CIPHER_MODE_OFB',
+     'GCRY_CIPHER_MODE_CTR' and 'GCRY_CIPHER_MODE_EAX') will work with
+     any block cipher algorithm.  GCM mode ('GCRY_CIPHER_MODE_GCM'), CCM
+     mode ('GCRY_CIPHER_MODE_CCM'), OCB mode ('GCRY_CIPHER_MODE_OCB'),
+     XTS mode ('GCRY_CIPHER_MODE_XTS'), SIV mode
+     ('GCRY_CIPHER_MODE_SIV') and GCM-SIV mode
+     ('GCRY_CIPHER_MODE_GCM_SIV') will only work with block cipher
      algorithms which have the block size of 16 bytes.
 
      The third argument FLAGS can either be passed as '0' or as the
@@ -1647,14 +1753,14 @@ This is to be done using the open function:
           OpenPGP's CFB variant.  See 'gcry_cipher_sync'.
      'GCRY_CIPHER_CBC_CTS'
           Enable cipher text stealing (CTS) for the CBC mode.  Cannot be
-          used simultaneous as GCRY_CIPHER_CBC_MAC. CTS mode makes it
-          possible to transform data of almost arbitrary size (only
+          used simultaneously with GCRY_CIPHER_CBC_MAC. CTS mode makes
+          it possible to transform data of almost arbitrary size (only
           limitation is that it must be greater than the algorithm's
           block size).
      'GCRY_CIPHER_CBC_MAC'
           Compute CBC-MAC keyed checksums.  This is the same as CBC
           mode, but only output the last block.  Cannot be used
-          simultaneous as GCRY_CIPHER_CBC_CTS.
+          simultaneously with GCRY_CIPHER_CBC_CTS.
 
    Use the following function to release an existing handle:
 
@@ -1700,16 +1806,16 @@ To set the IV or CTR, use these functions:
      Set the counter vector used for encryption or decryption.  The
      counter is passed as the buffer C of length L bytes and copied to
      internal data structures.  The function checks that the counter
-     matches the requirement of the selected algorithm (i.e., it must be
-     the same size as the block size).
+     matches the requirement of the selected algorithm (i.e., it must
+     have the same size as the block size).
 
  -- Function: gcry_error_t gcry_cipher_reset (gcry_cipher_hd_t H)
 
      Set the given handle's context back to the state it had after the
-     last call to gcry_cipher_setkey and clear the initialization
+     last call to 'gcry_cipher_setkey' and clear the initialization
      vector.
 
-     Note that gcry_cipher_reset is implemented as a macro.
+     Note that 'gcry_cipher_reset' is implemented as a macro.
 
    Authenticated Encryption with Associated Data (AEAD) block cipher
 modes require the handling of the authentication tag and the additional
@@ -1807,6 +1913,15 @@ the end of the input data.  This is done with:
      support it.  Checking the error is in general not necessary.  This
      is implemented as a macro.
 
+   The SIV mode and the GCM-SIV mode requires decryption tag to be input
+before decryption.  This is done with:
+
+ -- Function: gcry_error_t gcry_cipher_set_decryption_tag
+          (gcry_cipher_hd_t H, const void *TAG, size_t TAGLEN)
+
+     Set decryption tag for SIV or GCM-SIV mode decryption.  This is
+     implemented as a macro.
+
    OpenPGP (as defined in RFC-4880) requires a special sync operation in
 some places.  The following function is used for this:
 
@@ -1814,7 +1929,7 @@ some places.  The following function is used for this:
 
      Perform the OpenPGP sync operation on context H.  Note that this is
      a no-op unless the context was created with the flag
-     'GCRY_CIPHER_ENABLE_SYNC'
+     'GCRY_CIPHER_ENABLE_SYNC'.
 
    Some of the described functions are implemented as macros utilizing a
 catch-all control function.  This control function is rarely used
@@ -1826,7 +1941,7 @@ directly but there is nothing which would inhibit it:
      'gcry_cipher_ctl' controls various aspects of the cipher module and
      specific cipher contexts.  Usually some more specialized functions
      or macros are used for this purpose.  The semantics of the function
-     and its parameters depends on the the command CMD and the passed
+     and its parameters depends on the command CMD and the passed
      context handle H.  Please see the comments in the source code
      ('src/global.c') for details.
 
@@ -1839,8 +1954,8 @@ directly but there is nothing which would inhibit it:
      'GCRYCTL_GET_TAGLEN:'
           Return the length of the tag for an AE algorithm mode.  An
           error is returned for modes which do not support a tag.
-          BUFFER must be given as NULL. On success the result is stored
-          NBYTES.  The taglen is returned in bytes.
+          BUFFER must be given as 'NULL'.  On success the result is
+          stored NBYTES.  The taglen is returned in bytes.
 
 
 File: gcrypt.info,  Node: General cipher functions,  Prev: Working with cipher handles,  Up: Symmetric cryptography
@@ -1891,7 +2006,7 @@ information about an algorithm or the current cipher context.
      returned as number of octets.
 
      This is a convenience functions which should be preferred over
-     'gcry_cipher_algo_info' because it allows for proper type checking.
+     'gcry_cipher_algo_info' because it allows proper type checking.
 
  -- Function: size_t gcry_cipher_get_algo_blklen (int ALGO)
 
@@ -1899,7 +2014,7 @@ information about an algorithm or the current cipher context.
      counted in octets.  On error '0' is returned.
 
      This is a convenience functions which should be preferred over
-     'gcry_cipher_algo_info' because it allows for proper type checking.
+     'gcry_cipher_algo_info' because it allows proper type checking.
 
  -- Function: const char * gcry_cipher_algo_name (int ALGO)
 
@@ -1912,7 +2027,7 @@ information about an algorithm or the current cipher context.
 
      'gcry_cipher_map_name' returns the algorithm identifier for the
      cipher algorithm described by the string NAME.  If this algorithm
-     is not available '0' is returned.
+     is not available, '0' is returned.
 
  -- Function: int gcry_cipher_mode_from_oid (const char *STRING)
 
@@ -1937,6 +2052,7 @@ cryptography, this chapter explains the one based on S-expressions.
 * Available algorithms::        Algorithms supported by the library.
 * Used S-expressions::          Introduction into the used S-expression.
 * Cryptographic Functions::     Functions for performing the cryptographic actions.
+* Dedicated ECC Functions::     Dedicated functions for elliptic curves.
 * General public-key related Functions::  General functions, not implementing any cryptography.
 
 
@@ -1946,8 +2062,7 @@ File: gcrypt.info,  Node: Available algorithms,  Next: Used S-expressions,  Up: 
 ========================
 
 Libgcrypt supports the RSA (Rivest-Shamir-Adleman) algorithms as well as
-DSA (Digital Signature Algorithm) and Elgamal.  The versatile interface
-allows to add more algorithms in the future.
+DSA (Digital Signature Algorithm), Elgamal, ECDSA, ECDH, and EdDSA.
 
 
 File: gcrypt.info,  Node: Used S-expressions,  Next: Cryptographic Functions,  Prev: Available algorithms,  Up: Public Key cryptography
@@ -1958,7 +2073,7 @@ File: gcrypt.info,  Node: Used S-expressions,  Next: Cryptographic Functions,  P
 Libgcrypt's API for asymmetric cryptography is based on data structures
 called S-expressions (see
 <http://people.csail.mit.edu/rivest/sexp.html>) and does not work with
-contexts as most of the other building blocks of Libgcrypt do.
+contexts/handles as most of the other building blocks of Libgcrypt do.
 
 The following information are stored in S-expressions:
 
@@ -1971,7 +2086,7 @@ The following information are stored in S-expressions:
    * signatures
 
 To describe how Libgcrypt expect keys, we use examples.  Note that words
-in uppercase indicate parameters whereas lowercase words are literals.
+in uppercase indicate parameters, whereas lowercase words are literals.
 
    Note that all MPI (multi-precision-integers) values are expected to
 be in 'GCRYMPI_FMT_USG' format.  An easy way to create S-expressions is
@@ -2021,10 +2136,10 @@ Q-MPI
 U-MPI
      Multiplicative inverse u = p^{-1} \bmod q.
 
-   For signing and decryption the parameters (p, q, u) are optional but
+   For signing and decryption, the parameters (p, q, u) are optional but
 greatly improve the performance.  Either all of these optional
 parameters must be given or none of them.  They are mandatory for
-gcry_pk_testkey.
+'gcry_pk_testkey'.
 
    Note that OpenSSL uses slighly different parameters: q < p and u =
 q^{-1} \bmod p.  To use these parameters you will need to swap the
@@ -2063,8 +2178,8 @@ Y-MPI
 X-MPI
      DSA secret exponent x.
 
-   The public key is similar with "private-key" replaced by "public-key"
-and no X-MPI.
+   The public key is similar, with "private-key" replaced by
+"public-key" and no X-MPI.
 
 
 File: gcrypt.info,  Node: ECC key parameters,  Prev: DSA key parameters,  Up: Used S-expressions
@@ -2102,11 +2217,11 @@ D-MPI
 general only support uncompressed points, thus the first byte needs to
 be '0x04'.  However "EdDSA" describes its own compression scheme which
 is used by default; the non-standard first byte '0x40' may optionally be
-used to explicit flag the use of the algorithm’s native compression
+used to explicit flag the use of the algorithm's native compression
 method.
 
-   The public key is similar with "private-key" replaced by "public-key"
-and no D-MPI.
+   The public key is similar, with "private-key" replaced by
+"public-key" and no D-MPI.
 
    If the domain parameters are well-known, the name of this curve may
 be used.  For example
@@ -2122,35 +2237,164 @@ parameter may be given in any case and is used to replace missing
 parameters.
 
 Currently implemented curves are:
+
+'Curve25519'
+'X25519'
+'1.3.6.1.4.1.3029.1.5.1'
+'1.3.101.110'
+     The RFC-8410 255 bit curve, its RFC name, OpenPGP and RFC OIDs.
+
+'X448'
+'1.3.101.111'
+     The RFC-8410 448 bit curve and its RFC OID.
+
+'Ed25519'
+'1.3.6.1.4.1.11591.15.1'
+'1.3.101.112'
+     The signing variant of the RFC-8410 255 bit curve, its OpenPGP and
+     RFC OIDs.
+
+'Ed448'
+'1.3.101.113'
+     The signing variant of the RFC-8410 448 bit curve and its RFC OID.
+
 'NIST P-192'
 '1.2.840.10045.3.1.1'
+'nistp192'
 'prime192v1'
 'secp192r1'
-     The NIST 192 bit curve, its OID, X9.62 and SECP aliases.
+     The NIST 192 bit curve, its OID and aliases.
 
 'NIST P-224'
+'1.3.132.0.33'
+'nistp224'
 'secp224r1'
-     The NIST 224 bit curve and its SECP alias.
+     The NIST 224 bit curve, its OID and aliases.
 
 'NIST P-256'
 '1.2.840.10045.3.1.7'
+'nistp256'
 'prime256v1'
 'secp256r1'
-     The NIST 256 bit curve, its OID, X9.62 and SECP aliases.
+     The NIST 256 bit curve, its OID and aliases.
 
 'NIST P-384'
+'1.3.132.0.34'
+'nistp384'
 'secp384r1'
-     The NIST 384 bit curve and its SECP alias.
+     The NIST 384 bit curve, its OID and aliases.
 
 'NIST P-521'
+'1.3.132.0.35'
+'nistp521'
 'secp521r1'
-     The NIST 521 bit curve and its SECP alias.
+     The NIST 521 bit curve, its OID and aliases.
+
+'brainpoolP160r1'
+'1.3.36.3.3.2.8.1.1.1'
+     The Brainpool 160 bit curve and its OID.
+
+'brainpoolP192r1'
+'1.3.36.3.3.2.8.1.1.3'
+     The Brainpool 192 bit curve and its OID.
+
+'brainpoolP224r1'
+'1.3.36.3.3.2.8.1.1.5'
+     The Brainpool 224 bit curve and its OID.
+
+'brainpoolP256r1'
+'1.3.36.3.3.2.8.1.1.7'
+     The Brainpool 256 bit curve and its OID.
+
+'brainpoolP320r1'
+'1.3.36.3.3.2.8.1.1.9'
+     The Brainpool 320 bit curve and its OID.
+
+'brainpoolP384r1'
+'1.3.36.3.3.2.8.1.1.11'
+     The Brainpool 384 bit curve and its OID.
+
+'brainpoolP512r1'
+'1.3.36.3.3.2.8.1.1.13'
+     The Brainpool 512 bit curve and its OID.
+
+'GOST2001-test'
+'1.2.643.2.2.35.0'
+
+'GOST2001-CryptoPro-A'
+'1.2.643.2.2.35.1'
+
+'GOST2001-CryptoPro-B'
+'1.2.643.2.2.35.2'
+
+'GOST2001-CryptoPro-C'
+'1.2.643.2.2.35.3'
+
+'GOST2001-CryptoPro-A'
+'GOST2001-CryptoPro-XchA'
+
+'GOST2001-CryptoPro-C'
+'GOST2001-CryptoPro-XchB'
+
+'GOST2001-CryptoPro-A'
+'1.2.643.2.2.36.0'
+
+'GOST2001-CryptoPro-C'
+'1.2.643.2.2.36.1'
+
+'GOST2012-256-tc26-A'
+'1.2.643.7.1.2.1.1.1'
+
+'GOST2001-CryptoPro-A'
+'1.2.643.7.1.2.1.1.2'
+
+'GOST2001-CryptoPro-A'
+'GOST2012-256-tc26-B'
+
+'GOST2001-CryptoPro-B'
+'1.2.643.7.1.2.1.1.3'
+
+'GOST2001-CryptoPro-B'
+'GOST2012-256-tc26-C'
+
+'GOST2001-CryptoPro-C'
+'1.2.643.7.1.2.1.1.4'
+
+'GOST2001-CryptoPro-C'
+'GOST2012-256-tc26-D'
+
+'GOST2012-512-test'
+'GOST2012-test'
+
+'GOST2012-512-test'
+'1.2.643.7.1.2.1.2.0'
+
+'GOST2012-512-tc26-A'
+'GOST2012-tc26-A'
+
+'GOST2012-512-tc26-B'
+'GOST2012-tc26-B'
+
+'GOST2012-512-tc26-A'
+'1.2.643.7.1.2.1.2.1'
+
+'GOST2012-512-tc26-B'
+'1.2.643.7.1.2.1.2.2'
+
+'GOST2012-512-tc26-C'
+'1.2.643.7.1.2.1.2.3'
+
+'secp256k1'
+'1.3.132.0.10'
+
+'sm2p256v1'
+'1.2.156.10197.1.301'
 
    As usual the OIDs may optionally be prefixed with the string 'OID.'
 or 'oid.'.
 
 
-File: gcrypt.info,  Node: Cryptographic Functions,  Next: General public-key related Functions,  Prev: Used S-expressions,  Up: Public Key cryptography
+File: gcrypt.info,  Node: Cryptographic Functions,  Next: Dedicated ECC Functions,  Prev: Used S-expressions,  Up: Public Key cryptography
 
 6.3 Cryptographic Functions
 ===========================
@@ -2162,14 +2406,14 @@ known:
 
 'comp'
 'nocomp'
-     If supported by the algorithm and curve the 'comp' flag requests
+     If supported by the algorithm and curve, the 'comp' flag requests
      that points are returned in compact (compressed) representation.
      The 'nocomp' flag requests that points are returned with full
      coordinates.  The default depends on the the algorithm and curve.
      The compact representation requires a small overhead before a point
-     can be used but halves the size of a to be conveyed public key.  If
-     'comp' is used with the "EdDSA" algorithm the key generation prefix
-     the public key with a '0x40' byte.
+     can be used but halves the size of a public key to be conveyed.  If
+     'comp' is used with the "EdDSA" algorithm, the key generation
+     prefixes the public key with a '0x40' byte.
 
 'pkcs1'
      Use PKCS#1 block type 2 padding for encryption, block type 1
@@ -2202,7 +2446,7 @@ known:
 
 'transient-key'
      This flag is only meaningful for RSA, DSA, and ECC key generation.
-     If given the key is created using a faster and a somewhat less
+     If given, the key is created using a faster and a somewhat less
      secure random number generator.  This flag may be used for keys
      which are only used for a short time or per-message and do not
      require full cryptographic strength.
@@ -2322,7 +2566,7 @@ data.  There are 2 functions to do this:
      padding, or 'oaep' for RSA-OAEP padding.
 
      The function returns 0 on success or an error code.  The variable
-     at the address of R_PLAIN will be set to NULL on error or receive
+     at the address of R_PLAIN will be set to 'NULL' on error or receive
      the decrypted value on success.  The format of R_PLAIN is a simple
      S-expression part (i.e.  not a valid one) with just one MPI if
      there was no 'flags' element in DATA; if at least an empty 'flags'
@@ -2374,10 +2618,10 @@ similar to the encryption functions:
             (value MPI))
 
      Here, the data to be signed is directly given as an MPI.  It is
-     expect that this MPI is the the hash value.  For the standard DSA
+     expect that this MPI is the hash value.  For the standard DSA,
      using a MPI is not a problem in regard to leading zeroes because
      the hash value is directly used as an MPI. For better standard
-     conformance it would be better to explicit use a memory string
+     conformance it would be better to explicitly use a memory string
      (like with pkcs1) but that is currently not supported.  However,
      for deterministic DSA as specified in RFC6979 this can't be used.
      Instead the following input is expected.
@@ -2406,11 +2650,10 @@ similar to the encryption functions:
 
      Where R-MPI and S-MPI are the result of the DSA sign operation.
 
-     For Elgamal signing (which is slow, yields large numbers, hard to
-     use correctly and probably is not as secure as the other
-     algorithms), the same format is used with "elg" replacing "dsa";
-     for ECDSA signing, the same format is used with "ecdsa" replacing
-     "dsa".
+     For Elgamal signing (which is slow, yields large numbers and
+     probably is not as secure as the other algorithms), the same format
+     is used with "elg" replacing "dsa"; for ECDSA signing, the same
+     format is used with "ecdsa" replacing "dsa".
 
      For the EdDSA algorithm (cf.  Ed25515) the required input
      parameters are:
@@ -2421,9 +2664,12 @@ similar to the encryption functions:
             (value MESSAGE))
 
      Note that the MESSAGE may be of any length; hashing is part of the
-     algorithm.  Using a large data block for MESSAGE is not suggested;
-     in that case the used protocol should better require that a hash of
-     the message is used as input to the EdDSA algorithm.
+     algorithm.  Using a large data block for MESSAGE is in general not
+     suggested; in that case the used protocol should better require
+     that a hash of the message is used as input to the EdDSA algorithm.
+     Note that for X.509 certificates MESSAGE is the 'tbsCertificate'
+     part and in CMS MESSAGE is the 'signedAttrs' part; see RFC-8410 and
+     RFC-8419.
 
 The operation most commonly used is definitely the verification of a
 signature.  Libgcrypt provides this function:
@@ -2443,10 +2689,85 @@ signature.  Libgcrypt provides this function:
      'GCRY_ERR_BAD_SIGNATURE' to indicate that the signature does not
      match the provided data.
 
-
-File: gcrypt.info,  Node: General public-key related Functions,  Prev: Cryptographic Functions,  Up: Public Key cryptography
+   Additionally, libgcrypt provides three functions for digital
+signatures.  Those functions are useful when hashing computation should
+be closely combined with signature computation.
 
-6.4 General public-key related Functions
+ -- Function: gcry_error_t gcry_pk_hash_sign (gcry_sexp_t *RESULT,
+          const char *DATA_TMPL, gcry_sexp_t SKEY, gcry_md_hd_t HD,
+          gcry_ctx_t CTX)
+
+     This function is a variant of 'gcry_pk_sign' which takes as
+     additional parameter HD, handle for hash, and an optional context
+     CTX.  SKEY is a private key in S-expression.  The hash algorithm
+     used by the handle needs to be enabled and input needs to be
+     supplied beforehand.  DATA-TMPL specifies a template to compose an
+     S-expression to be signed.  A template should include '"(hash %s
+     %b)"' or '"(hash ALGONAME %b)"'.  For the former case, "%s" is
+     substituted by the string of algorithm of 'gcry_md_get_algo ('HD')'
+     and when 'gcry_md_read' is called, 'ALGO=0' is used internally.
+     For the latter case, hash algorithm by 'ALGONAME' is used when
+     'gcry_md_read' is called internally.  The hash handle must not yet
+     been finalized; the function takes a copy of the state and does a
+     finalize on the copy.  The last argument, CTX, may be used for
+     supplying nonce externally.  If no need, CTX should be passed as
+     'NULL'.
+
+ -- Function: gcry_error_t gcry_pk_hash_verify (gcry_sexp_t SIGVAL,
+          const char *DATA_TMPL, gcry_sexp_t PKEY, gcry_md_hd_t HD,
+          gcry_ctx_t CTX)
+
+     This function is a variant of 'gcry_pk_verify' which takes as
+     additional parameter HD, handle for hash, and an optional context
+     CTX.  PKEY is a public key in S-expression.  See
+     'gcry_pk_hash_sign', for the explanation of handle for hash,
+     DATA-TMPL and CTX.
+
+ -- Function: gcry_error_t gcry_pk_random_override_new
+          (gcry_ctx_t *R_CTX, const unsigned char *P, size_t LEN)
+
+     This function is used to allocate a new context for nonce, by
+     memory area pointed to by P to LEN bytes.  This context can be used
+     when calling 'gcry_pk_hash_sign' or 'gcry_pk_hash_verify' to supply
+     nonce externally, instead of generating internally.
+
+     On success the function returns 0 and stores the new context object
+     at R_CTX; this object eventually needs to be released (*note
+     gcry_ctx_release::).  On error the function stores 'NULL' at R_CTX
+     and returns an error code.
+
+
+File: gcrypt.info,  Node: Dedicated ECC Functions,  Next: General public-key related Functions,  Prev: Cryptographic Functions,  Up: Public Key cryptography
+
+6.4 Dedicated functions for elliptic curves.
+============================================
+
+The S-expression based interface is not optimal for certain operations
+on elliptic curves.  Thus a few special functions are implemented to
+support common operations on curves with one of these assigned curve
+ids:
+
+'GCRY_ECC_CURVE25519'
+'GCRY_ECC_CURVE448'
+
+ -- Function: unsigned int gcry_ecc_get_algo_keylen (int CURVEID);
+
+     Returns the length in bytes of a point on the curve with the id
+     CURVEID.  0 is returned for curves which have no assigned id.
+
+ -- Function: gpg_error_t gcry_ecc_mul_point (int CURVEID,
+          unsigned char *RESULT, const unsigned char *SCALAR,
+          const unsigned char *POINT)
+
+     This function computes the scalar multiplication on the Montgomery
+     form of the curve with id CURVEID.  If POINT is 'NULL', the base
+     point of the curve is used.  The caller needs to provide a large
+     enough buffer for RESULT and a valid SCALAR and POINT.
+
+
+File: gcrypt.info,  Node: General public-key related Functions,  Prev: Dedicated ECC Functions,  Up: Public Key cryptography
+
+6.5 General public-key related Functions
 ========================================
 
 A couple of utility functions are available to retrieve the length of
@@ -2472,7 +2793,7 @@ the key, map algorithm identifiers and perform sanity checks:
  -- Function: unsigned int gcry_pk_get_nbits (gcry_sexp_t KEY)
 
      Return what is commonly referred as the key length for the given
-     public or private in KEY.
+     public or private key in KEY.
 
  -- Function: unsigned char * gcry_pk_get_keygrip (gcry_sexp_t KEY,
           unsigned char *ARRAY)
@@ -2516,9 +2837,9 @@ the key, map algorithm identifiers and perform sanity checks:
           general better to use the macro gcry_pk_test_algo instead.
 
      'GCRYCTL_GET_ALGO_USAGE:'
-          Return the usage flags for the given algorithm.  An invalid
-          algorithm return 0.  Disabled algorithms are ignored here
-          because we want to know whether the algorithm is at all
+          Return the usage flags for the given algorithm.  For an
+          invalid algorithm return 0.  Disabled algorithms are ignored
+          here because we want to know whether the algorithm is at all
           capable of a certain usage.
 
      'GCRYCTL_GET_ALGO_NPKEY'
@@ -2535,7 +2856,7 @@ the key, map algorithm identifiers and perform sanity checks:
           algorithm ALGO consists of.  Return 0 for an unknown algorithm
           or for an algorithm not capable of creating signatures.
 
-     'GCRYCTL_GET_ALGO_NENC'
+     'GCRYCTL_GET_ALGO_NENCR'
           Return the number of elements a encrypted message created with
           the algorithm ALGO consists of.  Return 0 for an unknown
           algorithm or for an algorithm not capable of encryption.
@@ -2616,9 +2937,9 @@ Libgcrypt also provides a function to generate public key pairs:
           (e.g.  017 gives 15).
 
      'qbits N'
-          This is only meanigful for DSA keys.  If it is given the DSA
-          key is generated with a Q parameyer of size N bits.  If it is
-          not given or zero Q is deduced from NBITS in this way:
+          This is only meanigful for DSA keys.  If it is given, the DSA
+          key is generated with a Q parameter of size N bits.  If it is
+          not given or zero, Q is deduced from NBITS in this way:
           '512 <= N <= 1024'
                Q = 160
           'N = 2048'
@@ -2630,16 +2951,16 @@ Libgcrypt also provides a function to generate public key pairs:
           'N = 15360'
                Q = 512
           Note that in this case only the values for N, as given in the
-          table, are allowed.  When specifying Q all values of N in the
+          table, are allowed.  When specifying Q, all values of N in the
           range 512 to 15680 are valid as long as they are multiples of
           8.
 
      'domain LIST'
-          This is only meaningful for DLP algorithms.  If specified keys
-          are generated with domain parameters taken from this list.
-          The exact format of this parameter depends on the actual
-          algorithm.  It is currently only implemented for DSA using
-          this format:
+          This is only meaningful for DLP algorithms.  If specified,
+          keys are generated with domain parameters taken from this
+          list.  The exact format of this parameter depends on the
+          actual algorithm.  It is currently only implemented for DSA
+          using this format:
 
                (genkey
                  (dsa
@@ -2657,7 +2978,7 @@ Libgcrypt also provides a function to generate public key pairs:
           specification.  If given, it is used to derive the keys using
           the given parameters.
 
-          If given for an RSA key the X9.31 key generation algorithm is
+          If given for an RSA key, the X9.31 key generation algorithm is
           used even if libgcrypt is not in FIPS mode.  If given for a
           DSA key, the FIPS 186 algorithm is used even if libgcrypt is
           not in FIPS mode.
@@ -2709,7 +3030,7 @@ Libgcrypt also provides a function to generate public key pairs:
      Both private and public keys are returned in one container and may
      be accompanied by some miscellaneous information.
 
-     Here are two examples; the first for Elgamal and the second for
+     Here are two examples: the first for Elgamal and the second for
      elliptic curve key generation:
 
           (key-data
@@ -2749,7 +3070,7 @@ Libgcrypt also provides a function to generate public key pairs:
      generation algorithm provides them.
 
 Future versions of Libgcrypt will have extended versions of the public
-key interfaced which will take an additional context to allow for
+key interface which will take an additional context to allow for
 pre-computations, special operations, and other optimization.  As a
 first step a new function is introduced to help using the ECC algorithms
 in new ways:
@@ -2761,13 +3082,13 @@ in new ways:
      the state of that context, the S-expression may either be a public
      key, a private key or any other object used with public key
      operations.  On success 0 is returned and a new S-expression is
-     stored at R_SEXP; on error an error code is returned and NULL is
+     stored at R_SEXP; on error an error code is returned and 'NULL' is
      stored at R_SEXP.  MODE must be one of:
 
      '0'
           Decide what to return depending on the context.  For example
-          if the private key parameter is available a private key is
-          returned, if not a public key is returned.
+          if the private key parameter is available, a private key is
+          returned; if not, a public key is returned.
 
      'GCRY_PK_GET_PUBKEY'
           Return the public key even if the context has the private key
@@ -2787,7 +3108,7 @@ File: gcrypt.info,  Node: Hashing,  Next: Message Authentication Codes,  Prev: P
 7 Hashing
 *********
 
-Libgcrypt provides an easy and consistent to use interface for hashing.
+Libgcrypt provides an easy to use and consistent interface for hashing.
 Hashing is buffered and several hash algorithms can be updated at once.
 It is possible to compute a HMAC using the same routines.  The
 programming model follows an open/process/close paradigm and is in that
@@ -2820,8 +3141,8 @@ File: gcrypt.info,  Node: Available hash algorithms,  Next: Working with hash al
 'GCRY_MD_RMD160'
      This is the 160 bit version of the RIPE message digest
      (RIPE-MD-160).  Like SHA-1 it also yields a digest of 20 bytes.
-     This algorithm share a lot of design properties with SHA-1 and thus
-     it is advisable not to use it for new protocols.
+     This algorithm shares a lot of design properties with SHA-1 and
+     thus it is advisable not to use it for new protocols.
 
 'GCRY_MD_MD5'
      This is the well known MD5 algorithm, which yields a message digest
@@ -2836,7 +3157,7 @@ File: gcrypt.info,  Node: Available hash algorithms,  Next: Working with hash al
      used.
 
 'GCRY_MD_MD2'
-     This is an reserved identifier for MD-2; there is no implementation
+     This is a reserved identifier for MD-2; there is no implementation
      yet.  This algorithm has severe weaknesses and should not be used.
 
 'GCRY_MD_TIGER'
@@ -2853,7 +3174,7 @@ File: gcrypt.info,  Node: Available hash algorithms,  Next: Working with hash al
 
 'GCRY_MD_HAVAL'
      This is an reserved value for the HAVAL algorithm with 5 passes and
-     160 bit.  It yields a message digest of 20 bytes.  Note that there
+     160 bits.  It yields a message digest of 20 bytes.  Note that there
      is no implementation yet available.
 
 'GCRY_MD_SHA224'
@@ -2869,8 +3190,16 @@ File: gcrypt.info,  Node: Available hash algorithms,  Next: Working with hash al
      bytes.  See FIPS 180-2 for the specification.
 
 'GCRY_MD_SHA512'
-     This is the SHA-384 algorithm which yields a message digest of 64
+     This is the SHA-512 algorithm which yields a message digest of 64
      bytes.  See FIPS 180-2 for the specification.
+
+'GCRY_MD_SHA512_224'
+     This is the SHA-512/224 algorithm which yields a message digest of
+     28 bytes.  See FIPS 180-4 for the specification.
+
+'GCRY_MD_SHA512_256'
+     This is the SHA-512/256 algorithm which yields a message digest of
+     32 bytes.  See FIPS 180-4 for the specification.
 
 'GCRY_MD_SHA3_224'
      This is the SHA3-224 algorithm which yields a message digest of 28
@@ -2961,6 +3290,10 @@ File: gcrypt.info,  Node: Available hash algorithms,  Next: Working with hash al
      This is the BLAKE2s-128 algorithm which yields a message digest of
      16 bytes.  See RFC 7693 for the specification.
 
+'GCRY_MD_SM3'
+     This is the SM3 algorithm which yields a message digest of 32
+     bytes.
+
 
 File: gcrypt.info,  Node: Working with hash algorithms,  Prev: Available hash algorithms,  Up: Hashing
 
@@ -2977,7 +3310,7 @@ is done using:
      given as an bitwise OR of constants described below.  ALGO may be
      given as '0' if the algorithms to use are later set using
      'gcry_md_enable'.  HD is guaranteed to either receive a valid
-     handle or NULL.
+     handle or 'NULL'.
 
      For a list of supported algorithms, see *note Available hash
      algorithms::.
@@ -2986,7 +3319,7 @@ is done using:
 
      'GCRY_MD_FLAG_SECURE'
           Allocate all buffers and the resulting digest in "secure
-          memory".  Use this is the hashed data is highly confidential.
+          memory".  Use this if the hashed data is highly confidential.
 
      'GCRY_MD_FLAG_HMAC'
           Turn the algorithm into a HMAC message authentication
@@ -3004,11 +3337,11 @@ is done using:
           write patterns.  Using this flag emulates that bug.  This may
           for example be useful for applications which use Whirlpool as
           part of their key generation.  It is strongly suggested to use
-          this flag only if really needed and if possible to the data
+          this flag only if really needed; and if possible, the data
           should be re-processed using the regular Whirlpool algorithm.
 
           Note that this flag works for the entire hash context.  If
-          needed arises it may be used to enable bug emulation for other
+          need arises, it may be used to enable bug emulation for other
           hash algorithms.  Thus you should not use this flag for a
           multi-algorithm hash context.
 
@@ -3033,8 +3366,8 @@ set using the function:
      For use with the HMAC feature or BLAKE2 keyed hash, set the MAC key
      to the value of KEY of length KEYLEN bytes.  For HMAC, there is no
      restriction on the length of the key.  For keyed BLAKE2b hash,
-     length of the key must be 64 bytes or less.  For keyed BLAKE2s
-     hash, length of the key must be 32 bytes or less.
+     length of the key must be in the range 1 to 64 bytes.  For keyed
+     BLAKE2s hash, length of the key must be in the range 1 to 32 bytes.
 
    After you are done with the hash calculation, you should release the
 resources by using:
@@ -3071,7 +3404,7 @@ new context:
      independently using the original context.
 
    Now that we have prepared everything to calculate hashes, it is time
-to see how it is actually done.  There are two ways for this, one to
+to see how it is actually done.  There are two ways for this: one to
 update the hash with a block of memory and one macro to update the hash
 by just one character.  Both methods can be used on the same hash
 context.
@@ -3103,7 +3436,7 @@ hashed in the message digest or some padding.
      Finalize the message digest calculation.  This is not really needed
      because 'gcry_md_read' and 'gcry_md_extract' do this implicitly.
      After this has been done no further updates (by means of
-     'gcry_md_write' or 'gcry_md_putc' should be done; However, to
+     'gcry_md_write' or 'gcry_md_putc') should be done; However, to
      mitigate timing attacks it is sometimes useful to keep on updating
      the context after having stored away the actual digest.  Only the
      first call to this function has an effect.  It is implemented as a
@@ -3119,7 +3452,7 @@ function:
      will always return the same value for one handle.  The returned
      message digest is allocated within the message context and
      therefore valid until the handle is released or reset-ed (using
-     'gcry_md_close' or 'gcry_md_reset' or it has been updated as a
+     'gcry_md_close' or 'gcry_md_reset') or it has been updated as a
      mitigation measure against timing attacks.  ALGO may be given as 0
      to return the only enabled message digest or it may specify one of
      the enabled algorithms.  The function does return 'NULL' if the
@@ -3176,8 +3509,8 @@ memory, two fast convenience function are available for this task:
      digest of a buffer.  This function does not require a context and
      immediately returns the message digest of the LENGTH bytes at
      BUFFER.  DIGEST must be allocated by the caller, large enough to
-     hold the message digest yielded by the the specified algorithm
-     ALGO.  This required size may be obtained by using the function
+     hold the message digest yielded by the specified algorithm ALGO.
+     This required size may be obtained by using the function
      'gcry_md_get_algo_dlen'.
 
      Note that in contrast to 'gcry_md_hash_buffers' this function will
@@ -3212,7 +3545,7 @@ representations and hash algorithm identifiers.
      allocated BUFFER.  LENGTH must point to variable with the available
      size of BUFFER and receives after return the actual size of the
      returned OID. The returned error code may be 'GPG_ERR_TOO_SHORT' if
-     the provided buffer is to short to receive the OID; it is possible
+     the provided buffer is too short to receive the OID; it is possible
      to call the function with 'NULL' for BUFFER to have it only return
      the required size.  The function returns 0 on success.
 
@@ -3276,7 +3609,7 @@ File: gcrypt.info,  Node: Message Authentication Codes,  Next: Key Derivation,  
 8 Message Authentication Codes
 ******************************
 
-Libgcrypt provides an easy and consistent to use interface for
+Libgcrypt provides an easy to use and consistent interface for
 generating Message Authentication Codes (MAC). MAC generation is
 buffered and interface similar to the one used with hash algorithms.
 The programming model follows an open/process/close paradigm and is in
@@ -3329,6 +3662,14 @@ File: gcrypt.info,  Node: Available MAC algorithms,  Next: Working with MAC algo
      This is HMAC message authentication algorithm based on the SHA3-384
      hash algorithm.
 
+'GCRY_MAC_HMAC_SHA512_224'
+     This is HMAC message authentication algorithm based on the
+     SHA-512/224 hash algorithm.
+
+'GCRY_MAC_HMAC_SHA512_256'
+     This is HMAC message authentication algorithm based on the
+     SHA-512/256 hash algorithm.
+
 'GCRY_MAC_HMAC_SHA1'
      This is HMAC message authentication algorithm based on the SHA-1
      hash algorithm.
@@ -3360,6 +3701,42 @@ File: gcrypt.info,  Node: Available MAC algorithms,  Next: Working with MAC algo
 'GCRY_MAC_HMAC_STRIBOG512'
      This is HMAC message authentication algorithm based on the 512-bit
      hash algorithm described in GOST R 34.11-2012.
+
+'GCRY_MAC_HMAC_BLAKE2B_512'
+     This is HMAC message authentication algorithm based on the
+     BLAKE2b-512 hash algorithm.
+
+'GCRY_MAC_HMAC_BLAKE2B_384'
+     This is HMAC message authentication algorithm based on the
+     BLAKE2b-384 hash algorithm.
+
+'GCRY_MAC_HMAC_BLAKE2B_256'
+     This is HMAC message authentication algorithm based on the
+     BLAKE2b-256 hash algorithm.
+
+'GCRY_MAC_HMAC_BLAKE2B_160'
+     This is HMAC message authentication algorithm based on the
+     BLAKE2b-160 hash algorithm.
+
+'GCRY_MAC_HMAC_BLAKE2S_256'
+     This is HMAC message authentication algorithm based on the
+     BLAKE2s-256 hash algorithm.
+
+'GCRY_MAC_HMAC_BLAKE2S_224'
+     This is HMAC message authentication algorithm based on the
+     BLAKE2s-224 hash algorithm.
+
+'GCRY_MAC_HMAC_BLAKE2S_160'
+     This is HMAC message authentication algorithm based on the
+     BLAKE2s-160 hash algorithm.
+
+'GCRY_MAC_HMAC_BLAKE2S_128'
+     This is HMAC message authentication algorithm based on the
+     BLAKE2s-128 hash algorithm.
+
+'GCRY_MAC_HMAC_SM3'
+     This is HMAC message authentication algorithm based on the SM3 hash
+     algorithm.
 
 'GCRY_MAC_CMAC_AES'
      This is CMAC (Cipher-based MAC) message authentication algorithm
@@ -3405,6 +3782,10 @@ File: gcrypt.info,  Node: Available MAC algorithms,  Next: Working with MAC algo
      This is CMAC message authentication algorithm based on the GOST
      28147-89 block cipher algorithm.
 
+'GCRY_MAC_CMAC_SM4'
+     This is CMAC message authentication algorithm based on the SM4
+     block cipher algorithm.
+
 'GCRY_MAC_GMAC_AES'
      This is GMAC (GCM mode based MAC) message authentication algorithm
      based on the AES block cipher algorithm.
@@ -3449,6 +3830,10 @@ File: gcrypt.info,  Node: Available MAC algorithms,  Next: Working with MAC algo
      This is Poly1305-SEED message authentication algorithm, used with
      key and one-time nonce.
 
+'GCRY_MAC_GOST28147_IMIT'
+     This is MAC construction defined in GOST 28147-89 (see RFC 5830
+     Section 8).
+
 
 File: gcrypt.info,  Node: Working with MAC algorithms,  Prev: Available MAC algorithms,  Up: Message Authentication Codes
 
@@ -3461,10 +3846,10 @@ is done using:
  -- Function: gcry_error_t gcry_mac_open (gcry_mac_hd_t *HD, int ALGO,
           unsigned int FLAGS, gcry_ctx_t CTX)
 
-     Create a MAC object for algorithm ALGO.  FLAGS may be given as an
+     Create a MAC object for algorithm ALGO.  FLAGS may be given as a
      bitwise OR of constants described below.  HD is guaranteed to
-     either receive a valid handle or NULL. CTX is context object to
-     associate MAC object with.  CTX maybe set to NULL.
+     either receive a valid handle or 'NULL'.  CTX is context object to
+     associate MAC object with.  CTX maybe set to 'NULL'.
 
      For a list of supported algorithms, see *note Available MAC
      algorithms::.
@@ -3614,9 +3999,9 @@ strings.
           void *KEYBUFFER )
 
      Derive a key from a passphrase.  KEYSIZE gives the requested size
-     of the keys in octets.  KEYBUFFER is a caller provided buffer
-     filled on success with the derived key.  The input passphrase is
-     taken from PASSPHRASE which is an arbitrary memory buffer of
+     of the key in octets.  KEYBUFFER is a caller provided buffer filled
+     on success with the derived key.  The input passphrase is taken
+     from PASSPHRASE which is an arbitrary memory buffer of
      PASSPHRASELEN octets.  ALGO specifies the KDF algorithm to use; see
      below.  SUBALGO specifies an algorithm used internally by the KDF
      algorithms; this is usually a hash algorithm but certain KDF
@@ -3678,7 +4063,7 @@ Libgcypt offers random numbers of different quality levels:
 
 'GCRY_WEAK_RANDOM'
      For all functions, except for 'gcry_mpi_randomize', this level maps
-     to GCRY_STRONG_RANDOM. If you do not want this, consider using
+     to 'GCRY_STRONG_RANDOM'.  If you do not want this, consider using
      'gcry_create_nonce'.
 'GCRY_STRONG_RANDOM'
      Use this level for session keys and similar purposes.
@@ -3737,7 +4122,7 @@ code and description of S-expressions,
 
 * Menu:
 
-* Data types for S-expressions::  Data types related with S-expressions.
+* Data types for S-expressions::  Data types related to S-expressions.
 * Working with S-expressions::  How to work with S-expressions.
 
 
@@ -3768,9 +4153,9 @@ the external formats:
      from its external representation in BUFFER of LENGTH bytes.  On
      success the result is stored at the address given by R_SEXP.  With
      AUTODETECT set to 0, the data in BUFFER is expected to be in
-     canonized format, with AUTODETECT set to 1 the parses any of the
-     defined external formats.  If BUFFER does not hold a valid
-     S-expression an error code is returned and R_SEXP set to 'NULL'.
+     canonized format, with AUTODETECT set to 1 the function parses any
+     of the defined external formats.  If BUFFER does not hold a valid
+     S-expression, an error code is returned and R_SEXP set to 'NULL'.
      Note that the caller is responsible for releasing the newly
      allocated S-expression using 'gcry_sexp_release'.
 
@@ -3840,7 +4225,7 @@ the external formats:
  -- Function: void gcry_sexp_release (gcry_sexp_t SEXP)
 
      Release the S-expression object SEXP.  If the S-expression is
-     stored in secure memory it explicitly zeroises that memory; note
+     stored in secure memory, it explicitly zeroises that memory; note
      that this is done in addition to the zeroisation always done when
      freeing secure memory.
 
@@ -3926,7 +4311,7 @@ There are functions to parse S-expressions and retrieve elements:
 
      Create and return a new list form all elements except for the first
      one.  Note that this function may return an invalid S-expression
-     because it is not guaranteed, that the type exists and is a string.
+     because it is not guaranteed that the type exists and is a string.
      However, for parsing a complex S-expression it might be useful for
      intermediate lists.  Returns 'NULL' on error.
 
@@ -3994,28 +4379,58 @@ There are functions to parse S-expressions and retrieve elements:
           const char *PATH, const char *LIST, ...)
 
      Extract parameters from an S-expression using a list of parameter
-     names.  The names of these parameters are specified in LIST. White
+     names.  The names of these parameters are specified in LIST.  White
      space between the parameter names are ignored.  Some special
-     characters may be given to control the conversion:
+     characters and character sequences may be given to control the
+     conversion:
 
      '+'
-          Switch to unsigned integer format (GCRYMPI_FMT_USG). This is
-          the default mode.
+          Switch to unsigned integer format ('GCRYMPI_FMT_USG').  This
+          is the default mode.
      '-'
-          Switch to standard signed format (GCRYMPI_FMT_STD).
+          Switch to standard signed format ('GCRYMPI_FMT_STD').
      '/'
           Switch to opaque MPI format.  The resulting MPIs may not be
           used for computations; see 'gcry_mpi_get_opaque' for details.
      '&'
           Switch to buffer descriptor mode.  See below for details.
+     '%s'
+          Switch to string mode.  The expected argument is the address
+          of a 'char *' variable; the caller must release that value.
+          If the parameter was marked optional and is not found, 'NULL'
+          is stored.
+     '%#s'
+          Switch to multi string mode.  The expected argument is the
+          address of a 'char *' variable; the caller must release that
+          value.  If the parameter was marked optional and is not found,
+          'NULL' is stored.  A multi string takes all values, assumes
+          they are strings and concatenates them using a space as
+          delimiter.  In case a value is actually another list, this is
+          not further parsed but a '()' is inserted in place of that
+          sublist.
+     '%u'
+          Switch to unsigned integer mode.  The expected argument is
+          address of a 'unsigned int' variable.
+     '%lu'
+          Switch to unsigned long integer mode.  The expected argument
+          is address of a 'unsigned long' variable.
+     '%d'
+          Switch to signed integer mode.  The expected argument is
+          address of a 'int' variable.
+     '%ld'
+          Switch to signed long integer mode.  The expected argument is
+          address of a 'long' variable.
+     '%zu'
+          Switch to size_t mode.  The expected argument is address of a
+          'size_t' variable.
      '?'
           If immediately following a parameter letter (no white space
           allowed), that parameter is considered optional.
 
-     In general parameter names are single letters.  To use a string for
-     a parameter name, enclose the name in single quotes.
+     In general, parameter names are single letters.  To use a string
+     for a parameter name, enclose the name in single quotes.
 
-     Unless in buffer descriptor mode for each parameter name a pointer
+     Unless in buffer descriptor mode, for each parameter name a pointer
      to an 'gcry_mpi_t' variable is expected that must be set to 'NULL'
      prior to invoking this function, and finally a 'NULL' is expected.
      For example
@@ -4038,7 +4453,7 @@ There are functions to parse S-expressions and retrieve elements:
      descriptor is 'NULL', the function allocates a new buffer and
      stores it at DATA; the other fields are set accordingly with OFF
      set to 0.  If DATA is not 'NULL', the function assumes that the
-     DATA, SIZE, and OFF fields specify a buffer where to but the value
+     DATA, SIZE, and OFF fields specify a buffer where to put the value
      of the respective parameter; on return the LEN field receives the
      number of bytes copied to that buffer; in case the buffer is too
      small, the function immediately returns with an error code (and LEN
@@ -4137,13 +4552,24 @@ The simplest operations are used to assign a new value to an MPI:
      only possible to set W to small values (usually up to the word size
      of the CPU).
 
+ -- Function: gcry_error_t gcry_mpi_get_ui (unsigned int *W,
+          gcry_mpi_t U)
+
+     If U is not negative and small enough to be stored in an 'unsigned
+     int' variable, store its value at W.  If the value does not fit or
+     is negative, return 'GPG_ERR_ERANGE' and do not change the value
+     stored at W.  Note that this function returns an 'unsigned int' so
+     that this value can immediately be used with the bit test
+     functions.  This is in contrast to the other "_ui" functions which
+     allow for values up to an 'unsigned long'.
+
  -- Function: void gcry_mpi_swap (gcry_mpi_t A, gcry_mpi_t B)
 
      Swap the values of A and B.
 
  -- Function: void gcry_mpi_snatch (gcry_mpi_t W, const gcry_mpi_t U)
 
-     Set U into W and release U.  If W is 'NULL' only U will be
+     Set U into W and release U.  If W is 'NULL', only U will be
      released.
 
  -- Function: void gcry_mpi_neg (gcry_mpi_t W, gcry_mpi_t U)
@@ -4171,7 +4597,7 @@ representation of an MPI and the internal one of Libgcrypt.
      with a length of BUFLEN into a newly created MPI returned which
      will be stored at the address of R_MPI.  For certain formats the
      length argument is not required and should be passed as '0'.  A
-     BUFLEN larger than 16 MiByte will be rejected.  After a successful
+     BUFLEN larger than 16 MiB will be rejected.  After a successful
      operation the variable NSCANNED receives the number of bytes
      actually scanned unless NSCANNED was given as 'NULL'.  FORMAT
      describes the format of the MPI as stored in BUFFER:
@@ -4192,8 +4618,8 @@ representation of an MPI and the internal one of Libgcrypt.
 
      'GCRYMPI_FMT_HEX'
           Stored as a string with each byte of the MPI encoded as 2 hex
-          digits.  Negative numbers are prefix with a minus sign and in
-          addition the high bit is always zero to make clear that an
+          digits.  Negative numbers are prefixed with a minus sign and
+          in addition the high bit is always zero to make clear that an
           explicit sign ist used.  When using this format, BUFLEN must
           be zero.
 
@@ -4209,9 +4635,9 @@ representation of an MPI and the internal one of Libgcrypt.
 
      Convert the MPI A into an external representation described by
      FORMAT (see above) and store it in the provided BUFFER which has a
-     usable length of at least the BUFLEN bytes.  If NWRITTEN is not
-     NULL, it will receive the number of bytes actually stored in BUFFER
-     after a successful operation.
+     usable length of at least BUFLEN bytes.  If NWRITTEN is not 'NULL',
+     it will receive the number of bytes actually stored in BUFFER after
+     a successful operation.
 
  -- Function: gcry_error_t gcry_mpi_aprint (enum gcry_mpi_format FORMAT,
           unsigned char **BUFFER, size_t *NBYTES, const gcry_mpi_t A)
@@ -4296,7 +4722,9 @@ Basic arithmetic operations:
           gcry_mpi_t DIVIDEND, gcry_mpi_t DIVISOR, int ROUND)
 
      Q = DIVIDEND / DIVISOR, R = DIVIDEND \bmod DIVISOR.  Q and R may be
-     passed as 'NULL'.  ROUND should be negative or 0.
+     passed as 'NULL'.  ROUND is either negative for floored division
+     (rounds towards the next lower integer) or zero for truncated
+     division (rounds towards zero).
 
  -- Function: void gcry_mpi_mod (gcry_mpi_t R, gcry_mpi_t DIVIDEND,
           gcry_mpi_t DIVISOR)
@@ -4311,8 +4739,8 @@ Basic arithmetic operations:
  -- Function: int gcry_mpi_gcd (gcry_mpi_t G, gcry_mpi_t A,
           gcry_mpi_t B)
 
-     Set G to the greatest common divisor of A and B.  Return true if
-     the G is 1.
+     Set G to the greatest common divisor of A and B.  Return true if G
+     is 1.
 
  -- Function: int gcry_mpi_invm (gcry_mpi_t X, gcry_mpi_t A,
           gcry_mpi_t M)
@@ -4330,9 +4758,9 @@ The next 2 functions are used to compare MPIs:
 
  -- Function: int gcry_mpi_cmp (const gcry_mpi_t U, const gcry_mpi_t V)
 
-     Compare the multi-precision-integers number U and V returning 0 for
-     equality, a positive value for U > V and a negative for U < V.  If
-     both numbers are opaque values (cf, gcry_mpi_set_opaque) the
+     Compare the multi-precision-integers number U and V, returning 0
+     for equality, a positive value for U > V and a negative for U < V.
+     If both numbers are opaque values (cf.  'gcry_mpi_set_opaque'), the
      comparison is done by checking the bit sizes using memcmp.  If only
      one number is an opaque value, the opaque value is less than the
      other number.
@@ -4340,7 +4768,7 @@ The next 2 functions are used to compare MPIs:
  -- Function: int gcry_mpi_cmp_ui (const gcry_mpi_t U, unsigned long V)
 
      Compare the multi-precision-integers number U with the unsigned
-     integer V returning 0 for equality, a positive value for U > V and
+     integer V, returning 0 for equality, a positive value for U > V and
      a negative for U < V.
 
  -- Function: int gcry_mpi_is_neg (const gcry_mpi_t A)
@@ -4419,7 +4847,7 @@ elliptic curve methods for which no explicit support is available.
           (gcry_mpi_point_t POINT)
 
      Allocate and return a new point object and initialize it with
-     POINT.  If POINT is NULL the function is identical to
+     POINT.  If POINT is 'NULL', the function is identical to
      'gcry_mpi_point_new(0)'.
 
  -- Function: void gcry_mpi_point_get (gcry_mpi_t X, gcry_mpi_t Y,
@@ -4444,7 +4872,7 @@ elliptic curve methods for which no explicit support is available.
 
      Store the projective coordinates from X, Y, and Z into POINT.  If a
      coordinate is given as 'NULL', the value 0 is used.  If 'NULL' is
-     used for POINT a new point object is allocated and returned.
+     used for POINT, a new point object is allocated and returned.
      Returns POINT or the newly allocated point object.
 
  -- Function: gcry_mpi_point_t gcry_mpi_point_snatch_set (
@@ -4453,7 +4881,7 @@ elliptic curve methods for which no explicit support is available.
 
      Store the projective coordinates from X, Y, and Z into POINT.  If a
      coordinate is given as 'NULL', the value 0 is used.  If 'NULL' is
-     used for POINT a new point object is allocated and returned.  The
+     used for POINT, a new point object is allocated and returned.  The
      MPIs X, Y, and Z are released.  Using this function instead of
      'gcry_mpi_point_set' and 3 calls to 'gcry_mpi_release' has the
      advantage of avoiding some extra memory allocations and copies.
@@ -4463,7 +4891,7 @@ elliptic curve methods for which no explicit support is available.
           gcry_sexp_t KEYPARAM, const char *CURVENAME)
 
      Allocate a new context for elliptic curve operations.  If KEYPARAM
-     is given it specifies the parameters of the curve (*note
+     is given, it specifies the parameters of the curve (*note
      ecc_keyparam::).  If CURVENAME is given in addition to KEYPARAM and
      the key parameters do not include a named curve reference, the
      string CURVENAME is used to fill in missing parameters.  If only
@@ -4484,15 +4912,15 @@ elliptic curve methods for which no explicit support is available.
  -- Function: gcry_mpi_t gcry_mpi_ec_get_mpi ( const char *NAME,
           gcry_ctx_t CTX, int COPY)
 
-     Return the MPI with NAME from the context CTX.  If not found 'NULL'
-     is returned.  If the returned MPI may later be modified, it is
-     suggested to pass '1' to COPY, so that the function guarantees that
-     a modifiable copy of the MPI is returned.  If '0' is used for COPY,
-     this function may return a constant flagged MPI. In any case
+     Return the MPI with NAME from the context CTX.  If not found,
+     'NULL' is returned.  If the returned MPI may later be modified, it
+     is suggested to pass '1' to COPY, so that the function guarantees
+     that a modifiable copy of the MPI is returned.  If '0' is used for
+     COPY, this function may return a constant flagged MPI. In any case
      'gcry_mpi_release' needs to be called to release the result.  For
-     valid names *note ecc_keyparam::.  If the public key 'q' is
+     valid names, see *note ecc_keyparam::.  If the public key 'q' is
      requested but only the private key 'd' is available, 'q' will be
-     recomputed on the fly.  If a point parameter is requested it is
+     recomputed on the fly.  If a point parameter is requested, it is
      returned as an uncompressed encoded point unless these special
      names are used:
      Q@EDDSA
@@ -4502,7 +4930,7 @@ elliptic curve methods for which no explicit support is available.
  -- Function: gcry_mpi_point_t gcry_mpi_ec_get_point ( const char *NAME,
           gcry_ctx_t CTX, int COPY)
 
-     Return the point with NAME from the context CTX.  If not found
+     Return the point with NAME from the context CTX.  If not found,
      'NULL' is returned.  If the returned MPI may later be modified, it
      is suggested to pass '1' to COPY, so that the function guarantees
      that a modifiable copy of the MPI is returned.  If '0' is used for
@@ -4531,7 +4959,7 @@ elliptic curve methods for which no explicit support is available.
      Decode the point given as an MPI in VALUE and store at RESULT.  To
      decide which encoding is used the function takes a context CTX
      which can be created with 'gcry_mpi_ec_new'.  If 'NULL' is given
-     for the context the function assumes a 0x04 prefixed uncompressed
+     for the context, the function assumes a 0x04 prefixed uncompressed
      encoding.  On error an error code is returned and RESULT might be
      changed.
 
@@ -4594,19 +5022,19 @@ Two functions implement this kludge:
      value (i.e.  an value that can't be used for any math calculation
      and is only used to store an arbitrary bit pattern in A).
      Ownership of P is taken by this function and thus the user may not
-     use dereference the passed value anymore.  It is required that them
+     dereference the passed value anymore.  It is required that the
      memory referenced by P has been allocated in a way that 'gcry_free'
      is able to release it.
 
      WARNING: Never use an opaque MPI for actual math operations.  The
-     only valid functions are gcry_mpi_get_opaque and gcry_mpi_release.
-     Use gcry_mpi_scan to convert a string of arbitrary bytes into an
-     MPI.
+     only valid functions are 'gcry_mpi_get_opaque' and
+     'gcry_mpi_release'.  Use 'gcry_mpi_scan' to convert a string of
+     arbitrary bytes into an MPI.
 
  -- Function: gcry_mpi_t gcry_mpi_set_opaque_copy (gcry_mpi_t A,
           const void *P, unsigned int NBITS)
 
-     Same as 'gcry_mpi_set_opaque' but ownership of P is not taken
+     Same as 'gcry_mpi_set_opaque' but ownership of P is not taken;
      instead a copy of P is used.
 
  -- Function: void * gcry_mpi_get_opaque (gcry_mpi_t A,
@@ -4623,7 +5051,7 @@ currently defined flags are:
      Setting this flag converts A into an MPI stored in "secure memory".
      Clearing this flag is not allowed.
 'GCRYMPI_FLAG_OPAQUE'
-     This is an interanl flag, indicating the an opaque valuue and not
+     This is an internal flag, indicating that an opaque value and not
      an integer is stored.  This is an read-only flag; it may not be set
      or cleared.
 'GCRYMPI_FLAG_IMMUTABLE'
@@ -4635,8 +5063,8 @@ currently defined flags are:
      immutable Setting or changing the value of that MPI is ignored and
      an error message is logged.  Such an MPI will never be deallocated
      and may thus be used without copying.  Note that using
-     gcry_mpi_copy will return a copy of that constant with this and the
-     immutable flag cleared.  A few commonly used constants are
+     'gcry_mpi_copy' will return a copy of that constant with this and
+     the immutable flag cleared.  A few commonly used constants are
      pre-defined and accessible using the macros 'GCRYMPI_CONST_ONE',
      'GCRYMPI_CONST_TWO', 'GCRYMPI_CONST_THREE', 'GCRYMPI_CONST_FOUR',
      and 'GCRYMPI_CONST_EIGHT'.
@@ -4660,7 +5088,7 @@ currently defined flags are:
      flag is 'GCRYMPI_FLAG_IMMUTABLE' but only if 'GCRYMPI_FLAG_CONST'
      is not set.  If 'GCRYMPI_FLAG_CONST' is set, clearing
      'GCRYMPI_FLAG_IMMUTABLE' will simply be ignored.
-   o
+
  -- Function: int gcry_mpi_get_flag (gcry_mpi_t A,
           enum gcry_mpi_flag FLAG)
 
@@ -4675,7 +5103,7 @@ may be used:
      Set the multi-precision-integers W to a random non-negative number
      of NBITS, using random data quality of level LEVEL.  In case NBITS
      is not a multiple of a byte, NBITS is rounded up to the next byte
-     boundary.  When using a LEVEL of 'GCRY_WEAK_RANDOM' this function
+     boundary.  When using a LEVEL of 'GCRY_WEAK_RANDOM', this function
      makes use of 'gcry_create_nonce'.
 
 
@@ -4710,10 +5138,10 @@ File: gcrypt.info,  Node: Generation,  Next: Checking,  Up: Prime numbers
  -- Function: gcry_error_t gcry_prime_group_generator (gcry_mpi_t *R_G,
           gcry_mpi_t PRIME, gcry_mpi_t *FACTORS, gcry_mpi_t START_G)
 
-     Find a generator for PRIME where the factorization of (PRIME-1) is
-     in the 'NULL' terminated array FACTORS.  Return the generator as a
-     newly allocated MPI in R_G.  If START_G is not NULL, use this as
-     the start for the search.
+     Find a generator for PRIME where the factorization of (PRIME - 1)
+     is in the 'NULL' terminated array FACTORS.  Return the generator as
+     a newly allocated MPI in R_G.  If START_G is not 'NULL', use this
+     as the start for the search.
 
  -- Function: void gcry_prime_release_factors (gcry_mpi_t *FACTORS)
 
@@ -4740,10 +5168,10 @@ File: gcrypt.info,  Node: Utilities,  Next: Tools,  Prev: Prime numbers,  Up: To
 
 * Menu:
 
-* Memory allocation::   Functions related with memory allocation.
-* Context management::  Functions related with context management.
+* Memory allocation::   Functions related to memory allocation.
+* Context management::  Functions related to context management.
 * Buffer description::  A data type to describe buffers.
-* Config reporting::    How to return Libgcrypt's configuration.
+* Config reporting::    How to check Libgcrypt's configuration.
 
 
 File: gcrypt.info,  Node: Memory allocation,  Next: Context management,  Up: Utilities
@@ -4755,7 +5183,7 @@ File: gcrypt.info,  Node: Memory allocation,  Next: Context management,  Up: Uti
 
      This function tries to allocate N bytes of memory.  On success it
      returns a pointer to the memory area, in an out-of-core condition,
-     it returns NULL.
+     it returns 'NULL'.
 
  -- Function: void * gcry_malloc_secure (size_t N)
      Like 'gcry_malloc', but uses secure memory.
@@ -4765,7 +5193,7 @@ File: gcrypt.info,  Node: Memory allocation,  Next: Context management,  Up: Uti
      This function allocates a cleared block of memory (i.e.
      initialized with zero bytes) long enough to contain a vector of N
      elements, each of size M bytes.  On success it returns a pointer to
-     the memory block; in an out-of-core condition, it returns NULL.
+     the memory block; in an out-of-core condition, it returns 'NULL'.
 
  -- Function: void * gcry_calloc_secure (size_t N, size_t M)
      Like 'gcry_calloc', but uses secure memory.
@@ -4774,9 +5202,9 @@ File: gcrypt.info,  Node: Memory allocation,  Next: Context management,  Up: Uti
 
      This function tries to resize the memory area pointed to by P to N
      bytes.  On success it returns a pointer to the new memory area, in
-     an out-of-core condition, it returns NULL. Depending on whether the
-     memory pointed to by P is secure memory or not, gcry_realloc tries
-     to use secure memory as well.
+     an out-of-core condition, it returns 'NULL'.  Depending on whether
+     the memory pointed to by P is secure memory or not, 'gcry_realloc'
+     tries to use secure memory as well.
 
  -- Function: void gcry_free (void *P)
      Release the memory area pointed to by P.
@@ -4787,7 +5215,7 @@ File: gcrypt.info,  Node: Context management,  Next: Buffer description,  Prev: 
 14.2 Context management
 =======================
 
-Some function make use of a context object.  As of now there are only a
+Some function make use of a context object.  As of now, there are only a
 few math functions.  However, future versions of Libgcrypt may make more
 use of this context object.
 
@@ -4804,7 +5232,7 @@ File: gcrypt.info,  Node: Buffer description,  Next: Config reporting,  Prev: Co
 14.3 Buffer description
 =======================
 
-To help hashing non-contiguous areas of memory a general purpose data
+To help hashing non-contiguous areas of memory, a general purpose data
 type is defined:
 
  -- Data type: gcry_buffer_t
@@ -4825,8 +5253,8 @@ type is defined:
 
 File: gcrypt.info,  Node: Config reporting,  Prev: Buffer description,  Up: Utilities
 
-14.4 How to return Libgcrypt's configuration.
-=============================================
+14.4 How to check Libgcrypt's configuration.
+============================================
 
 Although 'GCRYCTL_PRINT_CONFIG' can be used to print configuration
 options, it is sometimes necessary to check them in a program.  This can
@@ -4837,12 +5265,13 @@ be accomplished by using this function:
      This function returns a malloced string with colon delimited
      configure options.  With a value of 0 for MODE this string
      resembles the output of 'GCRYCTL_PRINT_CONFIG'.  However, if WHAT
-     is not NULL, only the line where the first field (e.g.  "cpu-arch")
-     matches WHAT is returned.
+     is not 'NULL', only the line where the first field (e.g.
+     "cpu-arch") matches WHAT is returned.
 
      Other values than 0 for MODE are not defined.  The caller shall
-     free the string using 'gcry_free'.  On error NULL is returned and
-     ERRNO is set; if a value for WHAT is unknow ERRNO will be set to 0.
+     free the string using 'gcry_free'.  On error 'NULL' is returned and
+     'ERRNO' is set; if a value for WHAT is unknown, 'ERRNO' will be set
+     to 0.
 
 
 File: gcrypt.info,  Node: Tools,  Next: Configuration,  Prev: Utilities,  Up: Top
@@ -4881,7 +5310,7 @@ command line.
 
 '--binary'
      Print the MAC as a binary string.  The default is to print the MAC
-     encoded has lower case hex digits.
+     encoded as lower case hex digits.
 
 '--version'
      Print version of the program and exit.
@@ -4897,6 +5326,10 @@ to change the behaviour of Libgcrypt.
 
 The environment variables considered by Libgcrypt are:
 
+'LIBGCRYPT_FORCE_FIPS_MODE'
+     By setting this variable to any value, Libgcrypt is put into FIPS
+     mode at initialization time (*note enabling fips mode::).
+
 'GCRYPT_BARRETT'
      By setting this variable to any value a different algorithm for
      modular reduction is used for ECC.
@@ -4907,8 +5340,8 @@ The environment variables considered by Libgcrypt are:
      the rndunix entropy gatherer, which is used on systems lacking a
      /dev/random device.  The value of 'GCRYPT_RNDUNIX_DBG' is a file
      name or '-' for stdout.  Debug output is the written to this file.
-     By setting 'GCRYPT_RNDUNIX_DBGALL' to any value the debug output
-     will be more verbose.
+     Setting 'GCRYPT_RNDUNIX_DBGALL' to any value will make the debug
+     output more verbose.
 
 'GCRYPT_RNDW32_NOPERF'
      Setting this environment variable on Windows to any value disables
@@ -4926,7 +5359,7 @@ The environment variables considered by Libgcrypt are:
      This is used to locate the socket to connect to the EGD random
      daemon.  The EGD can be used on system without a /dev/random to
      speed up the random number generator.  It is not needed on the
-     majority of today's operating systems and support for EGD requires
+     majority of today's operating systems, and support for EGD requires
      the use of a configure option at build time.
 
 The files which Libgcrypt uses to retrieve system information and the
@@ -4974,11 +5407,11 @@ This chapter describes the internal architecture of Libgcrypt.
    Libgcrypt is a function library written in ISO C-90.  Any compliant
 compiler should be able to build Libgcrypt as long as the target is
 either a POSIX platform or compatible to the API used by Windows NT.
-Provisions have been take so that the library can be directly used from
+Provisions have been taken so that the library can be directly used from
 C++ applications; however building with a C++ compiler is not supported.
 
    Building Libgcrypt is done by using the common './configure && make'
-approach.  The configure command is included in the source distribution
+approach.  The configure command is included in the source distribution,
 and as a portable shell script it works on any Unix-alike system.  The
 result of running the configure script are a C header file ('config.h'),
 customized Makefiles, the setup of symbolic links and a few other
@@ -5004,8 +5437,8 @@ includes the helper subsystems like the one for S-expressions.  The API
 style depends on the subsystem; in general an open-use-close approach is
 implemented.  The open returns a handle to a context used for all
 further operations on this handle, several functions may then be used on
-this handle and a final close function releases all resources associated
-with the handle.
+this handle, and a final close function releases all resources
+associated with the handle.
 
 * Menu:
 
@@ -5033,11 +5466,11 @@ Because public key cryptography is almost always used to process small
 amounts of data (hash values or session keys), the interface is not
 implemented using the open-use-close paradigm, but with single
 self-contained functions.  Due to the wide variety of parameters
-required by different algorithms S-expressions, as flexible way to
-convey these parameters, are used.  There is a set of helper functions
+required by different algorithms, S-expressions - as flexible way to
+convey these parameters - are used.  There is a set of helper functions
 to work with these S-expressions.
 
-   Aside of functions to register new algorithms, map algorithms names
+   Aside from functions to register new algorithms, map algorithms names
 to algorithms identifiers and to lookup properties of a key, the
 following main functions are available:
 
@@ -5074,7 +5507,7 @@ blinding value r is a random value with the size of the modulus n and
 generated with 'GCRY_WEAK_RANDOM' random level.
 
    The algorithm used for RSA and DSA key generation depends on whether
-Libgcrypt is operated in standard or in FIPS mode.  In standard mode an
+Libgcrypt is operating in standard or in FIPS mode.  In standard mode an
 algorithm based on the Lim-Lee prime number generator is used.  In FIPS
 mode RSA keys are generated as specified in ANSI X9.31 (1998) and DSA
 keys as specified in FIPS 186-2.
@@ -5115,6 +5548,10 @@ each block.
      arbitrary amounts of data and as often as needed to encrypt or
      decrypt all data.
 
+     There is no strict alignment requirements for data, but the best
+     performance can be archived if data is aligned to cacheline
+     boundary.
+
    There are also functions to query properties of algorithms or
 context, like block length, key length, map names or to enable features
 like padding methods.
@@ -5150,6 +5587,10 @@ the same data.
 'gcry_md_write'
      Pass more data for computing the message digest to an instance.
 
+     There is no strict alignment requirements for data, but the best
+     performance can be archived if data is aligned to cacheline
+     boundary.
+
 'gcry_md_putc'
      Buffered version of 'gcry_md_write' implemented as a macro.
 
@@ -5166,7 +5607,7 @@ the same data.
 
    There are also functions to query properties of algorithms or the
 instance, like enabled algorithms, digest length, map algorithm names.
-it is also possible to reset an instance or to copy the current state of
+It is also possible to reset an instance or to copy the current state of
 an instance at any time.  Debug functions to write the hashed data to
 files are available as well.
 
@@ -5210,11 +5651,11 @@ File: gcrypt.info,  Node: Prime-Number-Generator Subsystem Architecture,  Next: 
 
 Libgcrypt provides an interface to its prime number generator.  These
 functions make use of the internal prime number generator which is
-required for the generation for public key key pairs.  The plain prime
+required for the generation for public key pairs.  The plain prime
 checking function is exported as well.
 
    The generation of random prime numbers is based on the Lim and Lee
-algorithm to create practically save primes.(1)  This algorithm creates
+algorithm to create practically safe primes.(1)  This algorithm creates
 a pool of smaller primes, select a few of them to create candidate
 primes of the form 2 * p_0 * p_1 * ... * p_n + 1, tests the candidate
 for primality and permutates the pool until a prime has been found.  It
@@ -5245,9 +5686,9 @@ available through the public API.
 
    (1) Chae Hoon Lim and Pil Joong Lee.  A key recovery attack on
 discrete log-based schemes using a prime order subgroup.  In Burton S.
-Kaliski Jr., editor, Advances in Cryptology: Crypto '97, pages
-249­-263, Berlin / Heidelberg / New York, 1997.  Springer-Verlag.
-Described on page 260.
+Kaliski Jr., editor, Advances in Cryptology: Crypto '97, pages 249-263,
+Berlin / Heidelberg / New York, 1997.  Springer-Verlag.  Described on
+page 260.
 
 
 File: gcrypt.info,  Node: Random-Number Subsystem Architecture,  Prev: Prime-Number-Generator Subsystem Architecture,  Up: Architecture
@@ -5261,22 +5702,30 @@ Libgcrypt provides 3 levels or random quality: The level
 function 'gcry_create_nonce' which is used for weaker usages like
 nonces.  There is also a level 'GCRY_WEAK_RANDOM' which in general maps
 to 'GCRY_STRONG_RANDOM' except when used with the function
-'gcry_mpi_randomize', where it randomizes an multi-precision-integer
+'gcry_mpi_randomize', where it randomizes a multi-precision integer
 using the 'gcry_create_nonce' function.
 
-There are two distinct random generators available:
+There are three distinct random generators available:
 
    * The Continuously Seeded Pseudo Random Number Generator (CSPRNG),
      which is based on the classic GnuPG derived big pool
      implementation.  Implemented in 'random/random-csprng.c' and used
      by default.
-   * A FIPS approved ANSI X9.31 PRNG using AES with a 128 bit key.
-     Implemented in 'random/random-fips.c' and used if Libgcrypt is in
-     FIPS mode.
+   * The Deterministic Random Bits Generator (DRBG), based on the
+     specification by NIST SP800-90A. Implemented in
+     'random/random-drbg.c' and used if Libgcrypt is in FIPS mode, or
+     Libgcrypt is configured by GCRYCTL_SET_PREFERRED_RNG_TYPE with
+     GCRY_RNG_TYPE_FIPS.
+   * Direct access to native RNG on the system.  Implemented in
+     'random/random-system.c' and used if Libgcrypt is configured by
+     GCRYCTL_SET_PREFERRED_RNG_TYPE with GCRY_RNG_TYPE_SYSTEM.
 
-Both generators make use of so-called entropy gathering modules:
+All generators make use of so-called entropy gathering modules:
 
-rndlinux
+rndgetentropy
+     Uses the operating system provided 'getentropy' function.
+
+rndoldlinux
      Uses the operating system provided '/dev/random' and '/dev/urandom'
      devices.  The '/dev/gcrypt/random.conf' config option
      'only-urandom' can be used to inhibit the use of the blocking
@@ -5294,7 +5743,7 @@ rndegd
      However as a system daemon it keeps on running and thus can serve
      several processes requiring entropy input and does not waste
      collected entropy if the application does not need all the
-     collected entropy.  It is not available in FIPS mode.
+     collected entropy.
 
 rndw32
      Targeted for the Microsoft Windows OS. It uses certain properties
@@ -5305,40 +5754,39 @@ rndhw
      Extra module to collect additional entropy by utilizing a hardware
      random number generator.  As of now the supported hardware RNG is
      the Padlock engine of VIA (Centaur) CPUs and x86 CPUs with the
-     RDRAND instruction.  It is not available in FIPS mode.
+     RDRAND instruction.
 
 rndjent
      Extra module to collect additional entropy using a CPU jitter based
-     approach.  This is only used on X86 hardware where the RDTSC opcode
-     is available.  The '/dev/gcrypt/random.conf' config option
+     approach.  The '/dev/gcrypt/random.conf' config option
      'disable-jent' can be used to inhibit the use of this module.
 
 * Menu:
 
 * CSPRNG Description::      Description of the CSPRNG.
-* FIPS PRNG Description::   Description of the FIPS X9.31 PRNG.
+* DRBG Description::   Description of the DRBG.
 
 
-File: gcrypt.info,  Node: CSPRNG Description,  Next: FIPS PRNG Description,  Up: Random-Number Subsystem Architecture
+File: gcrypt.info,  Node: CSPRNG Description,  Next: DRBG Description,  Up: Random-Number Subsystem Architecture
 
 17.6.1 Description of the CSPRNG
 --------------------------------
 
 This random number generator is loosely modelled after the one described
-in Peter Gutmann's paper: "Software Generation of Practically Strong
+in Peter Gutmann's paper "Software Generation of Practically Strong
 Random Numbers".(1)
 
    A pool of 600 bytes is used and mixed using the core SHA-1 hash
-transform function.  Several extra features are used to make the robust
+transform function.  Several extra features are used to make it robust
 against a wide variety of attacks and to protect against failures of
 subsystems.  The state of the generator may be saved to a file and
-initially seed form a file.
+initially seeded form a file.
 
-   Depending on how Libgcrypt was build the generator is able to select
+   Depending on how Libgcrypt was build, the generator is able to select
 the best working entropy gathering module.  It makes use of the slow and
-fast collection methods and requires the pool to initially seeded form
-the slow gatherer or a seed file.  An entropy estimation is used to mix
-in enough data from the gather modules before returning the actual
+fast collection methods and requires the pool to be initially seeded
+form the slow gatherer or a seed file.  An entropy estimation is used to
+mix in enough data from the gather modules before returning the actual
 random output.  Process fork detection and protection is implemented.
 
    The implementation of the nonce generator (for 'gcry_create_nonce')
@@ -5355,48 +5803,38 @@ as result.
 Architecture", New York, 2004, ISBN 0-387-95387-6.
 
 
-File: gcrypt.info,  Node: FIPS PRNG Description,  Prev: CSPRNG Description,  Up: Random-Number Subsystem Architecture
+File: gcrypt.info,  Node: DRBG Description,  Prev: CSPRNG Description,  Up: Random-Number Subsystem Architecture
 
-17.6.2 Description of the FIPS X9.31 PRNG
------------------------------------------
+17.6.2 Description of the DRBG
+------------------------------
 
 The core of this deterministic random number generator is implemented
-according to the document "NIST-Recommended Random Number Generator
-Based on ANSI X9.31 Appendix A.2.4 Using the 3-Key Triple DES and AES
-Algorithms", dated 2005-01-31.  This implementation uses the AES
-variant.
+according to the document "NIST Recommended DRBG Based on ANSI NIST
+SP800-90A". By default, this implementation uses the
+DRBG_NOPR_HMACSHA256 variant (HMAC DRBG with DF with SHA256, without
+prediction resistance.
 
    The generator is based on contexts to utilize the same core functions
 for all random levels as required by the high-level interface.  All
 random generators return their data in 128 bit blocks.  If the caller
-requests less bits, the extra bits are not used.  The key for each
+requests fewer bits, the extra bits are not used.  The key for each
 generator is only set once at the first time a generator context is
 used.  The seed value is set along with the key and again after 1000
 output blocks.
 
    On Unix like systems the 'GCRY_VERY_STRONG_RANDOM' and
-'GCRY_STRONG_RANDOM' generators are keyed and seeded using the rndlinux
-module with the '/dev/random' device.  Thus these generators may block
-until the OS kernel has collected enough entropy.  When used with
-Microsoft Windows the rndw32 module is used instead.
+'GCRY_STRONG_RANDOM' generators are keyed and seeded using the
+rndgetentropy or rndoldlinux module.  With rndoldlinux module, these
+generators may block until the OS kernel has collected enough entropy.
+When used with Microsoft Windows, the rndw32 module is used instead.
 
    The generator used for 'gcry_create_nonce' is keyed and seeded from
-the 'GCRY_STRONG_RANDOM' generator.  Thus is may also block if the
-'GCRY_STRONG_RANDOM' generator has not yet been used before and thus
-gets initialized on the first use by 'gcry_create_nonce'.  This special
-treatment is justified by the weaker requirements for a nonce generator
-and to save precious kernel entropy for use by the "real" random
-generators.
-
-   A self-test facility uses a separate context to check the
-functionality of the core X9.31 functions using a known answers test.
-During runtime each output block is compared to the previous one to
-detect a stuck generator.
-
-   The DT value for the generator is made up of the current time down to
-microseconds (if available) and a free running 64 bit counter.  When
-used with the test context the DT value is taken from the context and
-incremented on each use.
+the 'GCRY_STRONG_RANDOM' generator.  Thus, with rndoldlinux module, it
+may also block if the 'GCRY_STRONG_RANDOM' generator has not yet been
+used before and thus gets initialized on the first use by
+'gcry_create_nonce'.  This special treatment is justified by the weaker
+requirements for a nonce generator and to save precious kernel entropy
+for use by the "real" random generators.
 
 
 File: gcrypt.info,  Node: Self-Tests,  Next: FIPS Mode,  Prev: Architecture,  Up: Top
@@ -5414,7 +5852,7 @@ run all implemented self-tests at any time; this will even run more
 tests than those run in FIPS mode.
 
    If any of the self-tests fails, the library immediately returns an
-error code to the caller.  If Libgcrypt is in FIPS mode the self-tests
+error code to the caller.  If Libgcrypt is in FIPS mode, the self-tests
 will be performed within the "Self-Test" state and any failure puts the
 library into the "Error" state.
 
@@ -5428,20 +5866,6 @@ A.1.1 Symmetric Cipher Algorithm Power-Up Tests
 
 The following symmetric encryption algorithm tests are run during
 power-up:
-
-3DES
-     To test the 3DES 3-key EDE encryption in ECB mode these tests are
-     run:
-       1. A known answer test is run on a 64 bit test vector processed
-          by 64 rounds of Single-DES block encryption and decryption
-          using a key changed with each round.
-       2. A known answer test is run on a 64 bit test vector processed
-          by 16 rounds of 2-key and 3-key Triple-DES block encryption
-          and decryptions using a key changed with each round.
-       3. 10 known answer tests using 3-key Triple-DES EDE encryption,
-          comparing the ciphertext to the known value, then running a
-          decryption and comparing it to the initial plaintext.
-     ('cipher/des.c:selftest')
 
 AES-128
      A known answer tests is run using one test vector and one test key
@@ -5482,20 +5906,29 @@ A.1.3 MAC Algorithm Power-Up Tests
 The following MAC algorithm tests are run during power-up:
 
 HMAC SHA-1
-     A known answer test using 9 byte of data and a 64 byte key is run.
-     ('cipher/hmac-tests.c:selftests_sha1')
+     A known answer test using 9 bytes of data and a 64 byte key is run.
+     ('cipher/mac-hmac.c:selftests_sha1')
 HMAC SHA-224
-     A known answer test using 28 byte of data and a 4 byte key is run.
-     ('cipher/hmac-tests.c:selftests_sha224')
+     A known answer test using 28 bytes of data and a 4 byte key is run.
+     ('cipher/mac-hmac.c:selftests_sha224')
 HMAC SHA-256
-     A known answer test using 28 byte of data and a 4 byte key is run.
-     ('cipher/hmac-tests.c:selftests_sha256')
+     A known answer test using 28 bytes of data and a 4 byte key is run.
+     ('cipher/mac-hmac.c:selftests_sha256')
 HMAC SHA-384
-     A known answer test using 28 byte of data and a 4 byte key is run.
-     ('cipher/hmac-tests.c:selftests_sha384')
+     A known answer test using 28 bytes of data and a 4 byte key is run.
+     ('cipher/mac-hmac.c:selftests_sha384')
 HMAC SHA-512
-     A known answer test using 28 byte of data and a 4 byte key is run.
-     ('cipher/hmac-tests.c:selftests_sha512')
+     A known answer test using 28 bytes of data and a 4 byte key is run.
+     ('cipher/mac-hmac.c:selftests_sha512')
+HMAC SHA3-224
+HMAC SHA3-256
+HMAC SHA3-384
+HMAC SHA3-512
+     A known answer test using 9 bytes of data and a 20 byte key is run.
+     ('cipher/mac-hmac.c:selftests_sha3')
+CMAC AES
+     A known answer test using 40 bytes of data and a 16 byte key is
+     run.  ('cipher/mac-cmac.c:selftests_cmac_aes')
 
 A.1.4 Random Number Power-Up Test
 ---------------------------------
@@ -5515,47 +5948,49 @@ A.1.5 Public Key Algorithm Power-Up Tests
 The public key algorithms are tested during power-up:
 
 RSA
-     A pre-defined 1024 bit RSA key is used and these tests are run in
+     A pre-defined 2048 bit RSA key is used and these tests are run in
      turn:
        1. Conversion of S-expression to internal format.
           ('cipher/rsa.c:selftests_rsa')
        2. Private key consistency check.  ('cipher/rsa.c:selftests_rsa')
        3. A pre-defined 20 byte value is signed with PKCS#1 padding for
-          SHA-1.  The result is verified using the public key against
+          SHA-256.  The result is verified using the public key against
           the original data and against modified data.
-          ('cipher/rsa.c:selftest_sign_1024')
-       4. A 1000 bit random value is encrypted and checked that it does
-          not match the original random value.  The encrypted result is
+          ('cipher/rsa.c:selftest_sign_2048')
+       4. A predefined 66 byte value is encrypted and checked that it
+          matches reference encyrpted message.  The encrypted result is
           then decrypted and checked that it matches the original random
-          value.  ('cipher/rsa.c:selftest_encr_1024')
+          value.  ('cipher/rsa.c:selftest_encr_2048')
 
-DSA
-     A pre-defined 1024 bit DSA key is used and these tests are run in
-     turn:
+ECC
+     A pre-defined SEC P-256 ECDSA key is used and these tests are run
+     in turn:
        1. Conversion of S-expression to internal format.
-          ('cipher/dsa.c:selftests_dsa')
-       2. Private key consistency check.  ('cipher/dsa.c:selftests_dsa')
-       3. A pre-defined 20 byte value is signed with PKCS#1 padding for
-          SHA-1.  The result is verified using the public key against
-          the original data and against modified data.
-          ('cipher/dsa.c:selftest_sign_1024')
+          ('cipher/ecc.c:selftests_ecdsa')
+       2. Private key consistency check.
+          ('cipher/ecc.c:selftests_ecdsa')
+       3. A pre-defined 32 byte value (SHA-256 digest) is signed.  The
+          result is verified using the public key against the original
+          data and against modified data.
+          ('cipher/ecc.c:selftest_sign')
 
-A.1.6 Integrity Power-Up Tests
+A.1.6 Key derivation function Power-Up Tests
+--------------------------------------------
+
+The key derivation functions are tested during power-up:
+
+PBKDF2
+     A known answer tests with 8 byte password and 4 byte salt and SHA-1
+     is used.  ('cipher/kdf.c:selftest_pbkdf2')
+
+A.1.7 Integrity Power-Up Tests
 ------------------------------
 
 The integrity of the Libgcrypt is tested during power-up but only if
 checking has been enabled at build time.  The check works by computing a
 HMAC SHA-256 checksum over the file used to load Libgcrypt into memory.
-That checksum is compared against a checksum stored in a file of the
-same name but with a single dot as a prefix and a suffix of '.hmac'.
-
-A.1.7 Critical Functions Power-Up Tests
----------------------------------------
-
-The 3DES weak key detection is tested during power-up by calling the
-detection function with keys taken from a table listening all weak keys.
-The table itself is protected using a SHA-1 hash.
-('cipher/des.c:selftest')
+That checksum is compared against a checksum stored inside of the same
+file as in the text in the .rodata1 section of the ELF file.
 
 A.2 Conditional Tests
 =====================
@@ -5576,7 +6011,7 @@ mode, the library is put into the "Error" state.
 RSA
      The test uses a random number 64 bits less the size of the modulus
      as plaintext and runs an encryption and decryption operation in
-     turn.  The encrypted value is checked to not match the plaintext
+     turn.  The encrypted value is checked to not match the plaintext,
      and the result of the decryption is checked to match the plaintext.
 
      A new random number of the same size is generated, signed and
@@ -5584,12 +6019,6 @@ RSA
      second signing test, the signature is modified by incrementing its
      value and then verified with the expected result that the
      verification fails.  ('cipher/rsa.c:test_keys')
-DSA
-     The test uses a random number of the size of the Q parameter to
-     create a signature and then checks that the signature verifies.  As
-     a second signing test, the data is modified by incrementing its
-     value and then verified against the signature with the expected
-     result that the verification fails.  ('cipher/dsa.c:test_keys')
 
 A.2.2 Software Load Tests
 -------------------------
@@ -5601,23 +6030,12 @@ A.2.3 Manual Key Entry Tests
 
 A manual key entry feature is not implemented in Libgcrypt.
 
-A.2.4 Continuous RNG Tests
---------------------------
-
-The continuous random number test is only used in FIPS mode.  The RNG
-generates blocks of 128 bit size; the first block generated per context
-is saved in the context and another block is generated to be returned to
-the caller.  Each block is compared against the saved block and then
-stored in the context.  If a duplicated block is detected an error is
-signaled and the library is put into the "Fatal-Error" state.
-('random/random-fips.c:x931_aes_driver')
-
 A.3 Application Requested Tests
 ===============================
 
 The application may requests tests at any time by means of the
 'GCRYCTL_SELFTEST' control command.  Note that using these tests is not
-FIPS conform: Although Libgcrypt rejects all application requests for
+FIPS conformant: Although Libgcrypt rejects all application requests for
 services while running self-tests, it does not ensure that no other
 operations of Libgcrypt are still being executed.  Thus, in FIPS mode an
 application requesting self-tests needs to power-cycle Libgcrypt
@@ -5667,31 +6085,74 @@ The following MAC algorithm tests are run in addition to the power-up
 tests:
 
 HMAC SHA-1
-       1. A known answer test using 9 byte of data and a 20 byte key is
+       1. A known answer test using 9 bytes of data and a 20 byte key is
           run.
-       2. A known answer test using 9 byte of data and a 100 byte key is
+       2. A known answer test using 9 bytes of data and a 100 byte key
+          is run.
+       3. A known answer test using 9 bytes of data and a 49 byte key is
           run.
-       3. A known answer test using 9 byte of data and a 49 byte key is
-          run.
-     ('cipher/hmac-tests.c:selftests_sha1')
+     ('cipher/mac-hmac.c:selftests_sha1')
 HMAC SHA-224
 HMAC SHA-256
 HMAC SHA-384
 HMAC SHA-512
-       1. A known answer test using 9 byte of data and a 20 byte key is
+       1. A known answer test using 9 bytes of data and a 20 byte key is
+          run.
+       2. A known answer test using 50 bytes of data and a 20 byte key
+          is run.
+       3. A known answer test using 50 bytes of data and a 26 byte key
+          is run.
+       4. A known answer test using 54 bytes of data and a 131 byte key
+          is run.
+       5. A known answer test using 152 bytes of data and a 131 byte key
+          is run.
+     ('cipher/mac-hmac.c:selftests_sha224',
+     'cipher/mac-hmac.c:selftests_sha256',
+     'cipher/mac-hmac.c:selftests_sha384',
+     'cipher/mac-hmac.c:selftests_sha512')
+
+HMAC SHA3-224
+HMAC SHA3-256
+HMAC SHA3-384
+HMAC SHA3-512
+       1. A known answer test using 28 byte of data and a 4 byte key is
           run.
        2. A known answer test using 50 byte of data and a 20 byte key is
           run.
-       3. A known answer test using 50 byte of data and a 26 byte key is
+       3. A known answer test using 50 byte of data and a 25 byte key is
           run.
-       4. A known answer test using 54 byte of data and a 131 byte key
+       4. A known answer test using 20 byte of data and a 20 byte key
+          with truncation is run.
+       5. A known answer test using 54 byte of data and a 131 byte key
           is run.
-       5. A known answer test using 152 byte of data and a 131 byte key
+       6. A known answer test using 54 byte of data and a 147 byte key
           is run.
-     ('cipher/hmac-tests.c:selftests_sha224',
-     'cipher/hmac-tests.c:selftests_sha256',
-     'cipher/hmac-tests.c:selftests_sha384',
-     'cipher/hmac-tests.c:selftests_sha512')
+       7. A known answer test using 152 byte of data and a 131 byte key
+          is run.
+       8. A known answer test using 152 byte of data and a 147 byte key
+          is run.
+     ('cipher/mac-hmac.c:selftests_sha3',
+
+CMAC AES
+       1. A known answer test using 0 byte of data and a 16 byte key is
+          run.
+       2. A known answer test using 24 byte of data and a 16 byte key is
+          run.
+       3. A known answer test using 64 byte of data and a 32 byte key is
+          run.
+       4. A known answer test using 16 byte of data and a 16 byte key is
+          run.
+       5. A known answer test using 64 byte of data and a 16 byte key is
+          run.
+       6. A known answer test using 0 byte of data and a 24 byte key is
+          run.
+       7. A known answer test using 64 byte of data and a 24 byte key is
+          run.
+       8. A known answer test using 0 byte of data and a 32 byte key is
+          run.
+       9. A known answer test using 16 byte of data and a 32 byte key is
+          run.
+     ('cipher/mac-cmac.c:selftests_cmac_aes',
 
 
 File: gcrypt.info,  Node: FIPS Mode,  Next: Library Copying,  Prev: Self-Tests,  Up: Top
@@ -5707,12 +6168,10 @@ described in the appendix on self-tests.
 B.1 Restrictions in FIPS Mode
 =============================
 
-If Libgcrypt is used in FIPS mode these restrictions are effective:
+If Libgcrypt is used in FIPS mode, these restrictions are effective:
 
    * The cryptographic algorithms are restricted to this list:
 
-     GCRY_CIPHER_3DES
-          3 key EDE Triple-DES symmetric encryption.
      GCRY_CIPHER_AES128
           AES 128 bit symmetric encryption.
      GCRY_CIPHER_AES192
@@ -5729,6 +6188,14 @@ If Libgcrypt is used in FIPS mode these restrictions are effective:
           SHA-384 message digest.
      GCRY_MD_SHA512
           SHA-512 message digest.
+     GCRY_MD_SHA3_224
+          SHA3-224 message digest.
+     GCRY_MD_SHA3_256
+          SHA3-256 message digest.
+     GCRY_MD_SHA3_384
+          SHA3-384 message digest.
+     GCRY_MD_SHA3_512
+          SHA3-512 message digest.
      GCRY_MD_SHA1,GCRY_MD_FLAG_HMAC
           HMAC using a SHA-1 message digest.
      GCRY_MD_SHA224,GCRY_MD_FLAG_HMAC
@@ -5739,30 +6206,38 @@ If Libgcrypt is used in FIPS mode these restrictions are effective:
           HMAC using a SHA-384 message digest.
      GCRY_MD_SHA512,GCRY_MD_FLAG_HMAC
           HMAC using a SHA-512 message digest.
+     GCRY_MD_SHA3_224,GCRY_MD_FLAG_HMAC
+          HMAC using a SHA3-224 message digest.
+     GCRY_MD_SHA3_256,GCRY_MD_FLAG_HMAC
+          HMAC using a SHA3-256 message digest.
+     GCRY_MD_SHA3_384,GCRY_MD_FLAG_HMAC
+          HMAC using a SHA3-384 message digest.
+     GCRY_MD_SHA3_512,GCRY_MD_FLAG_HMAC
+          HMAC using a SHA3-512 message digest.
+     GCRY_MAC_CMAC_AES
+          CMAC using a AES key.
      GCRY_PK_RSA
           RSA encryption and signing.
-     GCRY_PK_DSA
-          DSA signing.
+     GCRY_PK_ECC
+          ECC encryption and signing.
 
      Note that the CRC algorithms are not considered cryptographic
      algorithms and thus are in addition available.
 
-   * RSA key generation refuses to create a key with a keysize of less
-     than 1024 bits.
+   * RSA key generation refuses to create and use a key with a keysize
+     of less than 2048 bits.
 
-   * DSA key generation refuses to create a key with a keysize other
-     than 1024 bits.
-
-   * The 'transient-key' flag for RSA and DSA key generation is ignored.
+   * The 'transient-key' flag for RSA key generation is ignored.
 
    * Support for the VIA Padlock engine is disabled.
 
-   * FIPS mode may only be used on systems with a /dev/random device.
-     Switching into FIPS mode on other systems will fail at runtime.
+   * FIPS mode may only be used on systems with a /dev/random device or
+     with a getentropy syscall.  Switching into FIPS mode on other
+     systems will fail at runtime.
 
    * Saving and loading a random seed file is ignored.
 
-   * An X9.31 style random number generator is used in place of the
+   * The DRBG style random number generator is used in place of the
      large-pool-CSPRNG generator.
 
    * The command 'GCRYCTL_ENABLE_QUICK_RANDOM' is ignored.
@@ -5774,18 +6249,18 @@ If Libgcrypt is used in FIPS mode these restrictions are effective:
    * On-the-fly self-tests are not performed, instead self-tests are run
      before entering operational state.
 
-   * The function 'gcry_set_allocation_handler' may not be used.  If it
-     is used Libgcrypt disables FIPS mode unless Enforced FIPS mode is
-     enabled, in which case Libgcrypt will enter the error state.
+   * The function 'gcry_set_allocation_handler' may not be used.  In
+     FIPS mode this function does not have any effect, because FIPS has
+     requirements for memory zeroization.
 
-   * The digest algorithm MD5 may not be used.  If it is used Libgcrypt
-     disables FIPS mode unless Enforced FIPS mode is enabled, in which
-     case Libgcrypt will enter the error state.
+   * The digest algorithm MD5 may not be used.
 
-   * In Enforced FIPS mode the command 'GCRYCTL_DISABLE_SECMEM' is
-     ignored.  In standard FIPS mode it disables FIPS mode.
+   * The signatures using SHA-1 digest algorithm may not be used.
+
+   * In FIPS mode the command 'GCRYCTL_DISABLE_SECMEM' is ignored.
 
    * A handler set by 'gcry_set_outofcore_handler' is ignored.
+
    * A handler set by 'gcry_set_fatalerror_handler' is ignored.
 
    Note that when we speak about disabling FIPS mode, it merely means
@@ -5795,7 +6270,7 @@ mean that any non FIPS algorithms are allowed.
 B.2 FIPS Finite State Machine
 =============================
 
-The FIPS mode of libgcrypt implements a finite state machine (FSM) using
+The FIPS mode of Libgcrypt implements a finite state machine (FSM) using
 8 states (*note Table B.1: tbl:fips-states.) and checks at runtime that
 only valid transitions (*note Table B.2: tbl:fips-state-transitions.)
 may happen.
@@ -5839,7 +6314,7 @@ Fatal-Error
 
 Shutdown
      Libgcrypt is about to be terminated and removed from the memory.
-     The application may at this point still running cleanup handlers.
+     The application may at this point still run cleanup handlers.
 
 Table B.1: FIPS mode states
 
@@ -5855,7 +6330,7 @@ The valid state transitions (*note Figure B.1: fig:fips-fsm.) are:
 
 '3'
      Init to Self-Test is either triggered by a dedicated API call or
-     implicit by invoking a libgrypt service controlled by the FSM.
+     implicit by invoking a Libgrypt service controlled by the FSM.
 
 '4'
      Self-Test to Operational is triggered after all self-tests passed
@@ -5867,7 +6342,7 @@ The valid state transitions (*note Figure B.1: fig:fips-fsm.) are:
      is deinitialized and can't return to any other state again.
 
 '6'
-     Shutdown to Power-off is the process of removing Libgcrypt from the
+     Shutdown to Power-Off is the process of removing Libgcrypt from the
      computer's memory.  For obvious reasons the Power-Off state can't
      be represented within Libgcrypt and thus this transition is for
      documentation only.
@@ -5892,7 +6367,7 @@ The valid state transitions (*note Figure B.1: fig:fips-fsm.) are:
 
 '11'
      Power-On to Shutdown is an artificial state to document that
-     Libgcrypt has not ye been initialized but the process is about to
+     Libgcrypt has not yet been initialized but the process is about to
      terminate.
 
 '12'
@@ -5916,8 +6391,7 @@ The valid state transitions (*note Figure B.1: fig:fips-fsm.) are:
 
 '17'
      Error to Self-Test is triggered if the application has requested to
-     run self-tests to get to get back into operational state after an
-     error.
+     run self-tests to get back into operational state after an error.
 
 '18'
      Init to Error is triggered by errors in the initialization code.
@@ -6835,186 +7309,4 @@ program into proprietary programs.  If your program is a subroutine
 library, you may consider it more useful to permit linking proprietary
 applications with the library.  If this is what you want to do, use the
 GNU Library General Public License instead of this License.
-
-
-File: gcrypt.info,  Node: Figures and Tables,  Next: Concept Index,  Prev: Copying,  Up: Top
-
-List of Figures and Tables
-**************************
-
-* Menu:
-
-* Figure 17.1: fig:subsystems.           Libgcrypt subsystems
-* Figure B.1: fig:fips-fsm.              FIPS mode state diagram
-
-* Menu:
-
-* Table B.1: tbl:fips-states.            FIPS mode states
-* Table B.2: tbl:fips-state-transitions. FIPS mode state transitions
-
-
-File: gcrypt.info,  Node: Concept Index,  Next: Function and Data Index,  Prev: Figures and Tables,  Up: Top
-
-Concept Index
-*************
-
- [index ]
-* Menu:
-
-* /etc/gcrypt/fips_enabled:              Configuration.        (line 69)
-* /etc/gcrypt/hwf.deny:                  Configuration.        (line 48)
-* /etc/gcrypt/random.conf:               Configuration.        (line 52)
-* /proc/cpuinfo:                         Configuration.        (line 74)
-* /proc/self/auxv:                       Configuration.        (line 74)
-* 3DES:                                  Available ciphers.    (line 14)
-* Advanced Encryption Standard:          Available ciphers.    (line 35)
-* AES:                                   Available ciphers.    (line 35)
-* AES-Wrap mode:                         Available cipher modes.
-                                                               (line 35)
-* Arcfour:                               Available ciphers.    (line 52)
-* BLAKE2b-512, BLAKE2b-384, BLAKE2b-256, BLAKE2b-160: Available hash algorithms.
-                                                               (line  6)
-* BLAKE2s-256, BLAKE2s-224, BLAKE2s-160, BLAKE2s-128: Available hash algorithms.
-                                                               (line  6)
-* Blowfish:                              Available ciphers.    (line 22)
-* bug emulation:                         Working with hash algorithms.
-                                                               (line 38)
-* Camellia:                              Available ciphers.    (line 77)
-* CAST5:                                 Available ciphers.    (line 19)
-* CBC, Cipher Block Chaining mode:       Available cipher modes.
-                                                               (line 23)
-* CBC-MAC:                               Working with cipher handles.
-                                                               (line 56)
-* CCM, Counter with CBC-MAC mode:        Available cipher modes.
-                                                               (line 48)
-* CFB, Cipher Feedback mode:             Available cipher modes.
-                                                               (line 17)
-* ChaCha20:                              Available ciphers.    (line 92)
-* cipher text stealing:                  Working with cipher handles.
-                                                               (line 50)
-* comp:                                  Cryptographic Functions.
-                                                               (line 13)
-* CRC32:                                 Available hash algorithms.
-                                                               (line  6)
-* CTR, Counter mode:                     Available cipher modes.
-                                                               (line 32)
-* DES:                                   Available ciphers.    (line 57)
-* DES-EDE:                               Available ciphers.    (line 14)
-* Digital Encryption Standard:           Available ciphers.    (line 14)
-* disable-jent:                          Configuration.        (line 58)
-* ECB, Electronic Codebook mode:         Available cipher modes.
-                                                               (line 13)
-* EdDSA:                                 Cryptographic Functions.
-                                                               (line 33)
-* Enforced FIPS mode:                    Enabling FIPS mode.   (line 29)
-* error codes:                           Error Values.         (line  6)
-* error codes, list of:                  Error Sources.        (line  6)
-* error codes, list of <1>:              Error Codes.          (line  6)
-* error codes, printing of:              Error Strings.        (line  6)
-* error sources:                         Error Values.         (line  6)
-* error sources, printing of:            Error Strings.        (line  6)
-* error strings:                         Error Strings.        (line  6)
-* error values:                          Error Values.         (line  6)
-* error values, printing of:             Error Strings.        (line  6)
-* FIPS 140:                              Enabling FIPS mode.   (line  6)
-* FIPS 186:                              Cryptographic Functions.
-                                                               (line 72)
-* FIPS 186 <1>:                          Public-Key Subsystem Architecture.
-                                                               (line 50)
-* FIPS 186-2:                            Cryptographic Functions.
-                                                               (line 80)
-* FIPS mode:                             Enabling FIPS mode.   (line  6)
-* fips_enabled:                          Configuration.        (line 69)
-* GCM, Galois/Counter Mode:              Available cipher modes.
-                                                               (line 53)
-* GCRYPT_BARRETT:                        Configuration.        (line 12)
-* GCRYPT_RNDUNIX_DBG:                    Configuration.        (line 17)
-* GCRYPT_RNDUNIX_DBGALL:                 Configuration.        (line 17)
-* GCRYPT_RNDW32_DBG:                     Configuration.        (line 32)
-* GCRYPT_RNDW32_NOPERF:                  Configuration.        (line 25)
-* GOST 28147-89:                         Available ciphers.    (line 88)
-* GPL, GNU General Public License:       Copying.              (line  6)
-* hardware features:                     Hardware features.    (line  6)
-* HAVAL:                                 Available hash algorithms.
-                                                               (line  6)
-* HMAC:                                  Working with hash algorithms.
-                                                               (line 28)
-* HMAC-GOSTR-3411-94:                    Available MAC algorithms.
-                                                               (line  6)
-* HMAC-MD2, HMAC-MD4, HMAC-MD5:          Available MAC algorithms.
-                                                               (line  6)
-* HMAC-RIPE-MD-160:                      Available MAC algorithms.
-                                                               (line  6)
-* HMAC-SHA-1:                            Available MAC algorithms.
-                                                               (line  6)
-* HMAC-SHA-224, HMAC-SHA-256, HMAC-SHA-384, HMAC-SHA-512: Available MAC algorithms.
-                                                               (line  6)
-* HMAC-SHA3-224, HMAC-SHA3-256, HMAC-SHA3-384, HMAC-SHA3-512: Available MAC algorithms.
-                                                               (line  6)
-* HMAC-Stribog-256, HMAC-Stribog-512:    Available MAC algorithms.
-                                                               (line  6)
-* HMAC-TIGER1:                           Available MAC algorithms.
-                                                               (line  6)
-* HMAC-Whirlpool:                        Available MAC algorithms.
-                                                               (line  6)
-* HOME:                                  Configuration.        (line 37)
-* IDEA:                                  Available ciphers.    (line 11)
-* LGPL, GNU Lesser General Public License: Library Copying.    (line  6)
-* MD2, MD4, MD5:                         Available hash algorithms.
-                                                               (line  6)
-* no-blinding:                           Cryptographic Functions.
-                                                               (line 41)
-* no-keytest:                            Cryptographic Functions.
-                                                               (line 59)
-* nocomp:                                Cryptographic Functions.
-                                                               (line 13)
-* OAEP:                                  Cryptographic Functions.
-                                                               (line 27)
-* OCB, OCB3:                             Available cipher modes.
-                                                               (line 63)
-* OFB, Output Feedback mode:             Available cipher modes.
-                                                               (line 29)
-* only-urandom:                          Configuration.        (line 61)
-* param:                                 Cryptographic Functions.
-                                                               (line 47)
-* PKCS1:                                 Cryptographic Functions.
-                                                               (line 23)
-* Poly1305 based AEAD mode with ChaCha20: Available cipher modes.
-                                                               (line 58)
-* PSS:                                   Cryptographic Functions.
-                                                               (line 30)
-* RC2:                                   Available ciphers.    (line 69)
-* RC4:                                   Available ciphers.    (line 52)
-* rfc-2268:                              Available ciphers.    (line 69)
-* RFC6979:                               Cryptographic Functions.
-                                                               (line 38)
-* Rijndael:                              Available ciphers.    (line 35)
-* RIPE-MD-160:                           Available hash algorithms.
-                                                               (line  6)
-* Salsa20:                               Available ciphers.    (line 81)
-* Salsa20/12:                            Available ciphers.    (line 84)
-* Seed (cipher):                         Available ciphers.    (line 72)
-* Serpent:                               Available ciphers.    (line 65)
-* SHA-1:                                 Available hash algorithms.
-                                                               (line  6)
-* SHA-224, SHA-256, SHA-384, SHA-512:    Available hash algorithms.
-                                                               (line  6)
-* SHA3-224, SHA3-256, SHA3-384, SHA3-512, SHAKE128, SHAKE256: Available hash algorithms.
-                                                               (line  6)
-* sync mode (OpenPGP):                   Working with cipher handles.
-                                                               (line 46)
-* TIGER, TIGER1, TIGER2:                 Available hash algorithms.
-                                                               (line  6)
-* transient-key:                         Cryptographic Functions.
-                                                               (line 52)
-* Triple-DES:                            Available ciphers.    (line 14)
-* Twofish:                               Available ciphers.    (line 46)
-* Whirlpool:                             Available hash algorithms.
-                                                               (line  6)
-* X9.31:                                 Cryptographic Functions.
-                                                               (line 65)
-* X9.31 <1>:                             Public-Key Subsystem Architecture.
-                                                               (line 50)
-* XTS, XTS mode:                         Available cipher modes.
-                                                               (line 74)
 

@@ -43,6 +43,8 @@
 #ifdef HAVE_STDINT_H
 # include <stdint.h>
 #endif
+#include <unistd.h>
+#include <errno.h>
 
 #include "types.h"
 #include "g10lib.h"
@@ -57,7 +59,7 @@
 #define JENT_USES_GETTIME 2
 #define JENT_USES_READ_REAL_TIME 3
 #ifdef ENABLE_JENT_SUPPORT
-# if defined (__i386__) || defined(__x86_64__)
+# if (defined (__i386__) || defined(__x86_64__)) && defined(HAVE_CPU_ARCH_X86)
 #   define USE_JENT JENT_USES_RDTSC
 # elif defined (HAVE_CLOCK_GETTIME)
 #  if _AIX
@@ -84,7 +86,14 @@
 #define JENT_PRIVATE_COMPILE 1
 
 #include "jitterentropy-base.c"
-
+#ifdef JENT_CONF_ENABLE_INTERNAL_TIMER
+#include <pthread.h>
+#endif /* JENT_CONF_ENABLE_INTERNAL_TIMER */
+#include "jitterentropy-gcd.c"
+#include "jitterentropy-health.c"
+#include "jitterentropy-noise.c"
+#include "jitterentropy-sha3.c"
+#include "jitterentropy-timer.c"
 
 /* This is the lock we use to serialize access to this RNG.  The extra
  * integer variable is only used to check the locking state; that is,
@@ -291,7 +300,7 @@ _gcry_rndjent_poll (void (*add)(const void*, size_t, enum random_origins),
               size_t n = length < sizeof(buffer)? length : sizeof (buffer);
 
               jent_rng_totalcalls++;
-              rc = jent_read_entropy (jent_rng_collector, buffer, n);
+              rc = jent_read_entropy_safe (&jent_rng_collector, buffer, n);
               if (rc < 0)
                 break;
               /* We need to hash the output to conform to the BSI
@@ -369,4 +378,21 @@ _gcry_rndjent_dump_stats (void)
 
     }
 #endif /*USE_JENT*/
+}
+
+
+void
+_gcry_rndjent_fini (void)
+{
+#ifdef USE_JENT
+  lock_rng ();
+
+  if (jent_rng_is_initialized)
+    {
+      jent_entropy_collector_free (jent_rng_collector);
+      jent_rng_collector = NULL;
+    }
+
+  unlock_rng ();
+#endif
 }

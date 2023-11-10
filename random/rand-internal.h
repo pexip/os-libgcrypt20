@@ -51,8 +51,6 @@ void _gcry_rngcsprng_close_fds (void);
 void _gcry_rngcsprng_dump_stats (void);
 void _gcry_rngcsprng_secure_alloc (void);
 void _gcry_rngcsprng_enable_quick_gen (void);
-void _gcry_rngcsprng_set_daemon_socket (const char *socketname);
-int  _gcry_rngcsprng_use_daemon (int onoff);
 int  _gcry_rngcsprng_is_faked (void);
 gcry_error_t _gcry_rngcsprng_add_bytes (const void *buf, size_t buflen,
                                         int quality);
@@ -89,11 +87,17 @@ void _gcry_rngsystem_randomize (void *buffer, size_t length,
 
 
 
-/*-- rndlinux.c --*/
-int _gcry_rndlinux_gather_random (void (*add) (const void *, size_t,
-                                               enum random_origins),
-                                   enum random_origins origin,
-                                  size_t length, int level);
+/*-- rndgetentropy.c --*/
+int _gcry_rndgetentropy_gather_random (void (*add) (const void *, size_t,
+                                                    enum random_origins),
+                                       enum random_origins origin,
+                                       size_t length, int level);
+
+/*-- rndoldlinux.c --*/
+int _gcry_rndoldlinux_gather_random (void (*add) (const void *, size_t,
+                                                  enum random_origins),
+                                     enum random_origins origin,
+                                     size_t length, int level);
 
 /*-- rndunix.c --*/
 int _gcry_rndunix_gather_random (void (*add) (const void *, size_t,
@@ -132,6 +136,7 @@ size_t _gcry_rndjent_poll (void (*add)(const void*,
                            enum random_origins origin,
                            size_t length);
 void _gcry_rndjent_dump_stats (void);
+void _gcry_rndjent_fini (void);
 
 /*-- rndhw.c --*/
 int _gcry_rndhw_failed_p (void);
@@ -140,7 +145,7 @@ void _gcry_rndhw_poll_fast (void (*add)(const void*, size_t,
                             enum random_origins origin);
 size_t _gcry_rndhw_poll_slow (void (*add)(const void*, size_t,
                                           enum random_origins),
-                              enum random_origins origin);
+                              enum random_origins origin, size_t req_length);
 
 
 

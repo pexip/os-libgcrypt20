@@ -21,16 +21,23 @@
 
 #include "hash-common.h"
 
+
+/* SHA1_USE_S390X_CRYPTO indicates whether to enable zSeries code. */
+#undef SHA1_USE_S390X_CRYPTO
+#if defined(HAVE_GCC_INLINE_ASM_S390X)
+# define SHA1_USE_S390X_CRYPTO 1
+#endif /* SHA1_USE_S390X_CRYPTO */
+
+
 /* We need this here for direct use by random-csprng.c. */
 typedef struct
 {
   gcry_md_block_ctx_t bctx;
   u32          h0,h1,h2,h3,h4;
-  unsigned int use_ssse3:1;
-  unsigned int use_avx:1;
-  unsigned int use_bmi2:1;
-  unsigned int use_neon:1;
-  unsigned int use_arm_ce:1;
+#ifdef SHA1_USE_S390X_CRYPTO
+  u32          final_len_msb, final_len_lsb; /* needs to be right after h4. */
+  int          use_s390x_crypto;
+#endif
 } SHA1_CONTEXT;
 
 

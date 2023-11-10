@@ -29,11 +29,13 @@
 #define BLOCKSIZE               (128/8)
 
 
-/* Helper macro to force alignment to 16 bytes.  */
+/* Helper macro to force alignment to 16 or 64 bytes.  */
 #ifdef HAVE_GCC_ATTRIBUTE_ALIGNED
 # define ATTR_ALIGNED_16  __attribute__ ((aligned (16)))
+# define ATTR_ALIGNED_64  __attribute__ ((aligned (64)))
 #else
 # define ATTR_ALIGNED_16
+# define ATTR_ALIGNED_64
 #endif
 
 
@@ -73,7 +75,7 @@
 #   define USE_PADLOCK 1
 #  endif
 # endif
-#endif /*ENABLE_PADLOCK_SUPPORT*/
+#endif /* ENABLE_PADLOCK_SUPPORT */
 
 /* USE_AESNI inidicates whether to compile with Intel AES-NI code.  We
    need the vector-size attribute which seems to be available since
@@ -86,6 +88,16 @@
 #  endif
 # endif
 #endif /* ENABLE_AESNI_SUPPORT */
+
+/* USE_VAES inidicates whether to compile with Intel VAES code.  */
+#undef USE_VAES
+#if (defined(HAVE_COMPATIBLE_GCC_AMD64_PLATFORM_AS) || \
+     defined(HAVE_COMPATIBLE_GCC_WIN64_PLATFORM_AS)) && \
+     defined(__x86_64__) && defined(ENABLE_AVX2_SUPPORT) && \
+     defined(HAVE_GCC_INLINE_ASM_VAES_VPCLMUL) && \
+     defined(USE_AESNI)
+# define USE_VAES 1
+#endif
 
 /* USE_ARM_CE indicates whether to enable ARMv8 Crypto Extension assembly
  * code. */
@@ -102,12 +114,36 @@
 # endif
 #endif /* ENABLE_ARM_CRYPTO_SUPPORT */
 
+/* USE_PPC_CRYPTO indicates whether to enable PowerPC vector crypto
+ * accelerated code.  USE_PPC_CRYPTO_WITH_PPC9LE indicates whether to
+ * enable POWER9 optimized variant.  */
+#undef USE_PPC_CRYPTO
+#undef USE_PPC_CRYPTO_WITH_PPC9LE
+#ifdef ENABLE_PPC_CRYPTO_SUPPORT
+# if defined(HAVE_COMPATIBLE_CC_PPC_ALTIVEC) && \
+     defined(HAVE_GCC_INLINE_ASM_PPC_ALTIVEC)
+#  if __GNUC__ >= 4
+#   define USE_PPC_CRYPTO 1
+#   if !defined(WORDS_BIGENDIAN) && defined(HAVE_GCC_INLINE_ASM_PPC_ARCH_3_00)
+#    define USE_PPC_CRYPTO_WITH_PPC9LE 1
+#   endif
+#  endif
+# endif
+#endif /* ENABLE_PPC_CRYPTO_SUPPORT */
+
+/* USE_S390X_CRYPTO indicates whether to enable zSeries code. */
+#undef USE_S390X_CRYPTO
+#if defined(HAVE_GCC_INLINE_ASM_S390X)
+# define USE_S390X_CRYPTO 1
+#endif /* USE_S390X_CRYPTO */
+
 struct RIJNDAEL_context_s;
 
 typedef unsigned int (*rijndael_cryptfn_t)(const struct RIJNDAEL_context_s *ctx,
                                            unsigned char *bx,
                                            const unsigned char *ax);
 typedef void (*rijndael_prefetchfn_t)(void);
+typedef void (*rijndael_prepare_decfn_t)(struct RIJNDAEL_context_s *ctx);
 
 /* Our context object.  */
 typedef struct RIJNDAEL_context_s
@@ -138,22 +174,24 @@ typedef struct RIJNDAEL_context_s
   } u2;
   int rounds;                         /* Key-length-dependent number of rounds.  */
   unsigned int decryption_prepared:1; /* The decryption key schedule is available.  */
-#ifdef USE_PADLOCK
-  unsigned int use_padlock:1;         /* Padlock shall be used.  */
-#endif /*USE_PADLOCK*/
 #ifdef USE_AESNI
-  unsigned int use_aesni:1;           /* AES-NI shall be used.  */
+  unsigned int use_avx:1;             /* AVX shall be used by AES-NI implementation. */
+  unsigned int use_avx2:1;            /* AVX2 shall be used by AES-NI implementation. */
 #endif /*USE_AESNI*/
-#ifdef USE_SSSE3
-  unsigned int use_ssse3:1;           /* SSSE3 shall be used.  */
-#endif /*USE_SSSE3*/
-#ifdef USE_ARM_CE
-  unsigned int use_arm_ce:1;          /* ARMv8 CE shall be used.  */
-#endif /*USE_ARM_CE*/
+#ifdef USE_S390X_CRYPTO
+  byte km_func;
+  byte km_func_xts;
+  byte kmc_func;
+  byte kmac_func;
+  byte kmf_func;
+  byte kmo_func;
+  byte kma_func;
+#endif /*USE_S390X_CRYPTO*/
   rijndael_cryptfn_t encrypt_fn;
   rijndael_cryptfn_t decrypt_fn;
   rijndael_prefetchfn_t prefetch_enc_fn;
   rijndael_prefetchfn_t prefetch_dec_fn;
+  rijndael_prepare_decfn_t prepare_decryption;
 } RIJNDAEL_context ATTR_ALIGNED_16;
 
 /* Macros defining alias for the keyschedules.  */

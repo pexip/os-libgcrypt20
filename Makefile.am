@@ -20,13 +20,14 @@
 # Location of the released tarball archives.  This is prefixed by
 # the variable RELEASE_ARCHIVE in ~/.gnupg-autogen.rc.  For example:
 # RELEASE_ARCHIVE=wk@somehost:archive/tarballs
-RELEASE_ARCHIVE_SUFFIX  = libgcrypt/v1.8
+RELEASE_ARCHIVE_SUFFIX  = libgcrypt/v1.10
 # The variable RELEASE_SIGNING_KEY in ~/.gnupg-autogen.rc is used
 # to specify the key for signing.  For example:
 # RELEASE_SIGNKEY=D8692123C4065DEA5E0F3AB5249B39D24F25E3B6
 
 
 ACLOCAL_AMFLAGS = -I m4
+AM_DISTCHECK_DVI_TARGET = pdf
 DISTCHECK_CONFIGURE_FLAGS = --disable-random-daemon --enable-doc \
                             --enable-random=auto
 
@@ -47,14 +48,12 @@ EXTRA_DIST = autogen.sh autogen.rc README.GIT LICENSES      	           \
              ChangeLog-2011 build-aux/ChangeLog-2011 doc/ChangeLog-2011    \
              m4/ChangeLog-2011 cipher/ChangeLog-2011 src/ChangeLog-2011    \
              random/ChangeLog-2011 tests/ChangeLog-2011 mpi/ChangeLog-2011 \
-             build-aux/git-log-footer build-aux/git-log-fix
+             build-aux/git-log-footer build-aux/git-log-fix VERSION
 
 DISTCLEANFILES =
 
 
-# Add all the files listed in "distfiles" files to the distribution,
-# apply version number s to some files and create a VERSION file which
-# we need for the Prereq: patch file trick.
+# Add all the files listed in "distfiles" files to the distribution
 dist-hook: gen-ChangeLog
 	@set -e; \
 	 for file in `cd $(top_srcdir); \
@@ -65,8 +64,6 @@ dist-hook: gen-ChangeLog
 		|| cp -p $(top_srcdir)/$$dir/$$i $(distdir)/$$dir/$$i; \
 	    done ; \
 	done
-	@set -e; \
-	echo "$(VERSION)" > $(distdir)/VERSION
 
 distcheck-hook:
 	set -e; ( \
@@ -127,7 +124,7 @@ release:
 
 sign-release:
 	 +(set -e; \
-	  cd dist; \
+	  test $$(pwd | sed 's,.*/,,') = dist || cd dist; \
 	  x=$$(grep '^RELEASE_ARCHIVE=' $$HOME/.gnupg-autogen.rc|cut -d= -f2);\
           if [ -z "$$x" ]; then \
              echo "error: RELEASE_ARCHIVE missing in ~/.gnupg-autogen.rc">&2; \
@@ -155,7 +152,7 @@ sign-release:
           cat "../$(RELEASE_NAME).buildlog" swdb.snippet \
                | gzip >$(RELEASE_NAME).buildlog ;\
           echo "Copying to archive $$myarchive ..." ;\
-	  scp -vp $${files1} $${files2} $${myarchive}/ || true;\
+	  scp -p $${files1} $${files2} $${myarchive}/ || true;\
 	  echo '/*' ;\
 	  echo ' * All done; for checksums see dist/swdb.snippet' ;\
 	  echo ' */' ;\

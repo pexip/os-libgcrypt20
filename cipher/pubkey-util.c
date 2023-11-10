@@ -39,9 +39,10 @@ static int
 pss_verify_cmp (void *opaque, gcry_mpi_t tmp)
 {
   struct pk_encoding_ctx *ctx = opaque;
-  gcry_mpi_t hash = ctx->verify_arg;
+  gcry_mpi_t value = ctx->verify_arg;
 
-  return _gcry_rsa_pss_verify (hash, tmp, ctx->nbits - 1,
+  return _gcry_rsa_pss_verify (value, !(ctx->flags & PUBKEY_FLAG_PREHASH),
+                               tmp, ctx->nbits - 1,
                                ctx->hash_algo, ctx->saltlen);
 }
 
@@ -80,6 +81,11 @@ _gcry_pk_util_parse_flaglist (gcry_sexp_t list,
             {
               encoding = PUBKEY_ENC_RAW;
               flags |= PUBKEY_FLAG_RAW_FLAG; /* Explicitly given.  */
+            }
+          else if (!memcmp (s, "sm2", 3))
+            {
+                encoding = PUBKEY_ENC_RAW;
+                flags |= PUBKEY_FLAG_SM2 | PUBKEY_FLAG_RAW_FLAG;
             }
           else if (!igninvflag)
             rc = GPG_ERR_INV_FLAG;
@@ -132,6 +138,8 @@ _gcry_pk_util_parse_flaglist (gcry_sexp_t list,
             flags |= PUBKEY_FLAG_RFC6979;
           else if (!memcmp (s, "noparam", 7))
             ; /* Ignore - it is the default.  */
+          else if (!memcmp (s, "prehash", 7))
+            flags |= PUBKEY_FLAG_PREHASH;
           else if (!igninvflag)
             rc = GPG_ERR_INV_FLAG;
           break;
@@ -221,6 +229,11 @@ get_hash_algo (const char *s, size_t n)
     { "sha3-256", GCRY_MD_SHA3_256 },
     { "sha3-384", GCRY_MD_SHA3_384 },
     { "sha3-512", GCRY_MD_SHA3_512 },
+    { "sm3", GCRY_MD_SM3 },
+    { "shake128", GCRY_MD_SHAKE128 },
+    { "shake256", GCRY_MD_SHAKE256 },
+    { "sha512-224", GCRY_MD_SHA512_224 },
+    { "sha512-256", GCRY_MD_SHA512_256 },
     { NULL, 0 }
   };
   int algo;
@@ -428,6 +441,8 @@ _gcry_pk_util_preparse_sigval (gcry_sexp_t s_sig, const char **algo_names,
         *r_eccflags = PUBKEY_FLAG_EDDSA;
       if (!strcmp (name, "gost"))
         *r_eccflags = PUBKEY_FLAG_GOST;
+      if (!strcmp (name, "sm2"))
+        *r_eccflags = PUBKEY_FLAG_SM2;
     }
 
   *r_parms = l2;
@@ -649,7 +664,8 @@ _gcry_pk_util_free_encoding_ctx (struct pk_encoding_ctx *ctx)
    (<mpi>)
    or
    (data
-    [(flags [raw, direct, pkcs1, oaep, pss, no-blinding, rfc6979, eddsa])]
+    [(flags [raw, direct, pkcs1, oaep, pss,
+             no-blinding, rfc6979, eddsa, prehash])]
     [(hash <algo> <value>)]
     [(value <text>)]
     [(hash-algo <algo>)]
@@ -661,11 +677,11 @@ _gcry_pk_util_free_encoding_ctx (struct pk_encoding_ctx *ctx)
    Either the VALUE or the HASH element must be present for use
    with signatures.  VALUE is used for encryption.
 
-   HASH-ALGO is specific to OAEP and EDDSA.
+   HASH-ALGO is specific to OAEP, PSS and EDDSA.
 
    LABEL is specific to OAEP.
 
-   SALT-LENGTH is for PSS it is limited to 16384 bytes.
+   SALT-LENGTH is for PSS, it is limited to 16384 bytes.
 
    RANDOM-OVERRIDE is used to replace random nonces for regression
    testing.  */
@@ -684,7 +700,10 @@ _gcry_pk_util_data_to_mpi (gcry_sexp_t input, gcry_mpi_t *ret_mpi,
   ldata = sexp_find_token (input, "data", 0);
   if (!ldata)
     { /* assume old style */
-      *ret_mpi = sexp_nth_mpi (input, 0, 0);
+      int mpifmt = (ctx->flags & PUBKEY_FLAG_RAW_FLAG) ?
+        GCRYMPI_FMT_OPAQUE : GCRYMPI_FMT_STD;
+
+      *ret_mpi = sexp_nth_mpi (input, 0, mpifmt);
       return *ret_mpi ? GPG_ERR_NO_ERROR : GPG_ERR_INV_OBJ;
     }
 
@@ -712,7 +731,8 @@ _gcry_pk_util_data_to_mpi (gcry_sexp_t input, gcry_mpi_t *ret_mpi,
   else if (unknown_flag)
     rc = GPG_ERR_INV_FLAG;
   else if (ctx->encoding == PUBKEY_ENC_RAW
-           && (parsed_flags & PUBKEY_FLAG_EDDSA))
+           && ((parsed_flags & PUBKEY_FLAG_EDDSA)
+               || (ctx->flags & PUBKEY_FLAG_EDDSA)))
     {
       /* Prepare for EdDSA.  */
       gcry_sexp_t list;
@@ -724,6 +744,7 @@ _gcry_pk_util_data_to_mpi (gcry_sexp_t input, gcry_mpi_t *ret_mpi,
           rc = GPG_ERR_INV_OBJ;
           goto leave;
         }
+      /* Hash algo is determined by curve.  No hash-algo is OK.  */
       /* Get HASH-ALGO. */
       list = sexp_find_token (ldata, "hash-algo", 0);
       if (list)
@@ -739,10 +760,31 @@ _gcry_pk_util_data_to_mpi (gcry_sexp_t input, gcry_mpi_t *ret_mpi,
             }
           sexp_release (list);
         }
-      else
-        rc = GPG_ERR_INV_OBJ;
       if (rc)
         goto leave;
+
+      /* Get LABEL. */
+      list = sexp_find_token (ldata, "label", 0);
+      if (list)
+        {
+          s = sexp_nth_data (list, 1, &n);
+          if (!s)
+            rc = GPG_ERR_NO_OBJ;
+          else if (n > 0)
+            {
+              ctx->label = xtrymalloc (n);
+              if (!ctx->label)
+                rc = gpg_err_code_from_syserror ();
+              else
+                {
+                  memcpy (ctx->label, s, n);
+                  ctx->labellen = n;
+                }
+            }
+          sexp_release (list);
+          if (rc)
+            goto leave;
+        }
 
       /* Get VALUE.  */
       value = sexp_nth_buffer (lvalue, 1, &valuelen);
@@ -767,27 +809,66 @@ _gcry_pk_util_data_to_mpi (gcry_sexp_t input, gcry_mpi_t *ret_mpi,
       /* Note that mpi_set_opaque takes ownership of VALUE.  */
       *ret_mpi = mpi_set_opaque (NULL, value, valuelen*8);
     }
-  else if (ctx->encoding == PUBKEY_ENC_RAW && lhash
+  else if (ctx->encoding == PUBKEY_ENC_RAW
+           && (lhash || (lvalue && (parsed_flags & PUBKEY_FLAG_PREHASH)))
            && ((parsed_flags & PUBKEY_FLAG_RAW_FLAG)
                || (parsed_flags & PUBKEY_FLAG_RFC6979)))
     {
+      void * value;
+      size_t valuelen;
+      gcry_sexp_t list;
+
       /* Raw encoding along with a hash element.  This is commonly
          used for DSA.  For better backward error compatibility we
          allow this only if either the rfc6979 flag has been given or
          the raw flags was explicitly given.  */
-      if (sexp_length (lhash) != 3)
-        rc = GPG_ERR_INV_OBJ;
-      else if ( !(s=sexp_nth_data (lhash, 1, &n)) || !n )
-        rc = GPG_ERR_INV_OBJ;
-      else
-        {
-          void *value;
-          size_t valuelen;
 
-	  ctx->hash_algo = get_hash_algo (s, n);
-          if (!ctx->hash_algo)
-            rc = GPG_ERR_DIGEST_ALGO;
-          else if (!(value=sexp_nth_buffer (lhash, 2, &valuelen)))
+      if (lvalue && (parsed_flags & PUBKEY_FLAG_PREHASH))
+        {
+          /* Get HASH-ALGO. */
+          list = sexp_find_token (ldata, "hash-algo", 0);
+          if (list)
+            {
+              s = sexp_nth_data (list, 1, &n);
+              if (!s)
+                rc = GPG_ERR_NO_OBJ;
+              else
+                {
+                  ctx->hash_algo = get_hash_algo (s, n);
+                  if (!ctx->hash_algo)
+                    rc = GPG_ERR_DIGEST_ALGO;
+                }
+              sexp_release (list);
+              if (rc)
+                goto leave;
+            }
+
+          /* Get optional LABEL.  */
+          list = sexp_find_token (ldata, "label", 0);
+          if (list)
+            {
+              s = sexp_nth_data (list, 1, &n);
+              if (!s)
+                rc = GPG_ERR_NO_OBJ;
+              else if (n > 0)
+                {
+                  ctx->label = xtrymalloc (n);
+                  if (!ctx->label)
+                    rc = gpg_err_code_from_syserror ();
+                  else
+                    {
+                      memcpy (ctx->label, s, n);
+                      ctx->labellen = n;
+                    }
+                }
+              else
+                rc = GPG_ERR_INV_ARG;
+              sexp_release (list);
+              if (rc)
+                goto leave;
+            }
+
+          if ( !(value=sexp_nth_buffer (lvalue, 1, &valuelen)) || !valuelen )
             rc = GPG_ERR_INV_OBJ;
           else if ((valuelen * 8) < valuelen)
             {
@@ -797,10 +878,64 @@ _gcry_pk_util_data_to_mpi (gcry_sexp_t input, gcry_mpi_t *ret_mpi,
           else
             *ret_mpi = mpi_set_opaque (NULL, value, valuelen*8);
         }
+      else if (lhash)
+        {
+          /* Get optional LABEL.  */
+          list = sexp_find_token (ldata, "label", 0);
+          if (list)
+            {
+              s = sexp_nth_data (list, 1, &n);
+              if (!s)
+                rc = GPG_ERR_NO_OBJ;
+              else if (n > 0)
+                {
+                  ctx->label = xtrymalloc (n);
+                  if (!ctx->label)
+                    rc = gpg_err_code_from_syserror ();
+                  else
+                    {
+                      memcpy (ctx->label, s, n);
+                      ctx->labellen = n;
+                    }
+                }
+              else
+                rc = GPG_ERR_INV_ARG;
+              sexp_release (list);
+              if (rc)
+                goto leave;
+            }
+
+          if (sexp_length (lhash) != 3)
+            rc = GPG_ERR_INV_OBJ;
+          else if ( !(s=sexp_nth_data (lhash, 1, &n)) || !n )
+            rc = GPG_ERR_INV_OBJ;
+          else
+            {
+              ctx->hash_algo = get_hash_algo (s, n);
+
+              if (!ctx->hash_algo)
+                rc = GPG_ERR_DIGEST_ALGO;
+              else if ( !(value=sexp_nth_buffer (lhash, 2, &valuelen))
+                        || !valuelen )
+                rc = GPG_ERR_INV_OBJ;
+              else if ((valuelen * 8) < valuelen)
+                {
+                  xfree (value);
+                  rc = GPG_ERR_TOO_LARGE;
+                }
+              else
+                *ret_mpi = mpi_set_opaque (NULL, value, valuelen*8);
+            }
+        }
+      else
+        rc = GPG_ERR_CONFLICT;
+
+      if (rc)
+        goto leave;
     }
   else if (ctx->encoding == PUBKEY_ENC_RAW && lvalue)
     {
-      /* RFC6969 may only be used with the a hash value and not the
+      /* RFC6979 may only be used with the a hash value and not the
          MPI based value.  */
       if (parsed_flags & PUBKEY_FLAG_RFC6979)
         {
@@ -856,29 +991,81 @@ _gcry_pk_util_data_to_mpi (gcry_sexp_t input, gcry_mpi_t *ret_mpi,
           xfree (random_override);
         }
     }
-  else if (ctx->encoding == PUBKEY_ENC_PKCS1 && lhash
+  else if (ctx->encoding == PUBKEY_ENC_PKCS1
+           && (lhash || (lvalue && (parsed_flags & PUBKEY_FLAG_PREHASH)))
 	   && (ctx->op == PUBKEY_OP_SIGN || ctx->op == PUBKEY_OP_VERIFY))
     {
-      if (sexp_length (lhash) != 3)
-        rc = GPG_ERR_INV_OBJ;
-      else if ( !(s=sexp_nth_data (lhash, 1, &n)) || !n )
-        rc = GPG_ERR_INV_OBJ;
-      else
+      if (lvalue && (parsed_flags & PUBKEY_FLAG_PREHASH))
         {
-          const void * value;
+          void * value;
           size_t valuelen;
+          gcry_sexp_t list;
 
-	  ctx->hash_algo = get_hash_algo (s, n);
+          /* Get HASH-ALGO. */
+          list = sexp_find_token (ldata, "hash-algo", 0);
+          if (list)
+            {
+              s = sexp_nth_data (list, 1, &n);
+              if (!s)
+                rc = GPG_ERR_NO_OBJ;
+              else
+                {
+                  ctx->hash_algo = get_hash_algo (s, n);
+                  if (!ctx->hash_algo)
+                    rc = GPG_ERR_DIGEST_ALGO;
+                }
+              sexp_release (list);
+              if (rc)
+                goto leave;
+            }
 
-          if (!ctx->hash_algo)
-            rc = GPG_ERR_DIGEST_ALGO;
-          else if ( !(value=sexp_nth_data (lhash, 2, &valuelen))
-                    || !valuelen )
+          if ( !(value=sexp_nth_buffer (lvalue, 1, &valuelen)) || !valuelen )
+            rc = GPG_ERR_INV_OBJ;
+          else if ((valuelen * 8) < valuelen)
+            {
+              xfree (value);
+              rc = GPG_ERR_TOO_LARGE;
+            }
+          else
+            {
+              void *hash;
+
+              n = _gcry_md_get_algo_dlen (ctx->hash_algo);
+              hash = xtrymalloc (n);
+              if (!hash)
+                rc = gpg_err_code_from_syserror ();
+              else
+                {
+                  _gcry_md_hash_buffer (ctx->hash_algo, hash, value, valuelen);
+                  rc = _gcry_rsa_pkcs1_encode_for_sig (ret_mpi, ctx->nbits,
+                                                       hash, n, ctx->hash_algo);
+                  xfree (hash);
+                }
+            }
+        }
+      else if (lhash)
+        {
+          if (sexp_length (lhash) != 3)
+            rc = GPG_ERR_INV_OBJ;
+          else if ( !(s=sexp_nth_data (lhash, 1, &n)) || !n )
             rc = GPG_ERR_INV_OBJ;
           else
-	    rc = _gcry_rsa_pkcs1_encode_for_sig (ret_mpi, ctx->nbits,
-                                                 value, valuelen,
-                                                 ctx->hash_algo);
+            {
+              const void * value;
+              size_t valuelen;
+
+              ctx->hash_algo = get_hash_algo (s, n);
+
+              if (!ctx->hash_algo)
+                rc = GPG_ERR_DIGEST_ALGO;
+              else if ( !(value=sexp_nth_data (lhash, 2, &valuelen))
+                        || !valuelen )
+                rc = GPG_ERR_INV_OBJ;
+              else
+                rc = _gcry_rsa_pkcs1_encode_for_sig (ret_mpi, ctx->nbits,
+                                                     value, valuelen,
+                                                     ctx->hash_algo);
+            }
         }
     }
   else if (ctx->encoding == PUBKEY_ENC_PKCS1_RAW && lvalue
@@ -981,125 +1168,180 @@ _gcry_pk_util_data_to_mpi (gcry_sexp_t input, gcry_mpi_t *ret_mpi,
           xfree (random_override);
 	}
     }
-  else if (ctx->encoding == PUBKEY_ENC_PSS && lhash
-	   && ctx->op == PUBKEY_OP_SIGN)
+  else if (ctx->encoding == PUBKEY_ENC_PSS && ctx->op == PUBKEY_OP_SIGN)
     {
-      if (sexp_length (lhash) != 3)
-        rc = GPG_ERR_INV_OBJ;
-      else if ( !(s=sexp_nth_data (lhash, 1, &n)) || !n )
-        rc = GPG_ERR_INV_OBJ;
-      else
+      const void * value;
+      size_t valuelen;
+      gcry_sexp_t list;
+      void *random_override = NULL;
+
+      if (lvalue)
         {
-          const void * value;
-          size_t valuelen;
-          void *random_override = NULL;
-          size_t random_override_len = 0;
+          /* Get HASH-ALGO. */
+          list = sexp_find_token (ldata, "hash-algo", 0);
+          if (list)
+            {
+              s = sexp_nth_data (list, 1, &n);
+              if (!s)
+                rc = GPG_ERR_NO_OBJ;
+              else
+                {
+                  ctx->hash_algo = get_hash_algo (s, n);
+                  if (!ctx->hash_algo)
+                    rc = GPG_ERR_DIGEST_ALGO;
+                }
+              sexp_release (list);
+              if (rc)
+                goto leave;
+            }
 
-	  ctx->hash_algo = get_hash_algo (s, n);
-
-          if (!ctx->hash_algo)
-            rc = GPG_ERR_DIGEST_ALGO;
-          else if ( !(value=sexp_nth_data (lhash, 2, &valuelen))
-                    || !valuelen )
+          if ( !(value=sexp_nth_data (lvalue, 1, &valuelen)) || !valuelen )
+            rc = GPG_ERR_INV_OBJ;
+          ctx->flags |= PUBKEY_FLAG_PREHASH;
+        }
+      else if (lhash)
+        {
+          if (sexp_length (lhash) != 3)
+            rc = GPG_ERR_INV_OBJ;
+          else if ( !(s=sexp_nth_data (lhash, 1, &n)) || !n )
             rc = GPG_ERR_INV_OBJ;
           else
-	    {
-	      gcry_sexp_t list;
+            {
+              ctx->hash_algo = get_hash_algo (s, n);
 
-	      /* Get SALT-LENGTH. */
-	      list = sexp_find_token (ldata, "salt-length", 0);
-	      if (list)
-		{
-		  s = sexp_nth_data (list, 1, &n);
-		  if (!s)
-		    {
-		      rc = GPG_ERR_NO_OBJ;
-		      goto leave;
-		    }
-		  ctx->saltlen = (unsigned int)strtoul (s, NULL, 10);
-		  sexp_release (list);
-		}
-
-              /* Get optional RANDOM-OVERRIDE.  */
-              list = sexp_find_token (ldata, "random-override", 0);
-              if (list)
-                {
-                  s = sexp_nth_data (list, 1, &n);
-                  if (!s)
-                    rc = GPG_ERR_NO_OBJ;
-                  else if (n > 0)
-                    {
-                      random_override = xtrymalloc (n);
-                      if (!random_override)
-                        rc = gpg_err_code_from_syserror ();
-                      else
-                        {
-                          memcpy (random_override, s, n);
-                          random_override_len = n;
-                        }
-                    }
-                  sexp_release (list);
-                  if (rc)
-                    goto leave;
-                }
-
-              /* Encode the data.  (NBITS-1 is due to 8.1.1, step 1.) */
-	      rc = _gcry_rsa_pss_encode (ret_mpi, ctx->nbits - 1,
-                                         ctx->hash_algo,
-                                         value, valuelen, ctx->saltlen,
-                                         random_override, random_override_len);
-
-              xfree (random_override);
-	    }
+              if (!ctx->hash_algo)
+                rc = GPG_ERR_DIGEST_ALGO;
+              else if ( !(value=sexp_nth_data (lhash, 2, &valuelen))
+                        || !valuelen )
+                rc = GPG_ERR_INV_OBJ;
+            }
         }
-    }
-  else if (ctx->encoding == PUBKEY_ENC_PSS && lhash
-	   && ctx->op == PUBKEY_OP_VERIFY)
-    {
-      if (sexp_length (lhash) != 3)
-        rc = GPG_ERR_INV_OBJ;
-      else if ( !(s=sexp_nth_data (lhash, 1, &n)) || !n )
-        rc = GPG_ERR_INV_OBJ;
       else
+        rc = GPG_ERR_CONFLICT;
+
+      if (rc)
+        goto leave;
+
+      /* Get SALT-LENGTH. */
+      list = sexp_find_token (ldata, "salt-length", 0);
+      if (list)
         {
-	  ctx->hash_algo = get_hash_algo (s, n);
+          s = sexp_nth_data (list, 1, &n);
+          if (!s)
+            {
+              rc = GPG_ERR_NO_OBJ;
+              goto leave;
+            }
+          ctx->saltlen = (unsigned int)strtoul (s, NULL, 10);
+          sexp_release (list);
+        }
 
-          if (!ctx->hash_algo)
-            rc = GPG_ERR_DIGEST_ALGO;
-	  else
-	    {
-	      gcry_sexp_t list;
-	      /* Get SALT-LENGTH. */
-	      list = sexp_find_token (ldata, "salt-length", 0);
-	      if (list)
-		{
-                  unsigned long ul;
+      /* Get optional RANDOM-OVERRIDE.  */
+      list = sexp_find_token (ldata, "random-override", 0);
+      if (list)
+        {
+          s = sexp_nth_data (list, 1, &n);
+          if (!s)
+            rc = GPG_ERR_NO_OBJ;
+          else if (n == ctx->saltlen)
+            {
+              random_override = xtrymalloc (n);
+              if (!random_override)
+                rc = gpg_err_code_from_syserror ();
+              else
+                memcpy (random_override, s, n);
+            }
+          else
+            rc = GPG_ERR_INV_ARG;
+          sexp_release (list);
+          if (rc)
+            goto leave;
+        }
 
-		  s = sexp_nth_data (list, 1, &n);
-		  if (!s)
-		    {
-		      rc = GPG_ERR_NO_OBJ;
-                      sexp_release (list);
-		      goto leave;
-		    }
-		  ul = strtoul (s, NULL, 10);
-                  if (ul > 16384)
-                    {
-                      rc = GPG_ERR_TOO_LARGE;
-                      sexp_release (list);
-                      goto leave;
-                    }
-                  ctx->saltlen = ul;
-		  sexp_release (list);
-		}
+      /* Encode the data.  (NBITS-1 is due to 8.1.1, step 1.) */
+      rc = _gcry_rsa_pss_encode (ret_mpi, ctx->nbits - 1,
+                                 ctx->hash_algo, ctx->saltlen,
+                                 !(ctx->flags & PUBKEY_FLAG_PREHASH),
+                                 value, valuelen,
+                                 random_override);
+      xfree (random_override);
+    }
+  else if (ctx->encoding == PUBKEY_ENC_PSS && ctx->op == PUBKEY_OP_VERIFY)
+    {
+      gcry_sexp_t list;
 
-	      *ret_mpi = sexp_nth_mpi (lhash, 2, GCRYMPI_FMT_USG);
-	      if (!*ret_mpi)
-		rc = GPG_ERR_INV_OBJ;
-	      ctx->verify_cmp = pss_verify_cmp;
-	      ctx->verify_arg = *ret_mpi;
-	    }
-	}
+      if (lvalue)
+        {
+          /* Get HASH-ALGO. */
+          list = sexp_find_token (ldata, "hash-algo", 0);
+          if (list)
+            {
+              s = sexp_nth_data (list, 1, &n);
+              if (!s)
+                rc = GPG_ERR_NO_OBJ;
+              else
+                {
+                  ctx->hash_algo = get_hash_algo (s, n);
+                  if (!ctx->hash_algo)
+                    rc = GPG_ERR_DIGEST_ALGO;
+                }
+              sexp_release (list);
+              if (rc)
+                goto leave;
+            }
+
+          *ret_mpi = sexp_nth_mpi (lvalue, 1, GCRYMPI_FMT_OPAQUE);
+          if (!*ret_mpi)
+            rc = GPG_ERR_INV_OBJ;
+
+          ctx->flags |= PUBKEY_FLAG_PREHASH;
+        }
+      else if (lhash)
+        {
+          if (sexp_length (lhash) != 3)
+            rc = GPG_ERR_INV_OBJ;
+          else if ( !(s=sexp_nth_data (lhash, 1, &n)) || !n )
+            rc = GPG_ERR_INV_OBJ;
+          else
+            {
+              ctx->hash_algo = get_hash_algo (s, n);
+
+              if (!ctx->hash_algo)
+                rc = GPG_ERR_DIGEST_ALGO;
+              else
+                {
+                  *ret_mpi = sexp_nth_mpi (lhash, 2, GCRYMPI_FMT_OPAQUE);
+                  if (!*ret_mpi)
+                    rc = GPG_ERR_INV_OBJ;
+                }
+            }
+        }
+      else
+        rc = GPG_ERR_CONFLICT;
+
+      if (rc)
+        goto leave;
+
+      /* Get SALT-LENGTH. */
+      list = sexp_find_token (ldata, "salt-length", 0);
+      if (list)
+        {
+          s = sexp_nth_data (list, 1, &n);
+          if (!s)
+            {
+              rc = GPG_ERR_NO_OBJ;
+              goto leave;
+            }
+          ctx->saltlen = (unsigned int)strtoul (s, NULL, 10);
+          if (ctx->saltlen > 16384)
+            rc = GPG_ERR_TOO_LARGE;
+          sexp_release (list);
+          if (rc)
+            goto leave;
+        }
+
+      ctx->verify_cmp = pss_verify_cmp;
+      ctx->verify_arg = *ret_mpi;
     }
   else
     rc = GPG_ERR_CONFLICT;
@@ -1110,7 +1352,7 @@ _gcry_pk_util_data_to_mpi (gcry_sexp_t input, gcry_mpi_t *ret_mpi,
   sexp_release (lvalue);
 
   if (!rc)
-    ctx->flags = parsed_flags;
+    ctx->flags |= parsed_flags;
   else
     {
       xfree (ctx->label);

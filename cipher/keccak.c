@@ -40,21 +40,24 @@
 
 /* USE_64BIT_BMI2 indicates whether to compile with 64-bit Intel BMI2 code. */
 #undef USE_64BIT_BMI2
-#if defined(USE_64BIT) && defined(HAVE_GCC_INLINE_ASM_BMI2)
+#if defined(USE_64BIT) && defined(HAVE_GCC_INLINE_ASM_BMI2) && \
+    defined(HAVE_CPU_ARCH_X86)
 # define USE_64BIT_BMI2 1
 #endif
 
 
 /* USE_64BIT_SHLD indicates whether to compile with 64-bit Intel SHLD code. */
 #undef USE_64BIT_SHLD
-#if defined(USE_64BIT) && defined (__GNUC__) && defined(__x86_64__)
+#if defined(USE_64BIT) && defined (__GNUC__) && defined(__x86_64__) && \
+    defined(HAVE_CPU_ARCH_X86)
 # define USE_64BIT_SHLD 1
 #endif
 
 
 /* USE_32BIT_BMI2 indicates whether to compile with 32-bit Intel BMI2 code. */
 #undef USE_32BIT_BMI2
-#if defined(USE_32BIT) && defined(HAVE_GCC_INLINE_ASM_BMI2)
+#if defined(USE_32BIT) && defined(HAVE_GCC_INLINE_ASM_BMI2) && \
+    defined(HAVE_CPU_ARCH_X86)
 # define USE_32BIT_BMI2 1
 #endif
 
@@ -69,6 +72,13 @@
 #  define USE_64BIT_ARM_NEON 1
 # endif
 #endif /*ENABLE_NEON_SUPPORT*/
+
+
+/* USE_S390X_CRYPTO indicates whether to enable zSeries code. */
+#undef USE_S390X_CRYPTO
+#if defined(HAVE_GCC_INLINE_ASM_S390X)
+# define USE_S390X_CRYPTO 1
+#endif /* USE_S390X_CRYPTO */
 
 
 #if defined(USE_64BIT) || defined(USE_64BIT_ARM_NEON)
@@ -115,6 +125,11 @@ typedef struct KECCAK_CONTEXT_S
   unsigned int count;
   unsigned int suffix;
   const keccak_ops_t *ops;
+#ifdef USE_S390X_CRYPTO
+  unsigned int kimd_func;
+  unsigned int buf_pos;
+  byte buf[1344 / 8]; /* SHAKE128 requires biggest buffer, 1344 bits. */
+#endif
 } KECCAK_CONTEXT;
 
 
@@ -619,7 +634,155 @@ static const keccak_ops_t keccak_bmi2_32bi_ops =
   .extract = keccak_extract32bi_bmi2,
 };
 
-#endif /* USE_32BIT */
+#endif /* USE_32BIT_BMI2 */
+
+
+#ifdef USE_S390X_CRYPTO
+#include "asm-inline-s390x.h"
+
+static inline void
+keccak_bwrite_s390x (void *context, const byte *in, size_t inlen)
+{
+  KECCAK_CONTEXT *ctx = context;
+
+  /* Write full-blocks. */
+  kimd_execute (ctx->kimd_func, &ctx->state, in, inlen);
+  return;
+}
+
+static inline void
+keccak_final_s390x (void *context)
+{
+  KECCAK_CONTEXT *ctx = context;
+
+  if (ctx->suffix == SHA3_DELIMITED_SUFFIX)
+    {
+      klmd_execute (ctx->kimd_func, &ctx->state, ctx->buf, ctx->count);
+    }
+  else
+    {
+      klmd_shake_execute (ctx->kimd_func, &ctx->state, NULL, 0, ctx->buf,
+			  ctx->count);
+      ctx->count = 0;
+      ctx->buf_pos = 0;
+    }
+
+  return;
+}
+
+static inline void
+keccak_bextract_s390x (void *context, byte *out, size_t outlen)
+{
+  KECCAK_CONTEXT *ctx = context;
+
+  /* Extract full-blocks. */
+  klmd_shake_execute (ctx->kimd_func | KLMD_PADDING_STATE, &ctx->state,
+		      out, outlen, NULL, 0);
+  return;
+}
+
+static void
+keccak_write_s390x (void *context, const byte *inbuf, size_t inlen)
+{
+  KECCAK_CONTEXT *hd = context;
+  const size_t blocksize = hd->blocksize;
+  size_t inblocks;
+  size_t copylen;
+
+  while (hd->count)
+    {
+      if (hd->count == blocksize)  /* Flush the buffer. */
+	{
+	  keccak_bwrite_s390x (hd, hd->buf, blocksize);
+	  hd->count = 0;
+	}
+      else
+	{
+	  copylen = inlen;
+	  if (copylen > blocksize - hd->count)
+	    copylen = blocksize - hd->count;
+
+	  if (copylen == 0)
+	    break;
+
+	  buf_cpy (&hd->buf[hd->count], inbuf, copylen);
+	  hd->count += copylen;
+	  inbuf += copylen;
+	  inlen -= copylen;
+	}
+    }
+
+  if (inlen == 0)
+    return;
+
+  if (inlen >= blocksize)
+    {
+      inblocks = inlen / blocksize;
+      keccak_bwrite_s390x (hd, inbuf, inblocks * blocksize);
+      hd->count = 0;
+      inlen -= inblocks * blocksize;
+      inbuf += inblocks * blocksize;
+    }
+
+  if (inlen)
+    {
+      buf_cpy (hd->buf, inbuf, inlen);
+      hd->count = inlen;
+    }
+}
+
+static void
+keccak_extract_s390x (void *context, void *outbuf_arg, size_t outlen)
+{
+  KECCAK_CONTEXT *hd = context;
+  const size_t blocksize = hd->blocksize;
+  byte *outbuf = outbuf_arg;
+
+  while (outlen)
+    {
+      gcry_assert(hd->count == 0 || hd->buf_pos < hd->count);
+
+      if (hd->buf_pos < hd->count && outlen)
+	{
+	  size_t copylen = hd->count - hd->buf_pos;
+
+	  if (copylen > outlen)
+	    copylen = outlen;
+
+	  buf_cpy (outbuf, &hd->buf[hd->buf_pos], copylen);
+
+	  outbuf += copylen;
+	  outlen -= copylen;
+	  hd->buf_pos += copylen;
+	}
+
+      if (hd->buf_pos == hd->count)
+	{
+	  hd->buf_pos = 0;
+	  hd->count = 0;
+	}
+
+      if (outlen == 0)
+	return;
+
+      if (outlen >= blocksize)
+	{
+	  size_t outblocks = outlen / blocksize;
+
+	  keccak_bextract_s390x (context, outbuf, outblocks * blocksize);
+
+	  outlen -= outblocks * blocksize;
+	  outbuf += outblocks * blocksize;
+
+	  if (outlen == 0)
+	    return;
+	}
+
+      keccak_bextract_s390x (context, hd->buf, blocksize);
+      hd->count = blocksize;
+    }
+}
+#endif /* USE_S390X_CRYPTO */
 
 
 static void
@@ -632,6 +795,14 @@ keccak_write (void *context, const void *inbuf_arg, size_t inlen)
   unsigned int nburn, burn = 0;
   unsigned int count, i;
   unsigned int pos, nlanes;
+
+#ifdef USE_S390X_CRYPTO
+  if (ctx->kimd_func)
+    {
+      keccak_write_s390x (context, inbuf, inlen);
+      return;
+    }
+#endif
 
   count = ctx->count;
 
@@ -777,6 +948,42 @@ keccak_init (int algo, void *context, unsigned int flags)
     default:
       BUG();
     }
+
+#ifdef USE_S390X_CRYPTO
+  ctx->kimd_func = 0;
+  if ((features & HWF_S390X_MSA) != 0)
+    {
+      unsigned int kimd_func = 0;
+
+      switch (algo)
+	{
+	case GCRY_MD_SHA3_224:
+	  kimd_func = KMID_FUNCTION_SHA3_224;
+	  break;
+	case GCRY_MD_SHA3_256:
+	  kimd_func = KMID_FUNCTION_SHA3_256;
+	  break;
+	case GCRY_MD_SHA3_384:
+	  kimd_func = KMID_FUNCTION_SHA3_384;
+	  break;
+	case GCRY_MD_SHA3_512:
+	  kimd_func = KMID_FUNCTION_SHA3_512;
+	  break;
+	case GCRY_MD_SHAKE128:
+	  kimd_func = KMID_FUNCTION_SHAKE128;
+	  break;
+	case GCRY_MD_SHAKE256:
+	  kimd_func = KMID_FUNCTION_SHAKE256;
+	  break;
+	}
+
+      if ((kimd_query () & km_function_to_mask (kimd_func)) &&
+	  (klmd_query () & km_function_to_mask (kimd_func)))
+	{
+	  ctx->kimd_func = kimd_func;
+	}
+    }
+#endif
 }
 
 static void
@@ -832,6 +1039,14 @@ keccak_final (void *context)
   unsigned int nburn, burn = 0;
   unsigned int lastbytes;
   byte lane[8];
+
+#ifdef USE_S390X_CRYPTO
+  if (ctx->kimd_func)
+    {
+      keccak_final_s390x (context);
+      return;
+    }
+#endif
 
   lastbytes = ctx->count;
 
@@ -893,6 +1108,14 @@ keccak_extract (void *context, void *out, size_t outlen)
   unsigned int count;
   unsigned int i;
   byte lane[8];
+
+#ifdef USE_S390X_CRYPTO
+  if (ctx->kimd_func)
+    {
+      keccak_extract_s390x (context, out, outlen);
+      return;
+    }
+#endif
 
   count = ctx->count;
 
@@ -997,6 +1220,72 @@ keccak_extract (void *context, void *out, size_t outlen)
     _gcry_burn_stack (burn);
 }
 
+
+/* Variant of the above shortcut function using multiple buffers.  */
+static void
+_gcry_sha3_hash_buffers (void *outbuf, size_t nbytes, const gcry_buffer_t *iov,
+			 int iovcnt, const gcry_md_spec_t *spec)
+{
+  KECCAK_CONTEXT hd;
+
+  spec->init (&hd, 0);
+  for (;iovcnt > 0; iov++, iovcnt--)
+    keccak_write (&hd, (const char*)iov[0].data + iov[0].off, iov[0].len);
+  keccak_final (&hd);
+  if (spec->mdlen > 0)
+    memcpy (outbuf, keccak_read (&hd), spec->mdlen);
+  else
+    keccak_extract (&hd, outbuf, nbytes);
+}
+
+
+static void
+_gcry_sha3_224_hash_buffers (void *outbuf, size_t nbytes,
+			     const gcry_buffer_t *iov, int iovcnt)
+{
+  _gcry_sha3_hash_buffers (outbuf, nbytes, iov, iovcnt,
+			   &_gcry_digest_spec_sha3_224);
+}
+
+static void
+_gcry_sha3_256_hash_buffers (void *outbuf, size_t nbytes,
+			     const gcry_buffer_t *iov, int iovcnt)
+{
+  _gcry_sha3_hash_buffers (outbuf, nbytes, iov, iovcnt,
+			   &_gcry_digest_spec_sha3_256);
+}
+
+static void
+_gcry_sha3_384_hash_buffers (void *outbuf, size_t nbytes,
+			     const gcry_buffer_t *iov, int iovcnt)
+{
+  _gcry_sha3_hash_buffers (outbuf, nbytes, iov, iovcnt,
+			   &_gcry_digest_spec_sha3_384);
+}
+
+static void
+_gcry_sha3_512_hash_buffers (void *outbuf, size_t nbytes,
+			     const gcry_buffer_t *iov, int iovcnt)
+{
+  _gcry_sha3_hash_buffers (outbuf, nbytes, iov, iovcnt,
+			   &_gcry_digest_spec_sha3_512);
+}
+
+static void
+_gcry_shake128_hash_buffers (void *outbuf, size_t nbytes,
+			     const gcry_buffer_t *iov, int iovcnt)
+{
+  _gcry_sha3_hash_buffers (outbuf, nbytes, iov, iovcnt,
+			   &_gcry_digest_spec_shake128);
+}
+
+static void
+_gcry_shake256_hash_buffers (void *outbuf, size_t nbytes,
+			     const gcry_buffer_t *iov, int iovcnt)
+{
+  _gcry_sha3_hash_buffers (outbuf, nbytes, iov, iovcnt,
+			   &_gcry_digest_spec_shake256);
+}
 
 
 /*
@@ -1167,48 +1456,48 @@ run_selftests (int algo, int extended, selftest_report_func_t report)
 
 
 
-static byte sha3_224_asn[] = { 0x30 };
-static gcry_md_oid_spec_t oid_spec_sha3_224[] =
+static const byte sha3_224_asn[] = { 0x30 };
+static const gcry_md_oid_spec_t oid_spec_sha3_224[] =
   {
     { "2.16.840.1.101.3.4.2.7" },
     /* PKCS#1 sha3_224WithRSAEncryption */
     { "?" },
     { NULL }
   };
-static byte sha3_256_asn[] = { 0x30 };
-static gcry_md_oid_spec_t oid_spec_sha3_256[] =
+static const byte sha3_256_asn[] = { 0x30 };
+static const gcry_md_oid_spec_t oid_spec_sha3_256[] =
   {
     { "2.16.840.1.101.3.4.2.8" },
     /* PKCS#1 sha3_256WithRSAEncryption */
     { "?" },
     { NULL }
   };
-static byte sha3_384_asn[] = { 0x30 };
-static gcry_md_oid_spec_t oid_spec_sha3_384[] =
+static const byte sha3_384_asn[] = { 0x30 };
+static const gcry_md_oid_spec_t oid_spec_sha3_384[] =
   {
     { "2.16.840.1.101.3.4.2.9" },
     /* PKCS#1 sha3_384WithRSAEncryption */
     { "?" },
     { NULL }
   };
-static byte sha3_512_asn[] = { 0x30 };
-static gcry_md_oid_spec_t oid_spec_sha3_512[] =
+static const byte sha3_512_asn[] = { 0x30 };
+static const gcry_md_oid_spec_t oid_spec_sha3_512[] =
   {
     { "2.16.840.1.101.3.4.2.10" },
     /* PKCS#1 sha3_512WithRSAEncryption */
     { "?" },
     { NULL }
   };
-static byte shake128_asn[] = { 0x30 };
-static gcry_md_oid_spec_t oid_spec_shake128[] =
+static const byte shake128_asn[] = { 0x30 };
+static const gcry_md_oid_spec_t oid_spec_shake128[] =
   {
     { "2.16.840.1.101.3.4.2.11" },
     /* PKCS#1 shake128WithRSAEncryption */
     { "?" },
     { NULL }
   };
-static byte shake256_asn[] = { 0x30 };
-static gcry_md_oid_spec_t oid_spec_shake256[] =
+static const byte shake256_asn[] = { 0x30 };
+static const gcry_md_oid_spec_t oid_spec_shake256[] =
   {
     { "2.16.840.1.101.3.4.2.12" },
     /* PKCS#1 shake256WithRSAEncryption */
@@ -1216,51 +1505,57 @@ static gcry_md_oid_spec_t oid_spec_shake256[] =
     { NULL }
   };
 
-gcry_md_spec_t _gcry_digest_spec_sha3_224 =
+const gcry_md_spec_t _gcry_digest_spec_sha3_224 =
   {
     GCRY_MD_SHA3_224, {0, 1},
     "SHA3-224", sha3_224_asn, DIM (sha3_224_asn), oid_spec_sha3_224, 28,
     sha3_224_init, keccak_write, keccak_final, keccak_read, NULL,
+    _gcry_sha3_224_hash_buffers,
     sizeof (KECCAK_CONTEXT),
     run_selftests
   };
-gcry_md_spec_t _gcry_digest_spec_sha3_256 =
+const gcry_md_spec_t _gcry_digest_spec_sha3_256 =
   {
     GCRY_MD_SHA3_256, {0, 1},
     "SHA3-256", sha3_256_asn, DIM (sha3_256_asn), oid_spec_sha3_256, 32,
     sha3_256_init, keccak_write, keccak_final, keccak_read, NULL,
+    _gcry_sha3_256_hash_buffers,
     sizeof (KECCAK_CONTEXT),
     run_selftests
   };
-gcry_md_spec_t _gcry_digest_spec_sha3_384 =
+const gcry_md_spec_t _gcry_digest_spec_sha3_384 =
   {
     GCRY_MD_SHA3_384, {0, 1},
     "SHA3-384", sha3_384_asn, DIM (sha3_384_asn), oid_spec_sha3_384, 48,
     sha3_384_init, keccak_write, keccak_final, keccak_read, NULL,
+    _gcry_sha3_384_hash_buffers,
     sizeof (KECCAK_CONTEXT),
     run_selftests
   };
-gcry_md_spec_t _gcry_digest_spec_sha3_512 =
+const gcry_md_spec_t _gcry_digest_spec_sha3_512 =
   {
     GCRY_MD_SHA3_512, {0, 1},
     "SHA3-512", sha3_512_asn, DIM (sha3_512_asn), oid_spec_sha3_512, 64,
     sha3_512_init, keccak_write, keccak_final, keccak_read, NULL,
+    _gcry_sha3_512_hash_buffers,
     sizeof (KECCAK_CONTEXT),
     run_selftests
   };
-gcry_md_spec_t _gcry_digest_spec_shake128 =
+const gcry_md_spec_t _gcry_digest_spec_shake128 =
   {
     GCRY_MD_SHAKE128, {0, 1},
     "SHAKE128", shake128_asn, DIM (shake128_asn), oid_spec_shake128, 0,
     shake128_init, keccak_write, keccak_final, NULL, keccak_extract,
+    _gcry_shake128_hash_buffers,
     sizeof (KECCAK_CONTEXT),
     run_selftests
   };
-gcry_md_spec_t _gcry_digest_spec_shake256 =
+const gcry_md_spec_t _gcry_digest_spec_shake256 =
   {
     GCRY_MD_SHAKE256, {0, 1},
     "SHAKE256", shake256_asn, DIM (shake256_asn), oid_spec_shake256, 0,
     shake256_init, keccak_write, keccak_final, NULL, keccak_extract,
+    _gcry_shake256_hash_buffers,
     sizeof (KECCAK_CONTEXT),
     run_selftests
   };

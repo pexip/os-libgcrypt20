@@ -3,10 +3,14 @@
 
 export DPKG_GENSYMBOLS_CHECK_LEVEL = 4
 export DEB_BUILD_MAINT_OPTIONS := hardening=+bindnow
+# DEB_HOST_MULTIARCH is set by dpkg-buildpackage but not mandated by policy,
+# provide fallback.
+ifeq ($(origin DEB_HOST_MULTIARCH), undefined)
+	export DEB_HOST_MULTIARCH = \
+		$(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
+endif
 
 include /usr/share/dpkg/pkg-info.mk
-
-WIN_FLAGS=LDFLAGS="-Xlinker --no-insert-timestamp" CFLAGS="-g -Os" CPPFLAGS=
 
 override_dh_auto_configure:
 	# unbreak arch-only builds when texi is patched.
@@ -23,14 +27,19 @@ override_dh_auto_build-indep:
 	cd build/doc && $(MAKE) stamp-vti
 	cd build/doc && $(MAKE) pdf html
 	for cpu in i686 x86_64; do \
-	 mkdir -p build-$$cpu-w64-mingw32 && \
-	 cd build-$$cpu-w64-mingw32 && $(WIN_FLAGS) ../configure \
-	    --prefix=/usr/$$cpu-w64-mingw32 \
-	    --with-libgpg-error-prefix=/usr/$$cpu-w64-mingw32 \
-	    --disable-padlock-support --disable-asm \
+	  mkdir -p build-$$cpu-w64-mingw32 && \
+	  cd build-$$cpu-w64-mingw32 && \
+	  env -u CFLAGS -u CPPFLAGS -u CXXFLAGS -u DFLAGS \
+	    -u FCFLAGS -u FFLAGS -u GCJFLAGS -u LDFLAGS -u OBJCFLAGS \
+	    -u OBJCXXFLAGS \
+	    PKG_CONFIG_LIBDIR=/usr/$$cpu-w64-mingw32/pkgconfig \
+	  ../configure \
 	    --enable-static \
-	    --host $$cpu-w64-mingw32 && \
-	  $(WIN_FLAGS) $(MAKE) \
+	    --prefix=/usr/$$cpu-w64-mingw32 \
+	    --host=$$cpu-w64-mingw32 --build=$(DEB_HOST_GNU_TYPE) \
+	    LDFLAGS="-Xlinker --insert-timestamp=$(SOURCE_DATE_EPOCH)" \
+	  && \
+	  $(MAKE) \
 	  || exit 1 ; \
 	  cd .. ; \
 	done
@@ -46,6 +55,11 @@ override_dh_auto_install-indep:	debian/tmp/usr/include/gcrypt.h
 	  cd .. ; \
 	done
 	find debian/tmp -name libgcrypt.la -type f -delete
+
+override_dh_auto_install-arch:
+	dh_auto_install --arch --verbose --builddirectory=build
+	install -m755 debian/clean-up-unmanaged-libraries \
+		debian/libgcrypt20/usr/share/libgcrypt20/
 
 override_dh_installinfo:
 	dh_installinfo
