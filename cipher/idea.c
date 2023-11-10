@@ -48,6 +48,7 @@
 #include "types.h"  /* for byte and u32 typedefs */
 #include "g10lib.h"
 #include "cipher.h"
+#include "cipher-internal.h"
 
 
 #define IDEA_KEYSIZE 16
@@ -250,7 +251,9 @@ do_setkey( IDEA_context *c, const byte *key, unsigned int keylen )
     if( selftest_failed )
 	return GPG_ERR_SELFTEST_FAILED;
 
-    assert(keylen == 16);
+    if (keylen != 16)
+      return GPG_ERR_INV_KEYLEN;
+
     c->have_dk = 0;
     expand_key( key, c->ek );
     invert_key( c->ek, c->dk );
@@ -258,10 +261,12 @@ do_setkey( IDEA_context *c, const byte *key, unsigned int keylen )
 }
 
 static gcry_err_code_t
-idea_setkey (void *context, const byte *key, unsigned int keylen)
+idea_setkey (void *context, const byte *key, unsigned int keylen,
+             cipher_bulk_ops_t *bulk_ops)
 {
     IDEA_context *ctx = context;
     int rc = do_setkey (ctx, key, keylen);
+    (void)bulk_ops;
     _gcry_burn_stack (23+6*sizeof(void*));
     return rc;
 }

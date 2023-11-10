@@ -109,7 +109,22 @@ const char *_gcry_pk_get_curve (gcry_sexp_t key, int iterator,
 gcry_sexp_t _gcry_pk_get_param (int algo, const char *name);
 gpg_err_code_t _gcry_pubkey_get_sexp (gcry_sexp_t *r_sexp,
                                       int mode, gcry_ctx_t ctx);
-
+unsigned int _gcry_ecc_get_algo_keylen (int algo);
+gpg_error_t _gcry_ecc_mul_point (int algo, unsigned char *result,
+                                 const unsigned char *scalar,
+                                 const unsigned char *point);
+gcry_err_code_t _gcry_pk_sign_md (gcry_sexp_t *r_sig, const char *tmpl,
+                                  gcry_md_hd_t hd, gcry_sexp_t s_skey,
+                                  gcry_ctx_t ctx);
+gcry_err_code_t _gcry_pk_verify_md (gcry_sexp_t s_sig, const char *tmpl,
+                                    gcry_md_hd_t hd, gcry_sexp_t s_pkey,
+                                    gcry_ctx_t ctx);
+gpg_err_code_t _gcry_pk_random_override_new (gcry_ctx_t *r_ctx,
+                                             const unsigned char *p,
+                                             size_t len);
+gpg_err_code_t _gcry_pk_get_random_override (gcry_ctx_t ctx,
+                                             const unsigned char **r_p,
+                                             size_t *r_len);
 
 gpg_err_code_t _gcry_md_open (gcry_md_hd_t *h, int algo, unsigned int flags);
 void _gcry_md_close (gcry_md_hd_t hd);
@@ -124,6 +139,10 @@ gpg_err_code_t _gcry_md_extract (gcry_md_hd_t hd, int algo, void *buffer,
                                  size_t length);
 void _gcry_md_hash_buffer (int algo, void *digest,
                            const void *buffer, size_t length);
+gpg_err_code_t _gcry_md_hash_buffers_extract (int algo, unsigned int flags,
+                                              void *digest, int digestlen,
+                                              const gcry_buffer_t *iov,
+                                              int iovcnt);
 gpg_err_code_t _gcry_md_hash_buffers (int algo, unsigned int flags,
                                       void *digest,
                                       const gcry_buffer_t *iov, int iovcnt);
@@ -187,6 +206,18 @@ gpg_err_code_t _gcry_kdf_derive (const void *passphrase, size_t passphraselen,
                                  const void *salt, size_t saltlen,
                                  unsigned long iterations,
                                  size_t keysize, void *keybuffer);
+
+gpg_err_code_t _gcry_kdf_open (gcry_kdf_hd_t *hd, int algo, int subalgo,
+                               const unsigned long *param,
+                               unsigned int paramlen,
+                               const void *passphrase, size_t passphraselen,
+                               const void *salt, size_t saltlen,
+                               const void *key, size_t keylen,
+                               const void *ad, size_t adlen);
+gcry_error_t _gcry_kdf_compute (gcry_kdf_hd_t h,
+                                const struct gcry_kdf_thread_ops *ops);
+gpg_err_code_t _gcry_kdf_final (gcry_kdf_hd_t h, size_t resultlen, void *result);
+void _gcry_kdf_close (gcry_kdf_hd_t h);
 
 
 gpg_err_code_t _gcry_prime_generate (gcry_mpi_t *prime,
@@ -362,7 +393,7 @@ gcry_mpi_t _gcry_mpi_copy (const gcry_mpi_t a);
 void _gcry_mpi_snatch (gcry_mpi_t w, gcry_mpi_t u);
 gcry_mpi_t _gcry_mpi_set (gcry_mpi_t w, const gcry_mpi_t u);
 gcry_mpi_t _gcry_mpi_set_ui (gcry_mpi_t w, unsigned long u);
-gcry_err_code_t _gcry_mpi_get_ui (gcry_mpi_t w, unsigned long *u);
+gcry_err_code_t _gcry_mpi_get_ui (unsigned int *w, gcry_mpi_t u);
 void _gcry_mpi_swap (gcry_mpi_t a, gcry_mpi_t b);
 int _gcry_mpi_is_neg (gcry_mpi_t a);
 void _gcry_mpi_neg (gcry_mpi_t w, gcry_mpi_t u);
@@ -417,6 +448,7 @@ gcry_mpi_point_t _gcry_mpi_ec_get_point (const char *name,
                                         gcry_ctx_t ctx, int copy);
 int _gcry_mpi_ec_get_affine (gcry_mpi_t x, gcry_mpi_t y, gcry_mpi_point_t point,
                              mpi_ec_t ctx);
+void _gcry_mpi_ec_point_resize (gcry_mpi_point_t p, mpi_ec_t ctx);
 void _gcry_mpi_ec_dup (gcry_mpi_point_t w, gcry_mpi_point_t u, gcry_ctx_t ctx);
 void _gcry_mpi_ec_add (gcry_mpi_point_t w,
                        gcry_mpi_point_t u, gcry_mpi_point_t v, mpi_ec_t ctx);
@@ -465,7 +497,7 @@ int _gcry_mpi_get_flag (gcry_mpi_t a, enum gcry_mpi_flag flag);
 #define mpi_snatch( w, u)      _gcry_mpi_snatch( (w), (u) )
 #define mpi_set( w, u)         _gcry_mpi_set( (w), (u) )
 #define mpi_set_ui( w, u)      _gcry_mpi_set_ui( (w), (u) )
-#define mpi_get_ui(a,b)        _gcry_mpi_get_ui( (a), (b) )
+#define mpi_get_ui(w,u)        _gcry_mpi_get_ui( (w), (u) )
 #define mpi_swap(a,b)          _gcry_mpi_swap ((a),(b))
 #define mpi_abs( w )           _gcry_mpi_abs( (w) )
 #define mpi_neg( w, u)         _gcry_mpi_neg( (w), (u) )
@@ -509,6 +541,7 @@ int _gcry_mpi_get_flag (gcry_mpi_t a, enum gcry_mpi_flag flag);
 #define mpi_point_set(p,x,y,z)        _gcry_mpi_point_set((p),(x),(y),(z))
 #define mpi_point_snatch_set(p,x,y,z) _gcry_mpi_point_snatch_set((p),(x), \
                                                                  (y),(z))
+#define mpi_point_resize(p,ctx) _gcry_mpi_ec_point_resize (p, ctx)
 
 #define mpi_get_nbits(a)       _gcry_mpi_get_nbits ((a))
 #define mpi_test_bit(a,b)      _gcry_mpi_test_bit ((a),(b))

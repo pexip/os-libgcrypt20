@@ -75,6 +75,14 @@
 # define USE_AVX2 1
 #endif
 
+/* USE_SHAEXT indicates whether to compile with Intel SHA Extension code. */
+#undef USE_SHAEXT
+#if defined(HAVE_GCC_INLINE_ASM_SHAEXT) && \
+    defined(HAVE_GCC_INLINE_ASM_SSE41) && \
+    defined(ENABLE_SHAEXT_SUPPORT)
+# define USE_SHAEXT 1
+#endif
+
 /* USE_ARM_CE indicates whether to enable ARMv8 Crypto Extension assembly
  * code. */
 #undef USE_ARM_CE
@@ -90,67 +98,265 @@
 # endif
 #endif
 
+/* USE_PPC_CRYPTO indicates whether to enable PowerPC vector crypto
+ * accelerated code. */
+#undef USE_PPC_CRYPTO
+#ifdef ENABLE_PPC_CRYPTO_SUPPORT
+# if defined(HAVE_COMPATIBLE_CC_PPC_ALTIVEC) && \
+     defined(HAVE_GCC_INLINE_ASM_PPC_ALTIVEC)
+#  if __GNUC__ >= 4
+#   define USE_PPC_CRYPTO 1
+#  endif
+# endif
+#endif
+
+/* USE_S390X_CRYPTO indicates whether to enable zSeries code. */
+#undef USE_S390X_CRYPTO
+#if defined(HAVE_GCC_INLINE_ASM_S390X)
+# define USE_S390X_CRYPTO 1
+#endif /* USE_S390X_CRYPTO */
+
 
 typedef struct {
   gcry_md_block_ctx_t bctx;
-  u32  h0,h1,h2,h3,h4,h5,h6,h7;
-#ifdef USE_SSSE3
-  unsigned int use_ssse3:1;
-#endif
-#ifdef USE_AVX
-  unsigned int use_avx:1;
-#endif
-#ifdef USE_AVX2
-  unsigned int use_avx2:1;
-#endif
-#ifdef USE_ARM_CE
-  unsigned int use_arm_ce:1;
+  u32  h[8];
+#ifdef USE_S390X_CRYPTO
+  u32  final_len_msb, final_len_lsb; /* needs to be right after h[7]. */
+  int  use_s390x_crypto;
 #endif
 } SHA256_CONTEXT;
 
 
+/* Assembly implementations use SystemV ABI, ABI conversion and additional
+ * stack to store XMM6-XMM15 needed on Win64. */
+#undef ASM_FUNC_ABI
+#undef ASM_EXTRA_STACK
+#if defined(USE_SSSE3) || defined(USE_AVX) || defined(USE_AVX2) || \
+    defined(USE_SHAEXT)
+# ifdef HAVE_COMPATIBLE_GCC_WIN64_PLATFORM_AS
+#  define ASM_FUNC_ABI __attribute__((sysv_abi))
+#  define ASM_EXTRA_STACK (10 * 16 + sizeof(void *) * 4)
+# else
+#  define ASM_FUNC_ABI
+#  define ASM_EXTRA_STACK 0
+# endif
+#endif
+
+
+#ifdef USE_SSSE3
+unsigned int _gcry_sha256_transform_amd64_ssse3(const void *input_data,
+                                                u32 state[8],
+                                                size_t num_blks) ASM_FUNC_ABI;
+
 static unsigned int
-transform (void *c, const unsigned char *data, size_t nblks);
+do_sha256_transform_amd64_ssse3(void *ctx, const unsigned char *data,
+                                size_t nblks)
+{
+  SHA256_CONTEXT *hd = ctx;
+  return _gcry_sha256_transform_amd64_ssse3 (data, hd->h, nblks)
+         + ASM_EXTRA_STACK;
+}
+#endif
+
+#ifdef USE_AVX
+unsigned int _gcry_sha256_transform_amd64_avx(const void *input_data,
+                                              u32 state[8],
+                                              size_t num_blks) ASM_FUNC_ABI;
+
+static unsigned int
+do_sha256_transform_amd64_avx(void *ctx, const unsigned char *data,
+                              size_t nblks)
+{
+  SHA256_CONTEXT *hd = ctx;
+  return _gcry_sha256_transform_amd64_avx (data, hd->h, nblks)
+         + ASM_EXTRA_STACK;
+}
+#endif
+
+#ifdef USE_AVX2
+unsigned int _gcry_sha256_transform_amd64_avx2(const void *input_data,
+                                               u32 state[8],
+                                               size_t num_blks) ASM_FUNC_ABI;
+
+static unsigned int
+do_sha256_transform_amd64_avx2(void *ctx, const unsigned char *data,
+                               size_t nblks)
+{
+  SHA256_CONTEXT *hd = ctx;
+  return _gcry_sha256_transform_amd64_avx2 (data, hd->h, nblks)
+         + ASM_EXTRA_STACK;
+}
+#endif
+
+#ifdef USE_SHAEXT
+/* Does not need ASM_FUNC_ABI */
+unsigned int
+_gcry_sha256_transform_intel_shaext(u32 state[8],
+                                    const unsigned char *input_data,
+                                    size_t num_blks);
+
+static unsigned int
+do_sha256_transform_intel_shaext(void *ctx, const unsigned char *data,
+                                 size_t nblks)
+{
+  SHA256_CONTEXT *hd = ctx;
+  return _gcry_sha256_transform_intel_shaext (hd->h, data, nblks);
+}
+#endif
+
+#ifdef USE_ARM_CE
+unsigned int _gcry_sha256_transform_armv8_ce(u32 state[8],
+                                             const void *input_data,
+                                             size_t num_blks);
+
+static unsigned int
+do_sha256_transform_armv8_ce(void *ctx, const unsigned char *data,
+                             size_t nblks)
+{
+  SHA256_CONTEXT *hd = ctx;
+  return _gcry_sha256_transform_armv8_ce (hd->h, data, nblks);
+}
+#endif
+
+#ifdef USE_PPC_CRYPTO
+unsigned int _gcry_sha256_transform_ppc8(u32 state[8],
+					 const unsigned char *input_data,
+					 size_t num_blks);
+
+unsigned int _gcry_sha256_transform_ppc9(u32 state[8],
+					 const unsigned char *input_data,
+					 size_t num_blks);
+
+static unsigned int
+do_sha256_transform_ppc8(void *ctx, const unsigned char *data, size_t nblks)
+{
+  SHA256_CONTEXT *hd = ctx;
+  return _gcry_sha256_transform_ppc8 (hd->h, data, nblks);
+}
+
+static unsigned int
+do_sha256_transform_ppc9(void *ctx, const unsigned char *data, size_t nblks)
+{
+  SHA256_CONTEXT *hd = ctx;
+  return _gcry_sha256_transform_ppc9 (hd->h, data, nblks);
+}
+#endif
+
+#ifdef USE_S390X_CRYPTO
+#include "asm-inline-s390x.h"
+
+static unsigned int
+do_sha256_transform_s390x (void *ctx, const unsigned char *data, size_t nblks)
+{
+  SHA256_CONTEXT *hd = ctx;
+
+  kimd_execute (KMID_FUNCTION_SHA256, hd->h, data, nblks * 64);
+  return 0;
+}
+
+static unsigned int
+do_sha256_final_s390x (void *ctx, const unsigned char *data, size_t datalen,
+		       u32 len_msb, u32 len_lsb)
+{
+  SHA256_CONTEXT *hd = ctx;
+
+  /* Make sure that 'final_len' is positioned at correct offset relative
+   * to 'h[0]'. This is because we are passing 'h[0]' pointer as start of
+   * parameter block to 'klmd' instruction. */
+
+  gcry_assert (offsetof (SHA256_CONTEXT, final_len_msb)
+	       - offsetof (SHA256_CONTEXT, h[0]) == 8 * sizeof(u32));
+  gcry_assert (offsetof (SHA256_CONTEXT, final_len_lsb)
+	       - offsetof (SHA256_CONTEXT, final_len_msb) == 1 * sizeof(u32));
+
+  hd->final_len_msb = len_msb;
+  hd->final_len_lsb = len_lsb;
+
+  klmd_execute (KMID_FUNCTION_SHA256, hd->h, data, datalen);
+  return 0;
+}
+#endif
+
+
+static unsigned int
+do_transform_generic (void *ctx, const unsigned char *data, size_t nblks);
+
+
+static void
+sha256_common_init (SHA256_CONTEXT *hd)
+{
+  unsigned int features = _gcry_get_hw_features ();
+
+  hd->bctx.nblocks = 0;
+  hd->bctx.nblocks_high = 0;
+  hd->bctx.count = 0;
+  hd->bctx.blocksize_shift = _gcry_ctz(64);
+
+  /* Order of feature checks is important here; last match will be
+   * selected.  Keep slower implementations at the top and faster at
+   * the bottom.  */
+  hd->bctx.bwrite = do_transform_generic;
+#ifdef USE_SSSE3
+  if ((features & HWF_INTEL_SSSE3) != 0)
+    hd->bctx.bwrite = do_sha256_transform_amd64_ssse3;
+#endif
+#ifdef USE_AVX
+  /* AVX implementation uses SHLD which is known to be slow on non-Intel CPUs.
+   * Therefore use this implementation on Intel CPUs only. */
+  if ((features & HWF_INTEL_AVX) && (features & HWF_INTEL_FAST_SHLD))
+    hd->bctx.bwrite = do_sha256_transform_amd64_avx;
+#endif
+#ifdef USE_AVX2
+  if ((features & HWF_INTEL_AVX2) && (features & HWF_INTEL_BMI2))
+    hd->bctx.bwrite = do_sha256_transform_amd64_avx2;
+#endif
+#ifdef USE_SHAEXT
+  if ((features & HWF_INTEL_SHAEXT) && (features & HWF_INTEL_SSE4_1))
+    hd->bctx.bwrite = do_sha256_transform_intel_shaext;
+#endif
+#ifdef USE_ARM_CE
+  if ((features & HWF_ARM_SHA2) != 0)
+    hd->bctx.bwrite = do_sha256_transform_armv8_ce;
+#endif
+#ifdef USE_PPC_CRYPTO
+  if ((features & HWF_PPC_VCRYPTO) != 0)
+    hd->bctx.bwrite = do_sha256_transform_ppc8;
+  if ((features & HWF_PPC_VCRYPTO) != 0 && (features & HWF_PPC_ARCH_3_00) != 0)
+    hd->bctx.bwrite = do_sha256_transform_ppc9;
+#endif
+#ifdef USE_S390X_CRYPTO
+  hd->use_s390x_crypto = 0;
+  if ((features & HWF_S390X_MSA) != 0)
+    {
+      if ((kimd_query () & km_function_to_mask (KMID_FUNCTION_SHA256)) &&
+	  (klmd_query () & km_function_to_mask (KMID_FUNCTION_SHA256)))
+	{
+	  hd->bctx.bwrite = do_sha256_transform_s390x;
+	  hd->use_s390x_crypto = 1;
+	}
+    }
+#endif
+  (void)features;
+}
 
 
 static void
 sha256_init (void *context, unsigned int flags)
 {
   SHA256_CONTEXT *hd = context;
-  unsigned int features = _gcry_get_hw_features ();
 
   (void)flags;
 
-  hd->h0 = 0x6a09e667;
-  hd->h1 = 0xbb67ae85;
-  hd->h2 = 0x3c6ef372;
-  hd->h3 = 0xa54ff53a;
-  hd->h4 = 0x510e527f;
-  hd->h5 = 0x9b05688c;
-  hd->h6 = 0x1f83d9ab;
-  hd->h7 = 0x5be0cd19;
+  hd->h[0] = 0x6a09e667;
+  hd->h[1] = 0xbb67ae85;
+  hd->h[2] = 0x3c6ef372;
+  hd->h[3] = 0xa54ff53a;
+  hd->h[4] = 0x510e527f;
+  hd->h[5] = 0x9b05688c;
+  hd->h[6] = 0x1f83d9ab;
+  hd->h[7] = 0x5be0cd19;
 
-  hd->bctx.nblocks = 0;
-  hd->bctx.nblocks_high = 0;
-  hd->bctx.count = 0;
-  hd->bctx.blocksize = 64;
-  hd->bctx.bwrite = transform;
-
-#ifdef USE_SSSE3
-  hd->use_ssse3 = (features & HWF_INTEL_SSSE3) != 0;
-#endif
-#ifdef USE_AVX
-  /* AVX implementation uses SHLD which is known to be slow on non-Intel CPUs.
-   * Therefore use this implementation on Intel CPUs only. */
-  hd->use_avx = (features & HWF_INTEL_AVX) && (features & HWF_INTEL_FAST_SHLD);
-#endif
-#ifdef USE_AVX2
-  hd->use_avx2 = (features & HWF_INTEL_AVX2) && (features & HWF_INTEL_BMI2);
-#endif
-#ifdef USE_ARM_CE
-  hd->use_arm_ce = (features & HWF_ARM_SHA2) != 0;
-#endif
-  (void)features;
+  sha256_common_init (hd);
 }
 
 
@@ -158,40 +364,19 @@ static void
 sha224_init (void *context, unsigned int flags)
 {
   SHA256_CONTEXT *hd = context;
-  unsigned int features = _gcry_get_hw_features ();
 
   (void)flags;
 
-  hd->h0 = 0xc1059ed8;
-  hd->h1 = 0x367cd507;
-  hd->h2 = 0x3070dd17;
-  hd->h3 = 0xf70e5939;
-  hd->h4 = 0xffc00b31;
-  hd->h5 = 0x68581511;
-  hd->h6 = 0x64f98fa7;
-  hd->h7 = 0xbefa4fa4;
+  hd->h[0] = 0xc1059ed8;
+  hd->h[1] = 0x367cd507;
+  hd->h[2] = 0x3070dd17;
+  hd->h[3] = 0xf70e5939;
+  hd->h[4] = 0xffc00b31;
+  hd->h[5] = 0x68581511;
+  hd->h[6] = 0x64f98fa7;
+  hd->h[7] = 0xbefa4fa4;
 
-  hd->bctx.nblocks = 0;
-  hd->bctx.nblocks_high = 0;
-  hd->bctx.count = 0;
-  hd->bctx.blocksize = 64;
-  hd->bctx.bwrite = transform;
-
-#ifdef USE_SSSE3
-  hd->use_ssse3 = (features & HWF_INTEL_SSSE3) != 0;
-#endif
-#ifdef USE_AVX
-  /* AVX implementation uses SHLD which is known to be slow on non-Intel CPUs.
-   * Therefore use this implementation on Intel CPUs only. */
-  hd->use_avx = (features & HWF_INTEL_AVX) && (features & HWF_INTEL_FAST_SHLD);
-#endif
-#ifdef USE_AVX2
-  hd->use_avx2 = (features & HWF_INTEL_AVX2) && (features & HWF_INTEL_BMI2);
-#endif
-#ifdef USE_ARM_CE
-  hd->use_arm_ce = (features & HWF_ARM_SHA2) != 0;
-#endif
-  (void)features;
+  sha256_common_init (hd);
 }
 
 
@@ -228,7 +413,7 @@ sha224_init (void *context, unsigned int flags)
                             +    w[(i-16)&0x0f] )
 
 static unsigned int
-transform_blk (void *ctx, const unsigned char *data)
+do_transform_generic (void *ctx, const unsigned char *data, size_t nblks)
 {
   SHA256_CONTEXT *hd = ctx;
   static const u32 K[64] = {
@@ -250,187 +435,108 @@ transform_blk (void *ctx, const unsigned char *data)
     0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
   };
 
-  u32 a,b,c,d,e,f,g,h,t1,t2;
-  u32 w[16];
-
-  a = hd->h0;
-  b = hd->h1;
-  c = hd->h2;
-  d = hd->h3;
-  e = hd->h4;
-  f = hd->h5;
-  g = hd->h6;
-  h = hd->h7;
-
-  R(a, b, c, d, e, f, g, h, K[0], I(0));
-  R(h, a, b, c, d, e, f, g, K[1], I(1));
-  R(g, h, a, b, c, d, e, f, K[2], I(2));
-  R(f, g, h, a, b, c, d, e, K[3], I(3));
-  R(e, f, g, h, a, b, c, d, K[4], I(4));
-  R(d, e, f, g, h, a, b, c, K[5], I(5));
-  R(c, d, e, f, g, h, a, b, K[6], I(6));
-  R(b, c, d, e, f, g, h, a, K[7], I(7));
-  R(a, b, c, d, e, f, g, h, K[8], I(8));
-  R(h, a, b, c, d, e, f, g, K[9], I(9));
-  R(g, h, a, b, c, d, e, f, K[10], I(10));
-  R(f, g, h, a, b, c, d, e, K[11], I(11));
-  R(e, f, g, h, a, b, c, d, K[12], I(12));
-  R(d, e, f, g, h, a, b, c, K[13], I(13));
-  R(c, d, e, f, g, h, a, b, K[14], I(14));
-  R(b, c, d, e, f, g, h, a, K[15], I(15));
-
-  R(a, b, c, d, e, f, g, h, K[16], W(16));
-  R(h, a, b, c, d, e, f, g, K[17], W(17));
-  R(g, h, a, b, c, d, e, f, K[18], W(18));
-  R(f, g, h, a, b, c, d, e, K[19], W(19));
-  R(e, f, g, h, a, b, c, d, K[20], W(20));
-  R(d, e, f, g, h, a, b, c, K[21], W(21));
-  R(c, d, e, f, g, h, a, b, K[22], W(22));
-  R(b, c, d, e, f, g, h, a, K[23], W(23));
-  R(a, b, c, d, e, f, g, h, K[24], W(24));
-  R(h, a, b, c, d, e, f, g, K[25], W(25));
-  R(g, h, a, b, c, d, e, f, K[26], W(26));
-  R(f, g, h, a, b, c, d, e, K[27], W(27));
-  R(e, f, g, h, a, b, c, d, K[28], W(28));
-  R(d, e, f, g, h, a, b, c, K[29], W(29));
-  R(c, d, e, f, g, h, a, b, K[30], W(30));
-  R(b, c, d, e, f, g, h, a, K[31], W(31));
-
-  R(a, b, c, d, e, f, g, h, K[32], W(32));
-  R(h, a, b, c, d, e, f, g, K[33], W(33));
-  R(g, h, a, b, c, d, e, f, K[34], W(34));
-  R(f, g, h, a, b, c, d, e, K[35], W(35));
-  R(e, f, g, h, a, b, c, d, K[36], W(36));
-  R(d, e, f, g, h, a, b, c, K[37], W(37));
-  R(c, d, e, f, g, h, a, b, K[38], W(38));
-  R(b, c, d, e, f, g, h, a, K[39], W(39));
-  R(a, b, c, d, e, f, g, h, K[40], W(40));
-  R(h, a, b, c, d, e, f, g, K[41], W(41));
-  R(g, h, a, b, c, d, e, f, K[42], W(42));
-  R(f, g, h, a, b, c, d, e, K[43], W(43));
-  R(e, f, g, h, a, b, c, d, K[44], W(44));
-  R(d, e, f, g, h, a, b, c, K[45], W(45));
-  R(c, d, e, f, g, h, a, b, K[46], W(46));
-  R(b, c, d, e, f, g, h, a, K[47], W(47));
-
-  R(a, b, c, d, e, f, g, h, K[48], W(48));
-  R(h, a, b, c, d, e, f, g, K[49], W(49));
-  R(g, h, a, b, c, d, e, f, K[50], W(50));
-  R(f, g, h, a, b, c, d, e, K[51], W(51));
-  R(e, f, g, h, a, b, c, d, K[52], W(52));
-  R(d, e, f, g, h, a, b, c, K[53], W(53));
-  R(c, d, e, f, g, h, a, b, K[54], W(54));
-  R(b, c, d, e, f, g, h, a, K[55], W(55));
-  R(a, b, c, d, e, f, g, h, K[56], W(56));
-  R(h, a, b, c, d, e, f, g, K[57], W(57));
-  R(g, h, a, b, c, d, e, f, K[58], W(58));
-  R(f, g, h, a, b, c, d, e, K[59], W(59));
-  R(e, f, g, h, a, b, c, d, K[60], W(60));
-  R(d, e, f, g, h, a, b, c, K[61], W(61));
-  R(c, d, e, f, g, h, a, b, K[62], W(62));
-  R(b, c, d, e, f, g, h, a, K[63], W(63));
-
-  hd->h0 += a;
-  hd->h1 += b;
-  hd->h2 += c;
-  hd->h3 += d;
-  hd->h4 += e;
-  hd->h5 += f;
-  hd->h6 += g;
-  hd->h7 += h;
-
-  return /*burn_stack*/ 26*4+32;
-}
-#undef S0
-#undef S1
-#undef R
-
-
-/* Assembly implementations use SystemV ABI, ABI conversion and additional
- * stack to store XMM6-XMM15 needed on Win64. */
-#undef ASM_FUNC_ABI
-#undef ASM_EXTRA_STACK
-#if defined(USE_SSSE3) || defined(USE_AVX) || defined(USE_AVX2)
-# ifdef HAVE_COMPATIBLE_GCC_WIN64_PLATFORM_AS
-#  define ASM_FUNC_ABI __attribute__((sysv_abi))
-#  define ASM_EXTRA_STACK (10 * 16)
-# else
-#  define ASM_FUNC_ABI
-#  define ASM_EXTRA_STACK 0
-# endif
-#endif
-
-
-#ifdef USE_SSSE3
-unsigned int _gcry_sha256_transform_amd64_ssse3(const void *input_data,
-                                                u32 state[8],
-                                                size_t num_blks) ASM_FUNC_ABI;
-#endif
-
-#ifdef USE_AVX
-unsigned int _gcry_sha256_transform_amd64_avx(const void *input_data,
-                                              u32 state[8],
-                                              size_t num_blks) ASM_FUNC_ABI;
-#endif
-
-#ifdef USE_AVX2
-unsigned int _gcry_sha256_transform_amd64_avx2(const void *input_data,
-                                               u32 state[8],
-                                               size_t num_blks) ASM_FUNC_ABI;
-#endif
-
-#ifdef USE_ARM_CE
-unsigned int _gcry_sha256_transform_armv8_ce(u32 state[8],
-                                             const void *input_data,
-                                             size_t num_blks);
-#endif
-
-static unsigned int
-transform (void *ctx, const unsigned char *data, size_t nblks)
-{
-  SHA256_CONTEXT *hd = ctx;
-  unsigned int burn;
-
-#ifdef USE_AVX2
-  if (hd->use_avx2)
-    return _gcry_sha256_transform_amd64_avx2 (data, &hd->h0, nblks)
-           + 4 * sizeof(void*) + ASM_EXTRA_STACK;
-#endif
-
-#ifdef USE_AVX
-  if (hd->use_avx)
-    return _gcry_sha256_transform_amd64_avx (data, &hd->h0, nblks)
-           + 4 * sizeof(void*) + ASM_EXTRA_STACK;
-#endif
-
-#ifdef USE_SSSE3
-  if (hd->use_ssse3)
-    return _gcry_sha256_transform_amd64_ssse3 (data, &hd->h0, nblks)
-           + 4 * sizeof(void*) + ASM_EXTRA_STACK;
-#endif
-
-#ifdef USE_ARM_CE
-  if (hd->use_arm_ce)
-    return _gcry_sha256_transform_armv8_ce (&hd->h0, data, nblks);
-#endif
-
   do
     {
-      burn = transform_blk (hd, data);
+
+      u32 a,b,c,d,e,f,g,h,t1,t2;
+      u32 w[16];
+
+      a = hd->h[0];
+      b = hd->h[1];
+      c = hd->h[2];
+      d = hd->h[3];
+      e = hd->h[4];
+      f = hd->h[5];
+      g = hd->h[6];
+      h = hd->h[7];
+
+      R(a, b, c, d, e, f, g, h, K[0], I(0));
+      R(h, a, b, c, d, e, f, g, K[1], I(1));
+      R(g, h, a, b, c, d, e, f, K[2], I(2));
+      R(f, g, h, a, b, c, d, e, K[3], I(3));
+      R(e, f, g, h, a, b, c, d, K[4], I(4));
+      R(d, e, f, g, h, a, b, c, K[5], I(5));
+      R(c, d, e, f, g, h, a, b, K[6], I(6));
+      R(b, c, d, e, f, g, h, a, K[7], I(7));
+      R(a, b, c, d, e, f, g, h, K[8], I(8));
+      R(h, a, b, c, d, e, f, g, K[9], I(9));
+      R(g, h, a, b, c, d, e, f, K[10], I(10));
+      R(f, g, h, a, b, c, d, e, K[11], I(11));
+      R(e, f, g, h, a, b, c, d, K[12], I(12));
+      R(d, e, f, g, h, a, b, c, K[13], I(13));
+      R(c, d, e, f, g, h, a, b, K[14], I(14));
+      R(b, c, d, e, f, g, h, a, K[15], I(15));
+
+      R(a, b, c, d, e, f, g, h, K[16], W(16));
+      R(h, a, b, c, d, e, f, g, K[17], W(17));
+      R(g, h, a, b, c, d, e, f, K[18], W(18));
+      R(f, g, h, a, b, c, d, e, K[19], W(19));
+      R(e, f, g, h, a, b, c, d, K[20], W(20));
+      R(d, e, f, g, h, a, b, c, K[21], W(21));
+      R(c, d, e, f, g, h, a, b, K[22], W(22));
+      R(b, c, d, e, f, g, h, a, K[23], W(23));
+      R(a, b, c, d, e, f, g, h, K[24], W(24));
+      R(h, a, b, c, d, e, f, g, K[25], W(25));
+      R(g, h, a, b, c, d, e, f, K[26], W(26));
+      R(f, g, h, a, b, c, d, e, K[27], W(27));
+      R(e, f, g, h, a, b, c, d, K[28], W(28));
+      R(d, e, f, g, h, a, b, c, K[29], W(29));
+      R(c, d, e, f, g, h, a, b, K[30], W(30));
+      R(b, c, d, e, f, g, h, a, K[31], W(31));
+
+      R(a, b, c, d, e, f, g, h, K[32], W(32));
+      R(h, a, b, c, d, e, f, g, K[33], W(33));
+      R(g, h, a, b, c, d, e, f, K[34], W(34));
+      R(f, g, h, a, b, c, d, e, K[35], W(35));
+      R(e, f, g, h, a, b, c, d, K[36], W(36));
+      R(d, e, f, g, h, a, b, c, K[37], W(37));
+      R(c, d, e, f, g, h, a, b, K[38], W(38));
+      R(b, c, d, e, f, g, h, a, K[39], W(39));
+      R(a, b, c, d, e, f, g, h, K[40], W(40));
+      R(h, a, b, c, d, e, f, g, K[41], W(41));
+      R(g, h, a, b, c, d, e, f, K[42], W(42));
+      R(f, g, h, a, b, c, d, e, K[43], W(43));
+      R(e, f, g, h, a, b, c, d, K[44], W(44));
+      R(d, e, f, g, h, a, b, c, K[45], W(45));
+      R(c, d, e, f, g, h, a, b, K[46], W(46));
+      R(b, c, d, e, f, g, h, a, K[47], W(47));
+
+      R(a, b, c, d, e, f, g, h, K[48], W(48));
+      R(h, a, b, c, d, e, f, g, K[49], W(49));
+      R(g, h, a, b, c, d, e, f, K[50], W(50));
+      R(f, g, h, a, b, c, d, e, K[51], W(51));
+      R(e, f, g, h, a, b, c, d, K[52], W(52));
+      R(d, e, f, g, h, a, b, c, K[53], W(53));
+      R(c, d, e, f, g, h, a, b, K[54], W(54));
+      R(b, c, d, e, f, g, h, a, K[55], W(55));
+      R(a, b, c, d, e, f, g, h, K[56], W(56));
+      R(h, a, b, c, d, e, f, g, K[57], W(57));
+      R(g, h, a, b, c, d, e, f, K[58], W(58));
+      R(f, g, h, a, b, c, d, e, K[59], W(59));
+      R(e, f, g, h, a, b, c, d, K[60], W(60));
+      R(d, e, f, g, h, a, b, c, K[61], W(61));
+      R(c, d, e, f, g, h, a, b, K[62], W(62));
+      R(b, c, d, e, f, g, h, a, K[63], W(63));
+
+      hd->h[0] += a;
+      hd->h[1] += b;
+      hd->h[2] += c;
+      hd->h[3] += d;
+      hd->h[4] += e;
+      hd->h[5] += f;
+      hd->h[6] += g;
+      hd->h[7] += h;
+
       data += 64;
     }
   while (--nblks);
 
-#ifdef ASM_EXTRA_STACK
-  /* 'transform_blk' is typically inlined and XMM6-XMM15 are stored at
-   *  the prologue of this function. Therefore need to add ASM_EXTRA_STACK to
-   *  here too.
-   */
-  burn += ASM_EXTRA_STACK;
-#endif
-
-  return burn;
+  return 26*4 + 32 + 3 * sizeof(void*);
 }
+
+#undef S0
+#undef S1
+#undef R
 
 
 /*
@@ -445,8 +551,6 @@ sha256_final(void *context)
   u32 t, th, msb, lsb;
   byte *p;
   unsigned int burn;
-
-  _gcry_md_block_write (hd, NULL, 0); /* flush */;
 
   t = hd->bctx.nblocks;
   if (sizeof t == sizeof hd->bctx.nblocks)
@@ -467,28 +571,39 @@ sha256_final(void *context)
   msb <<= 3;
   msb |= t >> 29;
 
-  if (hd->bctx.count < 56)
-    { /* enough room */
+  if (0)
+    { }
+#ifdef USE_S390X_CRYPTO
+  else if (hd->use_s390x_crypto)
+    {
+      burn = do_sha256_final_s390x (hd, hd->bctx.buf, hd->bctx.count, msb, lsb);
+    }
+#endif
+  else if (hd->bctx.count < 56)  /* enough room */
+    {
       hd->bctx.buf[hd->bctx.count++] = 0x80; /* pad */
-      while (hd->bctx.count < 56)
-        hd->bctx.buf[hd->bctx.count++] = 0;  /* pad */
+      if (hd->bctx.count < 56)
+	memset (&hd->bctx.buf[hd->bctx.count], 0, 56 - hd->bctx.count);
+
+      /* append the 64 bit count */
+      buf_put_be32(hd->bctx.buf + 56, msb);
+      buf_put_be32(hd->bctx.buf + 60, lsb);
+      burn = (*hd->bctx.bwrite) (hd, hd->bctx.buf, 1);
     }
-  else
-    { /* need one extra block */
+  else  /* need one extra block */
+    {
       hd->bctx.buf[hd->bctx.count++] = 0x80; /* pad character */
-      while (hd->bctx.count < 64)
-        hd->bctx.buf[hd->bctx.count++] = 0;
-      _gcry_md_block_write (hd, NULL, 0);  /* flush */;
-      memset (hd->bctx.buf, 0, 56 ); /* fill next block with zeroes */
+      /* fill pad and next block with zeroes */
+      memset (&hd->bctx.buf[hd->bctx.count], 0, 64 - hd->bctx.count + 56);
+
+      /* append the 64 bit count */
+      buf_put_be32(hd->bctx.buf + 64 + 56, msb);
+      buf_put_be32(hd->bctx.buf + 64 + 60, lsb);
+      burn = (*hd->bctx.bwrite) (hd, hd->bctx.buf, 2);
     }
-  /* append the 64 bit count */
-  buf_put_be32(hd->bctx.buf + 56, msb);
-  buf_put_be32(hd->bctx.buf + 60, lsb);
-  burn = transform (hd, hd->bctx.buf, 1);
-  _gcry_burn_stack (burn);
 
   p = hd->bctx.buf;
-#define X(a) do { buf_put_be32(p, hd->h##a); p += 4; } while(0)
+#define X(a) do { buf_put_be32(p, hd->h[a]); p += 4; } while(0)
   X(0);
   X(1);
   X(2);
@@ -498,6 +613,10 @@ sha256_final(void *context)
   X(6);
   X(7);
 #undef X
+
+  hd->bctx.count = 0;
+
+  _gcry_burn_stack (burn);
 }
 
 static byte *
@@ -509,25 +628,15 @@ sha256_read (void *context)
 }
 
 
-/* Shortcut functions which puts the hash value of the supplied buffer
+/* Shortcut functions which puts the hash value of the supplied buffer iov
  * into outbuf which must have a size of 32 bytes.  */
-void
-_gcry_sha256_hash_buffer (void *outbuf, const void *buffer, size_t length)
+static void
+_gcry_sha256_hash_buffers (void *outbuf, size_t nbytes,
+			   const gcry_buffer_t *iov, int iovcnt)
 {
   SHA256_CONTEXT hd;
 
-  sha256_init (&hd, 0);
-  _gcry_md_block_write (&hd, buffer, length);
-  sha256_final (&hd);
-  memcpy (outbuf, hd.bctx.buf, 32);
-}
-
-
-/* Variant of the above shortcut function using multiple buffers.  */
-void
-_gcry_sha256_hash_buffers (void *outbuf, const gcry_buffer_t *iov, int iovcnt)
-{
-  SHA256_CONTEXT hd;
+  (void)nbytes;
 
   sha256_init (&hd, 0);
   for (;iovcnt > 0; iov++, iovcnt--)
@@ -535,6 +644,25 @@ _gcry_sha256_hash_buffers (void *outbuf, const gcry_buffer_t *iov, int iovcnt)
                           (const char*)iov[0].data + iov[0].off, iov[0].len);
   sha256_final (&hd);
   memcpy (outbuf, hd.bctx.buf, 32);
+}
+
+
+/* Shortcut functions which puts the hash value of the supplied buffer iov
+ * into outbuf which must have a size of 28 bytes.  */
+static void
+_gcry_sha224_hash_buffers (void *outbuf, size_t nbytes,
+			   const gcry_buffer_t *iov, int iovcnt)
+{
+  SHA256_CONTEXT hd;
+
+  (void)nbytes;
+
+  sha224_init (&hd, 0);
+  for (;iovcnt > 0; iov++, iovcnt--)
+    _gcry_md_block_write (&hd,
+                          (const char*)iov[0].data + iov[0].off, iov[0].len);
+  sha256_final (&hd);
+  memcpy (outbuf, hd.bctx.buf, 28);
 }
 
 
@@ -660,48 +788,54 @@ run_selftests (int algo, int extended, selftest_report_func_t report)
 
 
 
-static byte asn224[19] = /* Object ID is 2.16.840.1.101.3.4.2.4 */
+static const byte asn224[19] = /* Object ID is 2.16.840.1.101.3.4.2.4 */
   { 0x30, 0x2D, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48,
     0x01, 0x65, 0x03, 0x04, 0x02, 0x04, 0x05, 0x00, 0x04,
     0x1C
   };
 
-static gcry_md_oid_spec_t oid_spec_sha224[] =
+static const gcry_md_oid_spec_t oid_spec_sha224[] =
   {
     /* From RFC3874, Section 4 */
     { "2.16.840.1.101.3.4.2.4" },
+    /* ANSI X9.62  ecdsaWithSHA224 */
+    { "1.2.840.10045.4.3.1" },
     { NULL },
   };
 
-static byte asn256[19] = /* Object ID is  2.16.840.1.101.3.4.2.1 */
+static const byte asn256[19] = /* Object ID is  2.16.840.1.101.3.4.2.1 */
   { 0x30, 0x31, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86,
     0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01, 0x05,
     0x00, 0x04, 0x20 };
 
-static gcry_md_oid_spec_t oid_spec_sha256[] =
+static const gcry_md_oid_spec_t oid_spec_sha256[] =
   {
     /* According to the OpenPGP draft rfc2440-bis06 */
     { "2.16.840.1.101.3.4.2.1" },
     /* PKCS#1 sha256WithRSAEncryption */
     { "1.2.840.113549.1.1.11" },
+    /* ANSI X9.62  ecdsaWithSHA256 */
+    { "1.2.840.10045.4.3.2" },
 
     { NULL },
   };
 
-gcry_md_spec_t _gcry_digest_spec_sha224 =
+const gcry_md_spec_t _gcry_digest_spec_sha224 =
   {
     GCRY_MD_SHA224, {0, 1},
     "SHA224", asn224, DIM (asn224), oid_spec_sha224, 28,
     sha224_init, _gcry_md_block_write, sha256_final, sha256_read, NULL,
+    _gcry_sha224_hash_buffers,
     sizeof (SHA256_CONTEXT),
     run_selftests
   };
 
-gcry_md_spec_t _gcry_digest_spec_sha256 =
+const gcry_md_spec_t _gcry_digest_spec_sha256 =
   {
     GCRY_MD_SHA256, {0, 1},
     "SHA256", asn256, DIM (asn256), oid_spec_sha256, 32,
     sha256_init, _gcry_md_block_write, sha256_final, sha256_read, NULL,
+    _gcry_sha256_hash_buffers,
     sizeof (SHA256_CONTEXT),
     run_selftests
   };

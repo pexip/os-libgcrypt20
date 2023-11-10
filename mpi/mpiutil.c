@@ -28,9 +28,29 @@
 #include "mpi-internal.h"
 #include "mod-source-info.h"
 
+
+#if SIZEOF_UNSIGNED_INT == 2
+# define MY_UINT_MAX 0xffff
+/* (visual check:      0123 ) */
+#elif SIZEOF_UNSIGNED_INT == 4
+# define MY_UINT_MAX 0xffffffff
+/* (visual check:      01234567 ) */
+#elif SIZEOF_UNSIGNED_INT == 8
+# define MY_UINT_MAX 0xffffffffffffffff
+/* (visual check:      0123456789abcdef ) */
+#else
+# error Need MY_UINT_MAX for this limb size
+#endif
+
+
 /* Constants allocated right away at startup.  */
 static gcry_mpi_t constants[MPI_NUMBER_OF_CONSTANTS];
 
+/* These variables are used to generate masks from conditional operation
+ * flag parameters.  Use of volatile prevents compiler optimizations from
+ * converting AND-masking to conditional branches.  */
+static volatile mpi_limb_t vzero = 0;
+static volatile mpi_limb_t vone = 1;
 
 
 const char *
@@ -177,7 +197,7 @@ _gcry_mpi_resize (gcry_mpi_t a, unsigned nlimbs)
   if (a->d)
     {
       a->d = xrealloc (a->d, nlimbs * sizeof (mpi_limb_t));
-      for (i=a->alloced; i < nlimbs; i++)
+      for (i=a->nlimbs; i < nlimbs; i++)
         a->d[i] = 0;
     }
   else
@@ -346,10 +366,13 @@ _gcry_mpi_copy (gcry_mpi_t a)
     gcry_mpi_t b;
 
     if( a && (a->flags & 4) ) {
-        void *p = _gcry_is_secure(a->d)? xmalloc_secure ((a->sign+7)/8)
-                                       : xmalloc ((a->sign+7)/8);
-        if (a->d)
-          memcpy( p, a->d, (a->sign+7)/8 );
+        void *p = NULL;
+        if (a->sign) {
+            p = _gcry_is_secure(a->d)? xmalloc_secure ((a->sign+7)/8)
+                                     : xmalloc ((a->sign+7)/8);
+            if (a->d)
+                memcpy( p, a->d, (a->sign+7)/8 );
+        }
         b = mpi_set_opaque( NULL, p, a->sign );
         b->flags = a->flags;
         b->flags &= ~(16|32); /* Reset the immutable and constant flags.  */
@@ -499,23 +522,30 @@ _gcry_mpi_set_cond (gcry_mpi_t w, const gcry_mpi_t u, unsigned long set)
 {
   mpi_size_t i;
   mpi_size_t nlimbs = u->alloced;
-  mpi_limb_t mask = ((mpi_limb_t)0) - set;
-  mpi_limb_t x;
+  mpi_limb_t mask1 = vzero - set;
+  mpi_limb_t mask2 = set - vone;
+  mpi_limb_t xu;
+  mpi_limb_t xw;
+  mpi_limb_t *uu = u->d;
+  mpi_limb_t *uw = w->d;
 
   if (w->alloced != u->alloced)
     log_bug ("mpi_set_cond: different sizes\n");
 
   for (i = 0; i < nlimbs; i++)
     {
-      x = mask & (w->d[i] ^ u->d[i]);
-      w->d[i] = w->d[i] ^ x;
+      xu = uu[i];
+      xw = uw[i];
+      uw[i] = (xw & mask2) | (xu & mask1);
     }
 
-  x = mask & (w->nlimbs ^ u->nlimbs);
-  w->nlimbs = w->nlimbs ^ x;
+  xu = u->nlimbs;
+  xw = w->nlimbs;
+  w->nlimbs = (xw & mask2) | (xu & mask1);
 
-  x = mask & (w->sign ^ u->sign);
-  w->sign = w->sign ^ x;
+  xu = u->sign;
+  xw = w->sign;
+  w->sign = (xw & mask2) | (xu & mask1);
   return w;
 }
 
@@ -540,23 +570,27 @@ _gcry_mpi_set_ui (gcry_mpi_t w, unsigned long u)
   return w;
 }
 
+/* If U is non-negative and small enough store it as an unsigned int
+ * at W.  If the value does not fit into an unsigned int or is
+ * negative return GPG_ERR_ERANGE.  Note that we return an unsigned
+ * int so that the value can be used with the bit test functions; in
+ * contrast the other _ui functions take an unsigned long so that on
+ * some platforms they may accept a larger value.  On error the value
+ * at W is not changed. */
 gcry_err_code_t
-_gcry_mpi_get_ui (gcry_mpi_t w, unsigned long *u)
+_gcry_mpi_get_ui (unsigned int *w, gcry_mpi_t u)
 {
-  gcry_err_code_t err = GPG_ERR_NO_ERROR;
-  unsigned long x = 0;
+  mpi_limb_t x;
 
-  if (w->nlimbs > 1)
-    err = GPG_ERR_TOO_LARGE;
-  else if (w->nlimbs == 1)
-    x = w->d[0];
-  else
-    x = 0;
+  if (u->nlimbs > 1 || u->sign)
+    return GPG_ERR_ERANGE;
 
-  if (! err)
-    *u = x;
+  x = (u->nlimbs == 1) ? u->d[0] : 0;
+  if (sizeof (x) > sizeof (unsigned int) && x > MY_UINT_MAX)
+    return GPG_ERR_ERANGE;
 
-  return err;
+  *w = x;
+  return 0;
 }
 
 
@@ -589,8 +623,12 @@ _gcry_mpi_swap_cond (gcry_mpi_t a, gcry_mpi_t b, unsigned long swap)
 {
   mpi_size_t i;
   mpi_size_t nlimbs;
-  mpi_limb_t mask = ((mpi_limb_t)0) - swap;
-  mpi_limb_t x;
+  mpi_limb_t mask1 = vzero - swap;
+  mpi_limb_t mask2 = swap - vone;
+  mpi_limb_t *ua = a->d;
+  mpi_limb_t *ub = b->d;
+  mpi_limb_t xa;
+  mpi_limb_t xb;
 
   if (a->alloced > b->alloced)
     nlimbs = b->alloced;
@@ -601,18 +639,38 @@ _gcry_mpi_swap_cond (gcry_mpi_t a, gcry_mpi_t b, unsigned long swap)
 
   for (i = 0; i < nlimbs; i++)
     {
-      x = mask & (a->d[i] ^ b->d[i]);
-      a->d[i] = a->d[i] ^ x;
-      b->d[i] = b->d[i] ^ x;
+      xa = ua[i];
+      xb = ub[i];
+      ua[i] = (xa & mask2) | (xb & mask1);
+      ub[i] = (xa & mask1) | (xb & mask2);
     }
 
-  x = mask & (a->nlimbs ^ b->nlimbs);
-  a->nlimbs = a->nlimbs ^ x;
-  b->nlimbs = b->nlimbs ^ x;
+  xa = a->nlimbs;
+  xb = b->nlimbs;
+  a->nlimbs = (xa & mask2) | (xb & mask1);
+  b->nlimbs = (xa & mask1) | (xb & mask2);
 
-  x = mask & (a->sign ^ b->sign);
-  a->sign = a->sign ^ x;
-  b->sign = b->sign ^ x;
+  xa = a->sign;
+  xb = b->sign;
+  a->sign = (xa & mask2) | (xb & mask1);
+  b->sign = (xa & mask1) | (xb & mask2);
+}
+
+
+/****************
+ * Set bit N of A, when SET is 1.
+ * This implementation should be constant-time regardless of SET.
+ */
+void
+_gcry_mpi_set_bit_cond (gcry_mpi_t a, unsigned int n, unsigned long set)
+{
+  unsigned int limbno, bitno;
+  mpi_limb_t set_the_bit = !!set;
+
+  limbno = n / BITS_PER_MPI_LIMB;
+  bitno  = n % BITS_PER_MPI_LIMB;
+
+  a->d[limbno] |= (set_the_bit<<bitno);
 }
 
 

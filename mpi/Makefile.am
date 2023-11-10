@@ -173,5 +173,8 @@ libmpi_la_SOURCES = longlong.h	   \
 	      mpicoder.c     \
 	      mpih-div.c     \
 	      mpih-mul.c     \
-	      mpiutil.c      \
-              ec.c ec-internal.h ec-ed25519.c
+	      mpih-const-time.c \
+	      mpiutil.c         \
+              ec.c ec-internal.h ec-ed25519.c ec-nist.c ec-inline.h \
+              ec-hw-s390x.c
+EXTRA_libmpi_la_SOURCES = asm-common-aarch64.h asm-common-amd64.h

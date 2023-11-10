@@ -30,6 +30,7 @@
 #include "g10lib.h"
 #include "cipher.h"
 #include "bufhelp.h"
+#include "cipher-internal.h"
 
 #define NUMKC	16
 
@@ -309,11 +310,12 @@ do_setkey (SEED_context *ctx, const byte *key, const unsigned keylen)
 }
 
 static gcry_err_code_t
-seed_setkey (void *context, const byte *key, const unsigned keylen)
+seed_setkey (void *context, const byte *key, const unsigned keylen,
+             cipher_bulk_ops_t *bulk_ops)
 {
   SEED_context *ctx = context;
-
   int rc = do_setkey (ctx, key, keylen);
+  (void)bulk_ops;
   _gcry_burn_stack (4*6 + sizeof(void*)*2 + sizeof(int)*2);
   return rc;
 }
@@ -446,7 +448,7 @@ selftest (void)
     0x22, 0x6B, 0xC3, 0x14, 0x2C, 0xD4, 0x0D, 0x4A,
   };
 
-  seed_setkey (&ctx, key, sizeof(key));
+  seed_setkey (&ctx, key, sizeof(key), NULL);
   seed_encrypt (&ctx, scratch, plaintext);
   if (memcmp (scratch, ciphertext, sizeof (ciphertext)))
     return "SEED test encryption failed.";
@@ -459,7 +461,7 @@ selftest (void)
 
 
 
-static gcry_cipher_oid_spec_t seed_oids[] =
+static const gcry_cipher_oid_spec_t seed_oids[] =
   {
     { "1.2.410.200004.1.3", GCRY_CIPHER_MODE_ECB },
     { "1.2.410.200004.1.4", GCRY_CIPHER_MODE_CBC },

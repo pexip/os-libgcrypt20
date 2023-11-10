@@ -33,6 +33,9 @@
 
 static int repetitions;
 
+/* Whether fips mode was active at startup.  */
+static int in_fips_mode;
+
 
 
 static void
@@ -54,6 +57,7 @@ static struct
   int algo;
   const char *key;
   const unsigned char grip[20];
+  int skip_when_fips;
 } key_grips[] =
   {
     {
@@ -145,6 +149,54 @@ static struct
       " (q #04C8A4CEC2E9A9BC8E173531A67B0840DF345C32E261ADD780E6D83D56EFADFD5DE872F8B854819B59543CE0B7F822330464FBC4E6324DADDCD9D059554F63B344#)))",
       "\xE6\xDF\x94\x2D\xBD\x8C\x77\x05\xA3\xDD\x41\x6E\xFC\x04\x01\xDB\x31\x0E\x99\xB6"
     },
+    {
+      GCRY_PK_ECC,
+      "(public-key"
+      " (ecc"
+      " (curve brainpoolP256r1)"
+      " (q #042ECD8679930BE2DB4AD42B8600BA3F80"
+      /*   */"2D4D539BFF2F69B83EC9B7BBAA7F3406"
+      /*   */"436DD11A1756AFE56CD93408410FCDA9"
+      /*   */"BA95024EB613BD481A14FCFEC27A448A#)))",
+      "\x52\xBA\xD4\xB4\xA3\x2D\x32\xA1\xDD\x06"
+      "\x5E\x99\x0B\xF1\xAB\xC1\x13\x3D\x84\xD4",
+      1
+    },
+    { /* Compressed form of above.  */
+      GCRY_PK_ECC,
+      "(public-key"
+      " (ecc"
+      " (curve brainpoolP256r1)"
+      " (q #022ECD8679930BE2DB4AD42B8600BA3F80"
+      /*   */"2D4D539BFF2F69B83EC9B7BBAA7F3406#)))",
+      "\x52\xBA\xD4\xB4\xA3\x2D\x32\xA1\xDD\x06"
+      "\x5E\x99\x0B\xF1\xAB\xC1\x13\x3D\x84\xD4",
+      1
+    },
+    {
+      GCRY_PK_ECC,
+      "(public-key"
+      " (ecc"
+      " (curve brainpoolP256r1)"
+      " (q #045B784CA008EE64AB3D85017EE0D2BE87"
+      /*   */"558762C7300E0C8E06B1F9AF7C031458"
+      /*   */"9EBBA41915313417BA54218EB0569C59"
+      /*   */"0B156C76DBCAB6E84575E6EF68CE7B87#)))",
+      "\x99\x38\x6A\x82\x41\x96\x29\x9C\x89\x74"
+      "\xD6\xE1\xBF\x43\xAC\x9B\x9A\x12\xE7\x3F",
+      1
+    },
+    { /* Compressed form of above.  */
+      GCRY_PK_ECC,
+      "(public-key"
+      " (ecc"
+      " (curve brainpoolP256r1)"
+      " (q #035B784CA008EE64AB3D85017EE0D2BE87"
+      /*   */"558762C7300E0C8E06B1F9AF7C031458#)))",
+      "\x99\x38\x6A\x82\x41\x96\x29\x9C\x89\x74"
+      "\xD6\xE1\xBF\x43\xAC\x9B\x9A\x12\xE7\x3F",
+      1
+    },
     { /* Ed25519 standard */
       GCRY_PK_ECC,
       "(public-key"
@@ -155,7 +207,8 @@ static struct
       "     47BD24842905C049257673B3F5249524E0A41FAA17B25B818D0F97E625F1A1D0#)"
       "     ))",
       "\x0C\xCA\xB2\xFD\x48\x9A\x33\x40\x2C\xE8"
-      "\xE0\x4A\x1F\xB2\x45\xEA\x80\x3D\x0A\xF1"
+      "\xE0\x4A\x1F\xB2\x45\xEA\x80\x3D\x0A\xF1",
+      1
     },
     { /* Ed25519+EdDSA */
       GCRY_PK_ECC,
@@ -165,7 +218,8 @@ static struct
       " (q #773E72848C1FD5F9652B29E2E7AF79571A04990E96F2016BF4E0EC1890C2B7DB#)"
       " ))",
       "\x9D\xB6\xC6\x4A\x38\x83\x0F\x49\x60\x70"
-      "\x17\x89\x47\x55\x20\xBE\x8C\x82\x1F\x47"
+      "\x17\x89\x47\x55\x20\xBE\x8C\x82\x1F\x47",
+      1
     },
     { /* Ed25519+EdDSA (with compression prefix) */
       GCRY_PK_ECC,
@@ -176,7 +230,8 @@ static struct
       "     773E72848C1FD5F9652B29E2E7AF79571A04990E96F2016BF4E0EC1890C2B7DB#)"
       " ))",
       "\x9D\xB6\xC6\x4A\x38\x83\x0F\x49\x60\x70"
-      "\x17\x89\x47\x55\x20\xBE\x8C\x82\x1F\x47"
+      "\x17\x89\x47\x55\x20\xBE\x8C\x82\x1F\x47",
+      1
     },
     { /* Ed25519+EdDSA  (same but uncompressed)*/
       GCRY_PK_ECC,
@@ -188,7 +243,8 @@ static struct
       "     5bb7c29018ece0f46b01f2960e99041a5779afe7e2292b65f9d51f8c84723e77#)"
       " ))",
       "\x9D\xB6\xC6\x4A\x38\x83\x0F\x49\x60\x70"
-      "\x17\x89\x47\x55\x20\xBE\x8C\x82\x1F\x47"
+      "\x17\x89\x47\x55\x20\xBE\x8C\x82\x1F\x47",
+      1
     },
     { /* Cv25519 */
       GCRY_PK_ECC,
@@ -199,7 +255,28 @@ static struct
       "     918C1733127F6BF2646FAE3D081A18AE77111C903B906310B077505EFFF12740#)"
       " ))",
       "\x0F\x89\xA5\x65\xD3\xEA\x18\x7C\xE8\x39"
-      "\x33\x23\x98\xF5\xD4\x80\x67\x7D\xF4\x9C"
+      "\x33\x23\x98\xF5\xD4\x80\x67\x7D\xF4\x9C",
+      1
+    },
+    { /* Random key  */
+      GCRY_PK_RSA,
+      "(shadowed-private-key"
+      " (rsa"
+      " (n #00B493C79928398DA9D99AC0E949FE6EB62F683CB974FFFBFBC01066F5C9A89B"
+      "     D3DC48EAD7C65F36EA943C2B2C865C26C4884FF9EDFDA8C99C855B737D77EEF6"
+      "     B85DBC0CCEC0E900C1F89A6893A2A93E8B31028469B6927CEB2F08687E547C68"
+      "     6B0A2F7E50A194FF7AB7637E03DE0912EF7F6E5F1EC37625BD1620CCC2E7A564"
+      "     31E168CDAFBD1D9E61AE47A69A6FA03EF22F844528A710B2392F262B95A3078C"
+      "     F321DC8325F92A5691EF69F34FD0DE0B22C79D29DC87723FCADE463829E8E5F7"
+      "     D196D73D6C9C180F6A6A0DDBF7B9D8F7FA293C36163B12199EF6A1A95CAE4051"
+      "     E3069C522CC6C4A7110F663A5DAD20F66C13A1674D050088208FAE4F33B3AB51"
+      "     03#)"
+      " (e #00010001#)"
+      " (shadowed t1-v1"
+      " (#D2760001240102000005000123350000# OPENPGP.1)"
+      ")))",
+      "\xE5\x6E\xE6\xEE\x5A\x2F\xDC\x3E\x98\x9D"
+      "\xFE\x49\xDA\xF5\x67\x43\xE3\x27\x28\x33"
     }
   };
 
@@ -216,6 +293,9 @@ check (void)
 
   for (i = 0; i < (sizeof (key_grips) / sizeof (*key_grips)); i++)
     {
+      if (in_fips_mode && key_grips[i].skip_when_fips)
+        continue;
+
       if (gcry_pk_test_algo (key_grips[i].algo))
         {
           if (verbose)
@@ -228,6 +308,9 @@ check (void)
       if (err)
         die ("scanning data %d failed: %s\n", i, gpg_strerror (err));
 
+      if (debug)
+        info ("check(%d): s-exp='%s'\n", i, key_grips[i].key);
+
       for (repn=0; repn < repetitions; repn++)
         {
           ret = gcry_pk_get_keygrip (sexp, buf);
@@ -239,6 +322,8 @@ check (void)
               print_hex ("keygrip: ", buf, sizeof buf);
               die ("keygrip for %d does not match\n", i);
             }
+          else if (debug && !repn)
+            print_hex ("keygrip: ", buf, sizeof buf);
         }
 
       gcry_sexp_release (sexp);
@@ -305,10 +390,13 @@ main (int argc, char **argv)
 
   gcry_set_progress_handler (progress_handler, NULL);
 
-  xgcry_control (GCRYCTL_DISABLE_SECMEM, 0);
-  xgcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
+  xgcry_control ((GCRYCTL_DISABLE_SECMEM, 0));
+  xgcry_control ((GCRYCTL_INITIALIZATION_FINISHED, 0));
   if (debug)
-    xgcry_control (GCRYCTL_SET_DEBUG_FLAGS, 1u, 0);
+    xgcry_control ((GCRYCTL_SET_DEBUG_FLAGS, 1u, 0));
+
+  if (gcry_fips_mode_active ())
+    in_fips_mode = 1;
 
   check ();
 

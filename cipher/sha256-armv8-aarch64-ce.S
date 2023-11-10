@@ -17,7 +17,7 @@
  * License along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <config.h>
+#include "asm-common-aarch64.h"
 
 #if defined(__AARCH64EL__) && \
     defined(HAVE_COMPATIBLE_GCC_AARCH64_PLATFORM_AS) && \
@@ -26,11 +26,6 @@
 .cpu generic+simd+crypto
 
 .text
-
-
-#define GET_DATA_POINTER(reg, name) \
-		adrp    reg, :got:name ; \
-		ldr     reg, [reg, #:got_lo12:name] ;
 
 
 /* Constants */
@@ -103,7 +98,7 @@ gcry_sha256_aarch64_ce_K:
 
 /* Other functional macros */
 
-#define CLEAR_REG(reg) eor reg.16b, reg.16b, reg.16b;
+#define CLEAR_REG(reg) movi reg.16b, #0;
 
 
 /*
@@ -113,13 +108,14 @@ gcry_sha256_aarch64_ce_K:
  */
 .align 3
 .globl _gcry_sha256_transform_armv8_ce
-.type  _gcry_sha256_transform_armv8_ce,%function;
+ELF(.type  _gcry_sha256_transform_armv8_ce,%function;)
 _gcry_sha256_transform_armv8_ce:
   /* input:
    *	r0: ctx, CTX
    *	r1: data (64*nblks bytes)
    *	r2: nblks
    */
+  CFI_STARTPROC();
 
   cbz x2, .Ldo_nothing;
 
@@ -212,7 +208,8 @@ _gcry_sha256_transform_armv8_ce:
 
 .Ldo_nothing:
   mov x0, #0
-  ret
-.size _gcry_sha256_transform_armv8_ce,.-_gcry_sha256_transform_armv8_ce;
+  ret_spec_stop
+  CFI_ENDPROC();
+ELF(.size _gcry_sha256_transform_armv8_ce,.-_gcry_sha256_transform_armv8_ce;)
 
 #endif

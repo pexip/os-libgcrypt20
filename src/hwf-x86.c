@@ -39,7 +39,14 @@
 #if defined (__i386__) && SIZEOF_UNSIGNED_LONG == 4 && defined (__GNUC__)
 # define HAS_X86_CPUID 1
 
-static int
+#if _GCRY_GCC_VERSION >= 40700 /* 4.7 */
+# define FORCE_FUNC_FRAME_POINTER \
+	__attribute__ ((optimize("no-omit-frame-pointer")))
+#else
+# define FORCE_FUNC_FRAME_POINTER
+#endif
+
+static FORCE_FUNC_FRAME_POINTER int
 is_cpuid_available(void)
 {
   int has_cpuid = 0;
@@ -63,7 +70,7 @@ is_cpuid_available(void)
      ".Lno_cpuid%=:\n\t"
      : "+r" (has_cpuid)
      :
-     : "%eax", "%ecx", "cc"
+     : "%eax", "%ecx", "cc", "memory"
      );
 
   return has_cpuid;
@@ -76,11 +83,9 @@ get_cpuid(unsigned int in, unsigned int *eax, unsigned int *ebx,
   unsigned int regs[4];
 
   asm volatile
-    ("pushl %%ebx\n\t"           /* Save GOT register.  */
-     "movl %1, %%ebx\n\t"
+    ("xchgl %%ebx, %1\n\t"     /* Save GOT register.  */
      "cpuid\n\t"
-     "movl %%ebx, %1\n\t"
-     "popl %%ebx\n\t"            /* Restore GOT register. */
+     "xchgl %%ebx, %1\n\t"     /* Restore GOT register. */
      : "=a" (regs[0]), "=D" (regs[1]), "=c" (regs[2]), "=d" (regs[3])
      : "0" (in), "1" (0), "2" (0), "3" (0)
      : "cc"
@@ -294,6 +299,29 @@ detect_x86_gnuc (void)
       avoid_vpgather |= 1;
     }
 
+#ifdef ENABLE_FORCE_SOFT_HWFEATURES
+  /* Soft HW features mark functionality that is available on all systems
+   * but not feasible to use because of slow HW implementation. */
+
+  /* SHLD is faster at rotating register than actual ROR/ROL instructions
+   * on older Intel systems (~sandy-bridge era). However, SHLD is very
+   * slow on almost anything else and later Intel processors have faster
+   * ROR/ROL. Therefore in regular build HWF_INTEL_FAST_SHLD is enabled
+   * only for those Intel processors that benefit from the SHLD
+   * instruction. Enabled here unconditionally as requested. */
+  result |= HWF_INTEL_FAST_SHLD;
+
+  /* VPGATHER instructions are used for look-up table based
+   * implementations which require VPGATHER to be fast enough to beat
+   * regular parallelized look-up table implementations (see Twofish).
+   * So far, only Intel processors beginning with skylake have had
+   * VPGATHER fast enough to be enabled. AMD Zen3 comes close to
+   * being feasible, but not quite (where twofish-avx2 is few percent
+   * slower than twofish-3way). Enable VPGATHER here unconditionally
+   * as requested. */
+  avoid_vpgather = 0;
+#endif
+
 #ifdef ENABLE_PCLMUL_SUPPORT
   /* Test bit 1 for PCLMUL.  */
   if (features & 0x00000002)
@@ -342,7 +370,7 @@ detect_x86_gnuc (void)
   if (max_cpuid_level >= 7 && (features & 0x00000001))
     {
       /* Get CPUID:7 contains further Intel feature flags. */
-      get_cpuid(7, NULL, &features, NULL, NULL);
+      get_cpuid(7, NULL, &features, &features2, NULL);
 
       /* Test bit 8 for BMI2.  */
       if (features & 0x00000100)
@@ -357,6 +385,17 @@ detect_x86_gnuc (void)
       if ((result & HWF_INTEL_AVX2) && !avoid_vpgather)
         result |= HWF_INTEL_FAST_VPGATHER;
 #endif /*ENABLE_AVX_SUPPORT*/
+
+      /* Test bit 29 for SHA Extensions. */
+      if (features & (1 << 29))
+        result |= HWF_INTEL_SHAEXT;
+
+#if defined(ENABLE_AVX2_SUPPORT) && defined(ENABLE_AESNI_SUPPORT) && \
+    defined(ENABLE_PCLMUL_SUPPORT)
+      /* Test bit 9 for VAES and bit 10 for VPCLMULDQD */
+      if ((features2 & 0x00000200) && (features2 & 0x00000400))
+        result |= HWF_INTEL_VAES_VPCLMUL;
+#endif
     }
 
   return result;

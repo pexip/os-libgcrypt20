@@ -205,6 +205,7 @@ test_maxsize (void)
 {
   gpg_error_t err;
   gcry_mpi_t a;
+  unsigned int val;
   char buffer[2+2048]; /* For PGP: 2 length bytes and 16384 bits.  */
 
   memset (buffer, 0x55, sizeof buffer);
@@ -232,7 +233,36 @@ test_maxsize (void)
   err = gcry_mpi_scan (&a, GCRYMPI_FMT_PGP, buffer, sizeof buffer, NULL);
   if (err)
     die ("gcry_mpi_scan did not parse a large PGP: %s\n", gpg_strerror (err));
+
+  /* Let's also test get_ui.  */
+  gcry_mpi_set_ui (a, 0);
+  val = 4711;
+  err = gcry_mpi_get_ui (&val, a);
+  if (err || val != 0)
+    die ("gcry_mpi_get_ui failed at %d: %s\n", __LINE__, gpg_strerror (err));
+
+  gcry_mpi_sub_ui (a, a, 1);
+  val = 4711;
+  err = gcry_mpi_get_ui (&val, a);
+  if (gpg_err_code (err) != GPG_ERR_ERANGE || val != 4711)
+    die ("gcry_mpi_get_ui failed at %d: %s\n", __LINE__, gpg_strerror (err));
+
+  gcry_mpi_set_ui (a, 0xffffffff);
+  val = 4711;
+  err = gcry_mpi_get_ui (&val, a);
+  if (err || val != 0xffffffff)
+    die ("gcry_mpi_get_ui failed at %d: %s\n", __LINE__, gpg_strerror (err));
+
+  if (sizeof (val) == 4)
+    {
+      gcry_mpi_add_ui (a, a, 1);
+      err = gcry_mpi_get_ui (&val, a);
+      if (gpg_err_code (err) != GPG_ERR_ERANGE)
+        die ("gcry_mpi_get_ui failed at %d: %s\n", __LINE__,gpg_strerror (err));
+    }
+
   gcry_mpi_release (a);
+
 }
 
 
@@ -348,7 +378,8 @@ test_add (void)
   gcry_mpi_t two;
   gcry_mpi_t ff;
   gcry_mpi_t result;
-  unsigned char* pc;
+  gcry_mpi_t minusfive;
+  char *pc;
 
   gcry_mpi_scan(&one, GCRYMPI_FMT_USG, ones, sizeof(ones), NULL);
   gcry_mpi_scan(&two, GCRYMPI_FMT_USG, twos, sizeof(twos), NULL);
@@ -356,21 +387,47 @@ test_add (void)
   result = gcry_mpi_new(0);
 
   gcry_mpi_add(result, one, two);
-  gcry_mpi_aprint(GCRYMPI_FMT_HEX, &pc, NULL, result);
+  gcry_mpi_aprint(GCRYMPI_FMT_HEX, (unsigned char **)&pc, NULL, result);
   if (debug)
     gcry_log_debug ("Result of one plus two:\n%s\n", pc);
+  if (strcmp (pc, "030303030303030303030303030303030303030303030303"
+                  "030303030303030303030303030303030303030303030303") != 0)
+    fail ("mpi_add failed at line %d", __LINE__);
   gcry_free(pc);
 
   gcry_mpi_add(result, ff, one);
-  gcry_mpi_aprint(GCRYMPI_FMT_HEX, &pc, NULL, result);
+  gcry_mpi_aprint(GCRYMPI_FMT_HEX, (unsigned char **)&pc, NULL, result);
   if (debug)
     gcry_log_debug ("Result of ff plus one:\n%s\n", pc);
+  if (strcmp (pc, "010101010101010101010101010101010101010101010101"
+                  "01010101010101010101010101010101010101010101010100") != 0)
+    fail ("mpi_add failed at line %d", __LINE__);
+  gcry_free(pc);
+
+  gcry_mpi_scan(&minusfive, GCRYMPI_FMT_HEX, "-5", 0, NULL);
+  gcry_mpi_add_ui (result, minusfive, 2);
+
+  gcry_mpi_aprint(GCRYMPI_FMT_HEX, (unsigned char **)&pc, NULL, result);
+  if (debug)
+    gcry_log_debug ("Result of minus five plus two:\n%s\n", pc);
+  if (strcmp (pc, "-03") != 0)
+    fail ("mpi_add_ui failed at line %d", __LINE__);
+  gcry_free(pc);
+
+  gcry_mpi_add_ui (result, result, 3);
+
+  gcry_mpi_aprint(GCRYMPI_FMT_HEX, (unsigned char **)&pc, NULL, result);
+  if (debug)
+    gcry_log_debug ("Result of minus three plus three:\n%s\n", pc);
+  if (strcmp (pc, "00") != 0)
+    fail ("mpi_add_ui failed at line %d", __LINE__);
   gcry_free(pc);
 
   gcry_mpi_release(one);
   gcry_mpi_release(two);
   gcry_mpi_release(ff);
   gcry_mpi_release(result);
+  gcry_mpi_release(minusfive);
   return 1;
 }
 
@@ -378,24 +435,76 @@ test_add (void)
 static int
 test_sub (void)
 {
+  gcry_mpi_t zero;
   gcry_mpi_t one;
   gcry_mpi_t two;
+  gcry_mpi_t five;
   gcry_mpi_t result;
-  unsigned char* pc;
+  gcry_mpi_t minusfive;
+  char *pc;
 
   gcry_mpi_scan(&one, GCRYMPI_FMT_USG, ones, sizeof(ones), NULL);
   gcry_mpi_scan(&two, GCRYMPI_FMT_USG, twos, sizeof(twos), NULL);
   result = gcry_mpi_new(0);
   gcry_mpi_sub(result, two, one);
 
-  gcry_mpi_aprint(GCRYMPI_FMT_HEX, &pc, NULL, result);
+  gcry_mpi_aprint(GCRYMPI_FMT_HEX, (unsigned char **)&pc, NULL, result);
   if (debug)
     gcry_log_debug ("Result of two minus one:\n%s\n", pc);
+  if (strcmp (pc, "010101010101010101010101010101010101010101010101"
+                  "010101010101010101010101010101010101010101010101") != 0)
+    fail ("mpi_sub failed at line %d", __LINE__);
+  gcry_free(pc);
+
+  zero = gcry_mpi_new(0);
+  five = gcry_mpi_new(0);
+  minusfive = gcry_mpi_new(0);
+  gcry_mpi_set_ui (zero, 0);
+  gcry_mpi_set_ui (one, 1);
+  gcry_mpi_set_ui (two, 2);
+  gcry_mpi_set_ui (five, 5);
+  gcry_mpi_sub (minusfive, zero, five);
+
+  gcry_mpi_aprint(GCRYMPI_FMT_HEX, (unsigned char **)&pc, NULL, minusfive);
+  if (debug)
+    gcry_log_debug ("Result of zero minus five:\n%s\n", pc);
+  if (strcmp (pc, "-05") != 0)
+    fail ("mpi_sub failed at line %d", __LINE__);
+  gcry_free(pc);
+
+  gcry_mpi_sub_ui (result, five, 2);
+
+  gcry_mpi_aprint(GCRYMPI_FMT_HEX, (unsigned char **)&pc, NULL, result);
+  if (debug)
+    gcry_log_debug ("Result of five minus two:\n%s\n", pc);
+  if (strcmp (pc, "03") != 0)
+    fail ("mpi_sub_ui failed at line %d", __LINE__);
+  gcry_free(pc);
+
+  gcry_mpi_sub_ui (result, one, 10);
+
+  gcry_mpi_aprint(GCRYMPI_FMT_HEX, (unsigned char **)&pc, NULL, result);
+  if (debug)
+    gcry_log_debug ("Result of one minus ten:\n%s\n", pc);
+  if (strcmp (pc, "-09") != 0)
+    fail ("mpi_sub_ui failed at line %d", __LINE__);
+  gcry_free(pc);
+
+  gcry_mpi_sub_ui (result, minusfive, 2);
+
+  gcry_mpi_aprint(GCRYMPI_FMT_HEX, (unsigned char **)&pc, NULL, result);
+  if (debug)
+    gcry_log_debug ("Result of minus five minus two:\n%s\n", pc);
+  if (strcmp (pc, "-07") != 0)
+    fail ("mpi_sub_ui failed at line %d", __LINE__);
   gcry_free(pc);
 
   gcry_mpi_release(one);
   gcry_mpi_release(two);
   gcry_mpi_release(result);
+  gcry_mpi_release(zero);
+  gcry_mpi_release(five);
+  gcry_mpi_release(minusfive);
   return 1;
 }
 
@@ -406,21 +515,47 @@ test_mul (void)
   gcry_mpi_t two;
   gcry_mpi_t three;
   gcry_mpi_t result;
-  unsigned char* pc;
+  gcry_mpi_t minusfive;
+  char *pc;
 
   gcry_mpi_scan(&two, GCRYMPI_FMT_USG, twos, sizeof(twos), NULL);
   gcry_mpi_scan(&three, GCRYMPI_FMT_USG, threes, sizeof(threes), NULL);
   result = gcry_mpi_new(0);
   gcry_mpi_mul(result, two, three);
 
-  gcry_mpi_aprint(GCRYMPI_FMT_HEX, &pc, NULL, result);
+  gcry_mpi_aprint(GCRYMPI_FMT_HEX, (unsigned char **)&pc, NULL, result);
   if (debug)
     gcry_log_debug ("Result of two mul three:\n%s\n", pc);
+  if (strcmp (pc, "060C12181E242A30363C42484E545A60666C72787E848A90"
+                  "969CA2A8AEB4BAC0C6CCD2D8DEE4EAF0F6FD03090F151B21"
+                  "1B150F0902FCF6F0EAE4DED8D2CCC6C0BAB4AEA8A29C9690"
+                  "8A847E78726C66605A544E48423C36302A241E18120C06") != 0)
+    fail ("mpi_mul failed at line %d", __LINE__);
+  gcry_free(pc);
+
+  gcry_mpi_scan(&minusfive, GCRYMPI_FMT_HEX, "-5", 0, NULL);
+  gcry_mpi_mul_ui (result, minusfive, 3);
+
+  gcry_mpi_aprint(GCRYMPI_FMT_HEX, (unsigned char **)&pc, NULL, result);
+  if (debug)
+    gcry_log_debug ("Result of minus five mul three:\n%s\n", pc);
+  if (strcmp (pc, "-0F") != 0)
+    fail ("mpi_mul_ui failed at line %d", __LINE__);
+  gcry_free(pc);
+
+  gcry_mpi_mul_ui (result, result, 0);
+
+  gcry_mpi_aprint(GCRYMPI_FMT_HEX, (unsigned char **)&pc, NULL, result);
+  if (debug)
+    gcry_log_debug ("Result of minus fifteen mul zero:\n%s\n", pc);
+  if (strcmp (pc, "00") != 0)
+    fail ("mpi_mul_ui failed at line %d", __LINE__);
   gcry_free(pc);
 
   gcry_mpi_release(two);
   gcry_mpi_release(three);
   gcry_mpi_release(result);
+  gcry_mpi_release(minusfive);
   return 1;
 }
 
@@ -565,7 +700,7 @@ main (int argc, char* argv[])
       fputs ("version mismatch\n", stderr);
       exit (1);
     }
-  xgcry_control(GCRYCTL_DISABLE_SECMEM);
+  xgcry_control ((GCRYCTL_DISABLE_SECMEM));
 
   test_const_and_immutable ();
   test_opaque ();

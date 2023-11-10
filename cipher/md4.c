@@ -83,7 +83,7 @@ md4_init (void *context, unsigned int flags)
   ctx->bctx.nblocks = 0;
   ctx->bctx.nblocks_high = 0;
   ctx->bctx.count = 0;
-  ctx->bctx.blocksize = 64;
+  ctx->bctx.blocksize_shift = _gcry_ctz(64);
   ctx->bctx.bwrite = transform;
 }
 
@@ -213,8 +213,6 @@ md4_final( void *context )
   byte *p;
   unsigned int burn;
 
-  _gcry_md_block_write(hd, NULL, 0); /* flush */;
-
   t = hd->bctx.nblocks;
   if (sizeof t == sizeof hd->bctx.nblocks)
     th = hd->bctx.nblocks_high;
@@ -234,25 +232,28 @@ md4_final( void *context )
   msb <<= 3;
   msb |= t >> 29;
 
-  if( hd->bctx.count < 56 )  /* enough room */
+  if (hd->bctx.count < 56)  /* enough room */
     {
       hd->bctx.buf[hd->bctx.count++] = 0x80; /* pad */
-      while( hd->bctx.count < 56 )
-        hd->bctx.buf[hd->bctx.count++] = 0;  /* pad */
+      if (hd->bctx.count < 56)
+	memset (&hd->bctx.buf[hd->bctx.count], 0, 56 - hd->bctx.count);
+
+      /* append the 64 bit count */
+      buf_put_le32(hd->bctx.buf + 56, lsb);
+      buf_put_le32(hd->bctx.buf + 60, msb);
+      burn = transform (hd, hd->bctx.buf, 1);
     }
   else /* need one extra block */
     {
       hd->bctx.buf[hd->bctx.count++] = 0x80; /* pad character */
-      while( hd->bctx.count < 64 )
-        hd->bctx.buf[hd->bctx.count++] = 0;
-      _gcry_md_block_write(hd, NULL, 0);  /* flush */;
-      memset(hd->bctx.buf, 0, 56 ); /* fill next block with zeroes */
+      /* fill pad and next block with zeroes */
+      memset (&hd->bctx.buf[hd->bctx.count], 0, 64 - hd->bctx.count + 56);
+
+      /* append the 64 bit count */
+      buf_put_le32(hd->bctx.buf + 64 + 56, lsb);
+      buf_put_le32(hd->bctx.buf + 64 + 60, msb);
+      burn = transform (hd, hd->bctx.buf, 2);
     }
-  /* append the 64 bit count */
-  buf_put_le32(hd->bctx.buf + 56, lsb);
-  buf_put_le32(hd->bctx.buf + 60, msb);
-  burn = transform ( hd, hd->bctx.buf, 1 );
-  _gcry_burn_stack (burn);
 
   p = hd->bctx.buf;
 #define X(a) do { buf_put_le32(p, hd->a); p += 4; } while(0)
@@ -262,6 +263,9 @@ md4_final( void *context )
   X(D);
 #undef X
 
+  hd->bctx.count = 0;
+
+  _gcry_burn_stack (burn);
 }
 
 static byte *
@@ -271,21 +275,22 @@ md4_read (void *context)
   return hd->bctx.buf;
 }
 
-static byte asn[18] = /* Object ID is 1.2.840.113549.2.4 */
+static const byte asn[18] = /* Object ID is 1.2.840.113549.2.4 */
   { 0x30, 0x20, 0x30, 0x0c, 0x06, 0x08, 0x2a, 0x86,0x48,
     0x86, 0xf7, 0x0d, 0x02, 0x04, 0x05, 0x00, 0x04, 0x10 };
 
-static gcry_md_oid_spec_t oid_spec_md4[] =
+static const gcry_md_oid_spec_t oid_spec_md4[] =
   {
     /* iso.member-body.us.rsadsi.digestAlgorithm.md4 */
     { "1.2.840.113549.2.4" },
     { NULL },
   };
 
-gcry_md_spec_t _gcry_digest_spec_md4 =
+const gcry_md_spec_t _gcry_digest_spec_md4 =
   {
     GCRY_MD_MD4, {0, 0},
     "MD4", asn, DIM (asn), oid_spec_md4,16,
     md4_init, _gcry_md_block_write, md4_final, md4_read, NULL,
+    NULL,
     sizeof (MD4_CONTEXT)
   };

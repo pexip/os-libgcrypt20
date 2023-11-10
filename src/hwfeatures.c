@@ -35,13 +35,15 @@
 /* The name of a file used to globally disable selected features. */
 #define HWF_DENY_FILE "/etc/gcrypt/hwf.deny"
 
-/* A table to map hardware features to a string.  */
+/* A table to map hardware features to a string.
+ * Note: Remember to add new HW features to 'doc/gcrypt.texi'.  */
 static struct
 {
   unsigned int flag;
   const char *desc;
 } hwflist[] =
   {
+#if defined(HAVE_CPU_ARCH_X86)
     { HWF_PADLOCK_RNG,         "padlock-rng" },
     { HWF_PADLOCK_AES,         "padlock-aes" },
     { HWF_PADLOCK_SHA,         "padlock-sha" },
@@ -58,11 +60,26 @@ static struct
     { HWF_INTEL_AVX2,          "intel-avx2" },
     { HWF_INTEL_FAST_VPGATHER, "intel-fast-vpgather" },
     { HWF_INTEL_RDTSC,         "intel-rdtsc" },
+    { HWF_INTEL_SHAEXT,        "intel-shaext" },
+    { HWF_INTEL_VAES_VPCLMUL,  "intel-vaes-vpclmul" },
+#elif defined(HAVE_CPU_ARCH_ARM)
     { HWF_ARM_NEON,            "arm-neon" },
     { HWF_ARM_AES,             "arm-aes" },
     { HWF_ARM_SHA1,            "arm-sha1" },
     { HWF_ARM_SHA2,            "arm-sha2" },
-    { HWF_ARM_PMULL,           "arm-pmull" }
+    { HWF_ARM_PMULL,           "arm-pmull" },
+#elif defined(HAVE_CPU_ARCH_PPC)
+    { HWF_PPC_VCRYPTO,         "ppc-vcrypto" },
+    { HWF_PPC_ARCH_3_00,       "ppc-arch_3_00" },
+    { HWF_PPC_ARCH_2_07,       "ppc-arch_2_07" },
+    { HWF_PPC_ARCH_3_10,       "ppc-arch_3_10" },
+#elif defined(HAVE_CPU_ARCH_S390X)
+    { HWF_S390X_MSA,           "s390x-msa" },
+    { HWF_S390X_MSA_4,         "s390x-msa-4" },
+    { HWF_S390X_MSA_8,         "s390x-msa-8" },
+    { HWF_S390X_MSA_9,         "s390x-msa-9" },
+    { HWF_S390X_VX,            "s390x-vx" },
+#endif
   };
 
 /* A bit vector with the hardware features which shall not be used.
@@ -198,21 +215,24 @@ _gcry_detect_hw_features (void)
 {
   hw_features = 0;
 
-  if (fips_mode ())
-    return; /* Hardware support is not to be evaluated.  */
-
   parse_hwf_deny_file ();
 
 #if defined (HAVE_CPU_ARCH_X86)
   {
     hw_features = _gcry_hwf_detect_x86 ();
   }
-#endif /* HAVE_CPU_ARCH_X86 */
-#if defined (HAVE_CPU_ARCH_ARM)
+#elif defined (HAVE_CPU_ARCH_ARM)
   {
     hw_features = _gcry_hwf_detect_arm ();
   }
-#endif /* HAVE_CPU_ARCH_ARM */
-
+#elif defined (HAVE_CPU_ARCH_PPC)
+  {
+    hw_features = _gcry_hwf_detect_ppc ();
+  }
+#elif defined (HAVE_CPU_ARCH_S390X)
+  {
+    hw_features = _gcry_hwf_detect_s390x ();
+  }
+#endif
   hw_features &= ~disabled_hw_features;
 }

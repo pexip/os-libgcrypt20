@@ -18,11 +18,16 @@
 
 ## Process this file with automake to produce Makefile.in
 
+# Note: Please keep these tests in sync with those in testdrv.c.
+# We will eventually switch over to the the new driver but as of now
+# the driver is only used for cross-compiling.
 tests_bin = \
         version t-secmem mpitests t-sexp t-convert \
 	t-mpi-bit t-mpi-point curves t-lock \
 	prime basic keygen pubkey hmac hashtest t-kdf keygrip \
-	fips186-dsa aeswrap pkcs1v2 random dsa-rfc6979 t-ed25519 t-cv25519
+	fips186-dsa aeswrap pkcs1v2 random dsa-rfc6979 \
+	t-dsa t-ecdsa t-rsa-pss t-rsa-15 \
+	t-ed25519 t-cv25519 t-x448 t-ed448
 
 tests_bin_last = benchmark bench-slope
 
@@ -47,21 +52,67 @@ AM_CFLAGS = $(GPG_ERROR_CFLAGS)
 AM_LDFLAGS = -no-install
 
 standard_ldadd = \
-	../src/libgcrypt.la $(DL_LIBS) \
+	../src/libgcrypt.la \
         ../compat/libcompat.la
 
 EXTRA_PROGRAMS = testapi pkbench
-noinst_PROGRAMS = $(tests_bin) $(tests_bin_last) fipsdrv rsacvt genhashdata \
-		  gchash
+noinst_PROGRAMS = testdrv $(tests_bin) $(tests_bin_last) \
+                  fipsdrv rsacvt genhashdata gchash
 noinst_HEADERS = t-common.h
 
-EXTRA_DIST = README rsa-16k.key cavs_tests.sh cavs_driver.pl \
+CLEANFILES = testdrv-build
+
+EXTRA_DIST = README rsa-16k.key \
 	     pkcs1v2-oaep.h pkcs1v2-pss.h pkcs1v2-v15c.h pkcs1v2-v15s.h \
-	     t-ed25519.inp stopwatch.h hashtest-256g.in \
-	     sha3-224.h sha3-256.h sha3-384.h sha3-512.h \
-	     blake2b.h blake2s.h \
+	     t-ed25519.inp t-ed448.inp t-dsa.inp t-ecdsa.inp t-rsa-15.inp \
+	     t-rsa-pss.inp stopwatch.h hashtest-256g.in sha3-224.h \
+	     sha3-256.h sha3-384.h sha3-512.h blake2b.h blake2s.h \
 	     basic-disable-all-hwf.in basic_all_hwfeature_combinations.sh
 
-LDADD = $(standard_ldadd) $(GPG_ERROR_LIBS)
-t_lock_LDADD = $(standard_ldadd) $(GPG_ERROR_MT_LIBS)
+LDADD = $(standard_ldadd) $(GPG_ERROR_LIBS) @LDADD_FOR_TESTS_KLUDGE@
+pkbench_LDADD = $(standard_ldadd) @LDADD_FOR_TESTS_KLUDGE@
+prime_LDADD = $(standard_ldadd) @LDADD_FOR_TESTS_KLUDGE@
+t_mpi_bit_LDADD = $(standard_ldadd) @LDADD_FOR_TESTS_KLUDGE@
+t_secmem_LDADD = $(standard_ldadd) @LDADD_FOR_TESTS_KLUDGE@
+testapi_LDADD = $(standard_ldadd) @LDADD_FOR_TESTS_KLUDGE@
+t_lock_LDADD = $(standard_ldadd) $(GPG_ERROR_MT_LIBS) @LDADD_FOR_TESTS_KLUDGE@
 t_lock_CFLAGS = $(GPG_ERROR_MT_CFLAGS)
+testdrv_LDADD = $(LDADD_FOR_TESTS_KLUDGE)
+
+# Build a version of the test driver for the build platform.
+testdrv-build: testdrv.c
+	$(CC_FOR_BUILD) $(CFLAGS_FOR_BUILD) $(LDFLAGS_FOR_BUILD) \
+	  $(CPPFLAGS_FOR_BUILD) -DTESTDRV_EXEEXT=\"$(EXEEXT)\" \
+          -o $@ $(srcdir)/testdrv.c
+
+if HAVE_W32_SYSTEM
+xtestsuite_libs = ../src/.libs/libgcrypt-20.dll \
+                  $(prefix)/bin/libgpg-error*-0.dll
+xtestsuite_driver = .libs/testdrv.exe
+t_kdf_LDADD = $(standard_ldadd) $(GPG_ERROR_LIBS) @LDADD_FOR_TESTS_KLUDGE@
+t_kdf_CFLAGS = $(GPG_ERROR_CFLAGS)
+else
+xtestsuite_libs = ../src/.libs/libgcrypt.so*
+xtestsuite_driver = testdrv
+t_kdf_LDADD = $(standard_ldadd) $(GPG_ERROR_MT_LIBS) @LDADD_FOR_TESTS_KLUDGE@
+t_kdf_CFLAGS = $(GPG_ERROR_MT_CFLAGS)
+endif
+
+# xcheck uses our new testdrv instead of the automake test runner.
+.PHONY: xcheck xtestsuite
+xcheck: testdrv$(EXEEXT)
+	srcdir=$(srcdir) ./testdrv$(EXEEXT) --verbose
+
+# Make a tarballs with all the tests.
+xtestsuite: testdrv$(EXEEXT) testdrv-build $(TESTS)
+	+(set -e; \
+         name="$(PACKAGE_TARNAME)-tests-$(PACKAGE_VERSION)";\
+	 xname="$$name/$(host)" ;\
+	 rm -rf $$name; mkdir $$name ; mkdir $$xname ;\
+	 cp -L $(xtestsuite_driver) \
+           $$(srcdir=$(srcdir) ./testdrv-build --files|sort|uniq) $$xname/ ;\
+         cp -P $(xtestsuite_libs) $$xname/ ;\
+	 touch $$xname/libgcrypt-standalone-tests ;\
+         $(AMTAR) czf "$(PACKAGE_TARNAME)-tests-$(PACKAGE_VERSION)".tar.gz \
+             $$name ;\
+	 )

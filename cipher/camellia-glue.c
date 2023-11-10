@@ -91,6 +91,12 @@
 # endif
 #endif
 
+/* USE_VAES_AVX2 inidicates whether to compile with Intel VAES/AVX2 code. */
+#undef USE_VAES_AVX2
+#if defined(USE_AESNI_AVX2) && defined(HAVE_GCC_INLINE_ASM_VAES_VPCLMUL)
+# define USE_VAES_AVX2 1
+#endif
+
 typedef struct
 {
   KEY_TABLE_TYPE keytable;
@@ -100,6 +106,7 @@ typedef struct
 #endif /*USE_AESNI_AVX*/
 #ifdef USE_AESNI_AVX2
   unsigned int use_aesni_avx2:1;/* AES-NI/AVX2 implementation shall be used.  */
+  unsigned int use_vaes_avx2:1; /* VAES/AVX2 implementation shall be used.  */
 #endif /*USE_AESNI_AVX2*/
 } CAMELLIA_context;
 
@@ -201,15 +208,71 @@ extern void _gcry_camellia_aesni_avx2_ocb_auth(CAMELLIA_context *ctx,
 					       const u64 Ls[32]) ASM_FUNC_ABI;
 #endif
 
+#ifdef USE_VAES_AVX2
+/* Assembler implementations of Camellia using VAES and AVX2.  Process data
+   in 32 block same time.
+ */
+extern void _gcry_camellia_vaes_avx2_ctr_enc(CAMELLIA_context *ctx,
+					     unsigned char *out,
+					     const unsigned char *in,
+					     unsigned char *ctr) ASM_FUNC_ABI;
+
+extern void _gcry_camellia_vaes_avx2_cbc_dec(CAMELLIA_context *ctx,
+					     unsigned char *out,
+					     const unsigned char *in,
+					     unsigned char *iv) ASM_FUNC_ABI;
+
+extern void _gcry_camellia_vaes_avx2_cfb_dec(CAMELLIA_context *ctx,
+					     unsigned char *out,
+					     const unsigned char *in,
+					     unsigned char *iv) ASM_FUNC_ABI;
+
+extern void _gcry_camellia_vaes_avx2_ocb_enc(CAMELLIA_context *ctx,
+					     unsigned char *out,
+					     const unsigned char *in,
+					     unsigned char *offset,
+					     unsigned char *checksum,
+					     const u64 Ls[32]) ASM_FUNC_ABI;
+
+extern void _gcry_camellia_vaes_avx2_ocb_dec(CAMELLIA_context *ctx,
+					     unsigned char *out,
+					     const unsigned char *in,
+					     unsigned char *offset,
+					     unsigned char *checksum,
+					     const u64 Ls[32]) ASM_FUNC_ABI;
+
+extern void _gcry_camellia_vaes_avx2_ocb_auth(CAMELLIA_context *ctx,
+					      const unsigned char *abuf,
+					      unsigned char *offset,
+					      unsigned char *checksum,
+					      const u64 Ls[32]) ASM_FUNC_ABI;
+#endif
+
 static const char *selftest(void);
 
+static void _gcry_camellia_ctr_enc (void *context, unsigned char *ctr,
+				    void *outbuf_arg, const void *inbuf_arg,
+				    size_t nblocks);
+static void _gcry_camellia_cbc_dec (void *context, unsigned char *iv,
+				    void *outbuf_arg, const void *inbuf_arg,
+				    size_t nblocks);
+static void _gcry_camellia_cfb_dec (void *context, unsigned char *iv,
+				    void *outbuf_arg, const void *inbuf_arg,
+				    size_t nblocks);
+static size_t _gcry_camellia_ocb_crypt (gcry_cipher_hd_t c, void *outbuf_arg,
+					const void *inbuf_arg, size_t nblocks,
+					int encrypt);
+static size_t _gcry_camellia_ocb_auth (gcry_cipher_hd_t c, const void *abuf_arg,
+				       size_t nblocks);
+
 static gcry_err_code_t
-camellia_setkey(void *c, const byte *key, unsigned keylen)
+camellia_setkey(void *c, const byte *key, unsigned keylen,
+                cipher_bulk_ops_t *bulk_ops)
 {
   CAMELLIA_context *ctx=c;
   static int initialized=0;
   static const char *selftest_failed=NULL;
-#if defined(USE_AESNI_AVX) || defined(USE_AESNI_AVX2)
+#if defined(USE_AESNI_AVX) || defined(USE_AESNI_AVX2) || defined(USE_VAES_AVX2)
   unsigned int hwf = _gcry_get_hw_features ();
 #endif
 
@@ -232,9 +295,21 @@ camellia_setkey(void *c, const byte *key, unsigned keylen)
 #endif
 #ifdef USE_AESNI_AVX2
   ctx->use_aesni_avx2 = (hwf & HWF_INTEL_AESNI) && (hwf & HWF_INTEL_AVX2);
+  ctx->use_vaes_avx2 = 0;
+#endif
+#ifdef USE_VAES_AVX2
+  ctx->use_vaes_avx2 = (hwf & HWF_INTEL_VAES_VPCLMUL) && (hwf & HWF_INTEL_AVX2);
 #endif
 
   ctx->keybitlength=keylen*8;
+
+  /* Setup bulk encryption routines.  */
+  memset (bulk_ops, 0, sizeof(*bulk_ops));
+  bulk_ops->cbc_dec = _gcry_camellia_cbc_dec;
+  bulk_ops->cfb_dec = _gcry_camellia_cfb_dec;
+  bulk_ops->ctr_enc = _gcry_camellia_ctr_enc;
+  bulk_ops->ocb_crypt = _gcry_camellia_ocb_crypt;
+  bulk_ops->ocb_auth  = _gcry_camellia_ocb_auth;
 
   if (0)
     { }
@@ -350,7 +425,7 @@ camellia_decrypt(void *c, byte *outbuf, const byte *inbuf)
 /* Bulk encryption of complete blocks in CTR mode.  This function is only
    intended for the bulk encryption feature of cipher.c.  CTR is expected to be
    of size CAMELLIA_BLOCK_SIZE. */
-void
+static void
 _gcry_camellia_ctr_enc(void *context, unsigned char *ctr,
                        void *outbuf_arg, const void *inbuf_arg,
                        size_t nblocks)
@@ -360,17 +435,24 @@ _gcry_camellia_ctr_enc(void *context, unsigned char *ctr,
   const unsigned char *inbuf = inbuf_arg;
   unsigned char tmpbuf[CAMELLIA_BLOCK_SIZE];
   int burn_stack_depth = CAMELLIA_encrypt_stack_burn_size;
-  int i;
 
 #ifdef USE_AESNI_AVX2
   if (ctx->use_aesni_avx2)
     {
       int did_use_aesni_avx2 = 0;
+#ifdef USE_VAES_AVX2
+      int use_vaes = ctx->use_vaes_avx2;
+#endif
 
       /* Process data in 32 block chunks. */
       while (nblocks >= 32)
         {
-          _gcry_camellia_aesni_avx2_ctr_enc(ctx, outbuf, inbuf, ctr);
+#ifdef USE_VAES_AVX2
+          if (use_vaes)
+            _gcry_camellia_vaes_avx2_ctr_enc(ctx, outbuf, inbuf, ctr);
+          else
+#endif
+            _gcry_camellia_aesni_avx2_ctr_enc(ctx, outbuf, inbuf, ctr);
 
           nblocks -= 32;
           outbuf += 32 * CAMELLIA_BLOCK_SIZE;
@@ -427,16 +509,11 @@ _gcry_camellia_ctr_enc(void *context, unsigned char *ctr,
       /* Encrypt the counter. */
       Camellia_EncryptBlock(ctx->keybitlength, ctr, ctx->keytable, tmpbuf);
       /* XOR the input with the encrypted counter and store in output.  */
-      buf_xor(outbuf, tmpbuf, inbuf, CAMELLIA_BLOCK_SIZE);
+      cipher_block_xor(outbuf, tmpbuf, inbuf, CAMELLIA_BLOCK_SIZE);
       outbuf += CAMELLIA_BLOCK_SIZE;
       inbuf  += CAMELLIA_BLOCK_SIZE;
       /* Increment the counter.  */
-      for (i = CAMELLIA_BLOCK_SIZE; i > 0; i--)
-        {
-          ctr[i-1]++;
-          if (ctr[i-1])
-            break;
-        }
+      cipher_block_add(ctr, 1, CAMELLIA_BLOCK_SIZE);
     }
 
   wipememory(tmpbuf, sizeof(tmpbuf));
@@ -445,7 +522,7 @@ _gcry_camellia_ctr_enc(void *context, unsigned char *ctr,
 
 /* Bulk decryption of complete blocks in CBC mode.  This function is only
    intended for the bulk encryption feature of cipher.c. */
-void
+static void
 _gcry_camellia_cbc_dec(void *context, unsigned char *iv,
                        void *outbuf_arg, const void *inbuf_arg,
                        size_t nblocks)
@@ -460,11 +537,19 @@ _gcry_camellia_cbc_dec(void *context, unsigned char *iv,
   if (ctx->use_aesni_avx2)
     {
       int did_use_aesni_avx2 = 0;
+#ifdef USE_VAES_AVX2
+      int use_vaes = ctx->use_vaes_avx2;
+#endif
 
       /* Process data in 32 block chunks. */
       while (nblocks >= 32)
         {
-          _gcry_camellia_aesni_avx2_cbc_dec(ctx, outbuf, inbuf, iv);
+#ifdef USE_VAES_AVX2
+          if (use_vaes)
+            _gcry_camellia_vaes_avx2_cbc_dec(ctx, outbuf, inbuf, iv);
+          else
+#endif
+            _gcry_camellia_aesni_avx2_cbc_dec(ctx, outbuf, inbuf, iv);
 
           nblocks -= 32;
           outbuf += 32 * CAMELLIA_BLOCK_SIZE;
@@ -520,7 +605,8 @@ _gcry_camellia_cbc_dec(void *context, unsigned char *iv,
          the intermediate result to SAVEBUF.  */
       Camellia_DecryptBlock(ctx->keybitlength, inbuf, ctx->keytable, savebuf);
 
-      buf_xor_n_copy_2(outbuf, savebuf, iv, inbuf, CAMELLIA_BLOCK_SIZE);
+      cipher_block_xor_n_copy_2(outbuf, savebuf, iv, inbuf,
+                                CAMELLIA_BLOCK_SIZE);
       inbuf += CAMELLIA_BLOCK_SIZE;
       outbuf += CAMELLIA_BLOCK_SIZE;
     }
@@ -531,7 +617,7 @@ _gcry_camellia_cbc_dec(void *context, unsigned char *iv,
 
 /* Bulk decryption of complete blocks in CFB mode.  This function is only
    intended for the bulk encryption feature of cipher.c. */
-void
+static void
 _gcry_camellia_cfb_dec(void *context, unsigned char *iv,
                        void *outbuf_arg, const void *inbuf_arg,
                        size_t nblocks)
@@ -545,11 +631,19 @@ _gcry_camellia_cfb_dec(void *context, unsigned char *iv,
   if (ctx->use_aesni_avx2)
     {
       int did_use_aesni_avx2 = 0;
+#ifdef USE_VAES_AVX2
+      int use_vaes = ctx->use_vaes_avx2;
+#endif
 
       /* Process data in 32 block chunks. */
       while (nblocks >= 32)
         {
-          _gcry_camellia_aesni_avx2_cfb_dec(ctx, outbuf, inbuf, iv);
+#ifdef USE_VAES_AVX2
+          if (use_vaes)
+            _gcry_camellia_vaes_avx2_cfb_dec(ctx, outbuf, inbuf, iv);
+          else
+#endif
+            _gcry_camellia_aesni_avx2_cfb_dec(ctx, outbuf, inbuf, iv);
 
           nblocks -= 32;
           outbuf += 32 * CAMELLIA_BLOCK_SIZE;
@@ -602,7 +696,7 @@ _gcry_camellia_cfb_dec(void *context, unsigned char *iv,
   for ( ;nblocks; nblocks-- )
     {
       Camellia_EncryptBlock(ctx->keybitlength, iv, ctx->keytable, iv);
-      buf_xor_n_copy(outbuf, iv, inbuf, CAMELLIA_BLOCK_SIZE);
+      cipher_block_xor_n_copy(outbuf, iv, inbuf, CAMELLIA_BLOCK_SIZE);
       outbuf += CAMELLIA_BLOCK_SIZE;
       inbuf  += CAMELLIA_BLOCK_SIZE;
     }
@@ -611,7 +705,7 @@ _gcry_camellia_cfb_dec(void *context, unsigned char *iv,
 }
 
 /* Bulk encryption/decryption of complete blocks in OCB mode. */
-size_t
+static size_t
 _gcry_camellia_ocb_crypt (gcry_cipher_hd_t c, void *outbuf_arg,
 			  const void *inbuf_arg, size_t nblocks, int encrypt)
 {
@@ -635,6 +729,10 @@ _gcry_camellia_ocb_crypt (gcry_cipher_hd_t c, void *outbuf_arg,
   if (ctx->use_aesni_avx2)
     {
       int did_use_aesni_avx2 = 0;
+#ifdef USE_VAES_AVX2
+      int encrypt_use_vaes = encrypt && ctx->use_vaes_avx2;
+      int decrypt_use_vaes = !encrypt && ctx->use_vaes_avx2;
+#endif
       u64 Ls[32];
       unsigned int n = 32 - (blkn % 32);
       u64 *l;
@@ -666,7 +764,16 @@ _gcry_camellia_ocb_crypt (gcry_cipher_hd_t c, void *outbuf_arg,
 	      blkn += 32;
 	      *l = (uintptr_t)(void *)ocb_get_l(c, blkn - blkn % 32);
 
-	      if (encrypt)
+	      if (0) {}
+#ifdef USE_VAES_AVX2
+	      else if (encrypt_use_vaes)
+		_gcry_camellia_vaes_avx2_ocb_enc(ctx, outbuf, inbuf, c->u_iv.iv,
+                                                 c->u_ctr.ctr, Ls);
+	      else if (decrypt_use_vaes)
+		_gcry_camellia_vaes_avx2_ocb_dec(ctx, outbuf, inbuf, c->u_iv.iv,
+                                                 c->u_ctr.ctr, Ls);
+#endif
+	      else if (encrypt)
 		_gcry_camellia_aesni_avx2_ocb_enc(ctx, outbuf, inbuf, c->u_iv.iv,
 						  c->u_ctr.ctr, Ls);
 	      else
@@ -764,7 +871,7 @@ _gcry_camellia_ocb_crypt (gcry_cipher_hd_t c, void *outbuf_arg,
 }
 
 /* Bulk authentication of complete blocks in OCB mode. */
-size_t
+static size_t
 _gcry_camellia_ocb_auth (gcry_cipher_hd_t c, const void *abuf_arg,
 			 size_t nblocks)
 {
@@ -784,6 +891,9 @@ _gcry_camellia_ocb_auth (gcry_cipher_hd_t c, const void *abuf_arg,
   if (ctx->use_aesni_avx2)
     {
       int did_use_aesni_avx2 = 0;
+#ifdef USE_VAES_AVX2
+      int use_vaes = ctx->use_vaes_avx2;
+#endif
       u64 Ls[32];
       unsigned int n = 32 - (blkn % 32);
       u64 *l;
@@ -815,9 +925,16 @@ _gcry_camellia_ocb_auth (gcry_cipher_hd_t c, const void *abuf_arg,
 	      blkn += 32;
 	      *l = (uintptr_t)(void *)ocb_get_l(c, blkn - blkn % 32);
 
-	      _gcry_camellia_aesni_avx2_ocb_auth(ctx, abuf,
-						 c->u_mode.ocb.aad_offset,
-						 c->u_mode.ocb.aad_sum, Ls);
+#ifdef USE_VAES_AVX2
+              if (use_vaes)
+                _gcry_camellia_vaes_avx2_ocb_auth(ctx, abuf,
+                                                  c->u_mode.ocb.aad_offset,
+                                                  c->u_mode.ocb.aad_sum, Ls);
+              else
+#endif
+                _gcry_camellia_aesni_avx2_ocb_auth(ctx, abuf,
+                                                   c->u_mode.ocb.aad_offset,
+                                                   c->u_mode.ocb.aad_sum, Ls);
 
 	      nblocks -= 32;
 	      abuf += 32 * CAMELLIA_BLOCK_SIZE;
@@ -914,8 +1031,7 @@ selftest_ctr_128 (void)
   const int context_size = sizeof(CAMELLIA_context);
 
   return _gcry_selftest_helper_ctr("CAMELLIA", &camellia_setkey,
-           &camellia_encrypt, &_gcry_camellia_ctr_enc, nblocks, blocksize,
-	   context_size);
+           &camellia_encrypt, nblocks, blocksize, context_size);
 }
 
 /* Run the self-tests for CAMELLIA-CBC-128, tests bulk CBC decryption.
@@ -928,8 +1044,7 @@ selftest_cbc_128 (void)
   const int context_size = sizeof(CAMELLIA_context);
 
   return _gcry_selftest_helper_cbc("CAMELLIA", &camellia_setkey,
-           &camellia_encrypt, &_gcry_camellia_cbc_dec, nblocks, blocksize,
-	   context_size);
+           &camellia_encrypt, nblocks, blocksize, context_size);
 }
 
 /* Run the self-tests for CAMELLIA-CFB-128, tests bulk CFB decryption.
@@ -942,8 +1057,7 @@ selftest_cfb_128 (void)
   const int context_size = sizeof(CAMELLIA_context);
 
   return _gcry_selftest_helper_cfb("CAMELLIA", &camellia_setkey,
-           &camellia_encrypt, &_gcry_camellia_cfb_dec, nblocks, blocksize,
-	   context_size);
+           &camellia_encrypt, nblocks, blocksize, context_size);
 }
 
 static const char *
@@ -951,6 +1065,7 @@ selftest(void)
 {
   CAMELLIA_context ctx;
   byte scratch[16];
+  cipher_bulk_ops_t bulk_ops;
   const char *r;
 
   /* These test vectors are from RFC-3713 */
@@ -991,7 +1106,7 @@ selftest(void)
       0x20,0xef,0x7c,0x91,0x9e,0x3a,0x75,0x09
     };
 
-  camellia_setkey(&ctx,key_128,sizeof(key_128));
+  camellia_setkey(&ctx,key_128,sizeof(key_128),&bulk_ops);
   camellia_encrypt(&ctx,scratch,plaintext);
   if(memcmp(scratch,ciphertext_128,sizeof(ciphertext_128))!=0)
     return "CAMELLIA-128 test encryption failed.";
@@ -999,7 +1114,7 @@ selftest(void)
   if(memcmp(scratch,plaintext,sizeof(plaintext))!=0)
     return "CAMELLIA-128 test decryption failed.";
 
-  camellia_setkey(&ctx,key_192,sizeof(key_192));
+  camellia_setkey(&ctx,key_192,sizeof(key_192),&bulk_ops);
   camellia_encrypt(&ctx,scratch,plaintext);
   if(memcmp(scratch,ciphertext_192,sizeof(ciphertext_192))!=0)
     return "CAMELLIA-192 test encryption failed.";
@@ -1007,7 +1122,7 @@ selftest(void)
   if(memcmp(scratch,plaintext,sizeof(plaintext))!=0)
     return "CAMELLIA-192 test decryption failed.";
 
-  camellia_setkey(&ctx,key_256,sizeof(key_256));
+  camellia_setkey(&ctx,key_256,sizeof(key_256),&bulk_ops);
   camellia_encrypt(&ctx,scratch,plaintext);
   if(memcmp(scratch,ciphertext_256,sizeof(ciphertext_256))!=0)
     return "CAMELLIA-256 test encryption failed.";
@@ -1031,7 +1146,7 @@ selftest(void)
    <http://info.isl.ntt.co.jp/crypt/eng/camellia/specifications_oid.html>,
    retrieved May 1, 2007. */
 
-static gcry_cipher_oid_spec_t camellia128_oids[] =
+static const gcry_cipher_oid_spec_t camellia128_oids[] =
   {
     {"1.2.392.200011.61.1.1.1.2", GCRY_CIPHER_MODE_CBC},
     {"0.3.4401.5.3.1.9.1", GCRY_CIPHER_MODE_ECB},
@@ -1040,7 +1155,7 @@ static gcry_cipher_oid_spec_t camellia128_oids[] =
     { NULL }
   };
 
-static gcry_cipher_oid_spec_t camellia192_oids[] =
+static const gcry_cipher_oid_spec_t camellia192_oids[] =
   {
     {"1.2.392.200011.61.1.1.1.3", GCRY_CIPHER_MODE_CBC},
     {"0.3.4401.5.3.1.9.21", GCRY_CIPHER_MODE_ECB},
@@ -1049,7 +1164,7 @@ static gcry_cipher_oid_spec_t camellia192_oids[] =
     { NULL }
   };
 
-static gcry_cipher_oid_spec_t camellia256_oids[] =
+static const gcry_cipher_oid_spec_t camellia256_oids[] =
   {
     {"1.2.392.200011.61.1.1.1.4", GCRY_CIPHER_MODE_CBC},
     {"0.3.4401.5.3.1.9.41", GCRY_CIPHER_MODE_ECB},
