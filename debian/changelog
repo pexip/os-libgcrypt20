@@ -1,3 +1,9 @@
+libgcrypt20 (1.10.1-3+pexip24u3) pexip-bookworm; urgency=medium
+
+  * New versioning scheme
+
+ -- Mark Hymers <mark.hymers@pexip.com>  Thu, 01 Feb 2024 16:04:51 +0000
+
 libgcrypt20 (1.10.1-3pexip2) pexip-bookworm; urgency=medium
 
   * Bookworm build for product distribution
