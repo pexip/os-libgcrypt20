@@ -4,7 +4,7 @@
  * This file is part of Libgcrypt.
  *
  * Libgcrypt is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser general Public License as
+ * it under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
  *
@@ -292,7 +292,7 @@ KECCAK_F1600_PERMUTE_FUNC_NAME(KECCAK_STATE *hd)
 
 static unsigned int
 KECCAK_F1600_ABSORB_FUNC_NAME(KECCAK_STATE *hd, int pos, const byte *lanes,
-			      unsigned int nlanes, int blocklanes)
+			      size_t nlanes, int blocklanes)
 {
   unsigned int burn = 0;
 

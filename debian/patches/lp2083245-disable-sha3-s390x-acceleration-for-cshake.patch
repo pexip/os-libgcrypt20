@@ -1,0 +1,88 @@
+From 2486d9b5ae015c1786cb84466a751da4bc0d7122 Mon Sep 17 00:00:00 2001
+From: Jussi Kivilinna <jussi.kivilinna@iki.fi>
+Date: Thu, 20 Jun 2024 20:10:09 +0300
+Subject: [PATCH] Disable SHA3 s390x acceleration for CSHAKE
+
+* cipher/keccak.c (keccak_final_s390x): Add assert check for
+expected SHAKE suffix.
+(_gcry_cshake_customize, cshake_hash_buffers): Disable s390x
+acceleration when selecting CSHAKE suffix.
+--
+
+Signed-off-by: Jussi Kivilinna <jussi.kivilinna@iki.fi>
+---
+ cipher/keccak.c | 16 ++++++++++++++--
+ 1 file changed, 14 insertions(+), 2 deletions(-)
+
+diff --git a/cipher/keccak.c b/cipher/keccak.c
+index aaf83a62..44cc9f71 100644
+--- a/cipher/keccak.c
++++ b/cipher/keccak.c
+@@ -741,14 +741,16 @@ keccak_final_s390x (void *context)
+ 
+   if (ctx->suffix == SHA3_DELIMITED_SUFFIX)
+     {
+       klmd_execute (ctx->kimd_func, &ctx->state, ctx->buf, ctx->count);
+     }
+   else
+     {
++      gcry_assert(ctx->suffix == SHAKE_DELIMITED_SUFFIX);
++
+       klmd_shake_execute (ctx->kimd_func, &ctx->state, NULL, 0, ctx->buf,
+ 			  ctx->count);
+       ctx->count = 0;
+       ctx->buf_pos = 0;
+     }
+ 
+   return;
+@@ -1493,17 +1495,22 @@ _gcry_cshake_customize (void *context, struct gcry_cshake_customization *p)
+   if (p->n_len >= 255 || p->s_len >= 255)
+     return GPG_ERR_TOO_LARGE;
+ 
+   if (p->n_len == 0 && p->s_len == 0)
+     /* No customization */
+     return 0;
+ 
++  ctx->suffix = CSHAKE_DELIMITED_SUFFIX;
++#ifdef USE_S390X_CRYPTO
++  /* CSHAKE suffix is not supported by s390x/kimd. */
++  ctx->kimd_func = 0;
++#endif
++
+   len_written = cshake_input_n (ctx, p->n, p->n_len);
+   cshake_input_s (ctx, p->s, p->s_len, len_written);
+-  ctx->suffix = CSHAKE_DELIMITED_SUFFIX;
+   return 0;
+ }
+ 
+ 
+ static void
+ cshake128_init (void *context, unsigned int flags)
+ {
+@@ -1532,17 +1539,22 @@ cshake_hash_buffers (const gcry_md_spec_t *spec, void *outbuf, size_t nbytes,
+         {
+           const void *n = (unsigned char *)iov[0].data + iov[0].off;
+           size_t n_len = iov[0].len;
+           const void *s = (unsigned char *)iov[1].data + iov[1].off;
+           size_t s_len = iov[1].len;
+           size_t len;
+ 
++          ctx.suffix = CSHAKE_DELIMITED_SUFFIX;
++#ifdef USE_S390X_CRYPTO
++          /* CSHAKE suffix is not supported by s390x/kimd. */
++          ctx.kimd_func = 0;
++#endif
++
+           len = cshake_input_n (&ctx, n, n_len);
+           cshake_input_s (&ctx, s, s_len, len);
+-          ctx.suffix = CSHAKE_DELIMITED_SUFFIX;
+         }
+       iovcnt -= 2;
+       iov += 2;
+     }
+ 
+   for (;iovcnt > 0; iov++, iovcnt--)
+     keccak_write (&ctx, (const char*)iov[0].data + iov[0].off, iov[0].len);
+-- 
+2.45.2
+

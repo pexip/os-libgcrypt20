@@ -4,7 +4,7 @@
  * This file is part of Libgcrypt.
  *
  * Libgcrypt is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser general Public License as
+ * it under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
  *
@@ -46,11 +46,20 @@
 # define USE_AVX2 1
 #endif
 
+/* USE_AVX512 indicates whether to compile with Intel AVX512 code. */
+#undef USE_AVX512
+#if defined(__x86_64__) && defined(HAVE_GCC_INLINE_ASM_AVX512) && \
+    (defined(HAVE_COMPATIBLE_GCC_AMD64_PLATFORM_AS) || \
+     defined(HAVE_COMPATIBLE_GCC_WIN64_PLATFORM_AS))
+# define USE_AVX512 1
+#endif
+
 /* AMD64 assembly implementations use SystemV ABI, ABI conversion and additional
  * stack to store XMM6-XMM15 needed on Win64. */
 #undef ASM_FUNC_ABI
 #undef ASM_EXTRA_STACK
-#if defined(USE_AVX2) && defined(HAVE_COMPATIBLE_GCC_WIN64_PLATFORM_AS)
+#if (defined(USE_AVX) || defined(USE_AVX2) || defined(USE_AVX512)) \
+    && defined(HAVE_COMPATIBLE_GCC_WIN64_PLATFORM_AS)
 # define ASM_FUNC_ABI __attribute__((sysv_abi))
 # define ASM_EXTRA_STACK (10 * 16)
 #else
@@ -98,6 +107,9 @@ typedef struct BLAKE2B_CONTEXT_S
 #ifdef USE_AVX2
   unsigned int use_avx2:1;
 #endif
+#ifdef USE_AVX512
+  unsigned int use_avx512:1;
+#endif
 } BLAKE2B_CONTEXT;
 
 typedef struct
@@ -131,6 +143,9 @@ typedef struct BLAKE2S_CONTEXT_S
   size_t outlen;
 #ifdef USE_AVX
   unsigned int use_avx:1;
+#endif
+#ifdef USE_AVX512
+  unsigned int use_avx512:1;
 #endif
 } BLAKE2S_CONTEXT;
 
@@ -346,6 +361,12 @@ unsigned int _gcry_blake2b_transform_amd64_avx2(BLAKE2B_STATE *S,
                                                 size_t nblks) ASM_FUNC_ABI;
 #endif
 
+#ifdef USE_AVX512
+unsigned int _gcry_blake2b_transform_amd64_avx512(BLAKE2B_STATE *S,
+                                                  const void *inblks,
+                                                  size_t nblks) ASM_FUNC_ABI;
+#endif
+
 static unsigned int blake2b_transform(void *ctx, const void *inblks,
                                       size_t nblks)
 {
@@ -354,8 +375,12 @@ static unsigned int blake2b_transform(void *ctx, const void *inblks,
 
   if (0)
     {}
+#ifdef USE_AVX512
+  else if (c->use_avx512)
+    nburn = _gcry_blake2b_transform_amd64_avx512(&c->state, inblks, nblks);
+#endif
 #ifdef USE_AVX2
-  if (c->use_avx2)
+  else if (c->use_avx2)
     nburn = _gcry_blake2b_transform_amd64_avx2(&c->state, inblks, nblks);
 #endif
   else
@@ -468,6 +493,9 @@ static gcry_err_code_t blake2b_init_ctx(void *ctx, unsigned int flags,
 #ifdef USE_AVX2
   c->use_avx2 = !!(features & HWF_INTEL_AVX2);
 #endif
+#ifdef USE_AVX512
+  c->use_avx512 = !!(features & HWF_INTEL_AVX512);
+#endif
 
   c->outlen = dbits / 8;
   c->buflen = 0;
@@ -496,7 +524,7 @@ blake2b_vl_hash (const void *in, size_t inlen, size_t outputlen, void *output)
     memcpy (output, ctx.buf, outputlen);
   else
     {
-      int r = (outputlen-1)/32;
+      int r = (outputlen-1)/32 - 1;
       unsigned int remained = outputlen - 32*r;
       int i;
       unsigned char d[64];
@@ -518,8 +546,14 @@ blake2b_vl_hash (const void *in, size_t inlen, size_t outputlen, void *output)
           blake2b_final (&ctx);
         }
 
-      if (remained)
-        memcpy ((unsigned char *)output+r*32, d+32, remained);
+      ec = blake2b_init_ctx (&ctx, 0, NULL, 0, remained*8);
+      if (ec)
+        return ec;
+
+      blake2b_write (&ctx, d, 64);
+      blake2b_final (&ctx);
+
+      memcpy ((unsigned char *)output+r*32, ctx.buf, remained);
     }
 
   wipememory (buf, sizeof (buf));
@@ -664,6 +698,12 @@ unsigned int _gcry_blake2s_transform_amd64_avx(BLAKE2S_STATE *S,
                                                size_t nblks) ASM_FUNC_ABI;
 #endif
 
+#ifdef USE_AVX512
+unsigned int _gcry_blake2s_transform_amd64_avx512(BLAKE2S_STATE *S,
+                                                  const void *inblks,
+                                                  size_t nblks) ASM_FUNC_ABI;
+#endif
+
 static unsigned int blake2s_transform(void *ctx, const void *inblks,
                                       size_t nblks)
 {
@@ -671,9 +711,13 @@ static unsigned int blake2s_transform(void *ctx, const void *inblks,
   unsigned int nburn;
 
   if (0)
-    {}
+    { }
+#ifdef USE_AVX512
+  else if (c->use_avx512)
+    nburn = _gcry_blake2s_transform_amd64_avx512(&c->state, inblks, nblks);
+#endif
 #ifdef USE_AVX
-  if (c->use_avx)
+  else if (c->use_avx)
     nburn = _gcry_blake2s_transform_amd64_avx(&c->state, inblks, nblks);
 #endif
   else
@@ -785,6 +829,9 @@ static gcry_err_code_t blake2s_init_ctx(void *ctx, unsigned int flags,
 
 #ifdef USE_AVX
   c->use_avx = !!(features & HWF_INTEL_AVX);
+#endif
+#ifdef USE_AVX
+  c->use_avx512 = !!(features & HWF_INTEL_AVX512);
 #endif
 
   c->outlen = dbits / 8;

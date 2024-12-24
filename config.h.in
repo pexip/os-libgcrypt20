@@ -36,6 +36,9 @@
 /* Enable support for Intel AVX2 instructions. */
 #undef ENABLE_AVX2_SUPPORT
 
+/* Enable support for Intel AVX512 instructions. */
+#undef ENABLE_AVX512_SUPPORT
+
 /* Enable support for Intel AVX instructions. */
 #undef ENABLE_AVX_SUPPORT
 
@@ -44,6 +47,9 @@
 
 /* Enable forcing 'soft' HW feature bits on (for testing). */
 #undef ENABLE_FORCE_SOFT_HWFEATURES
+
+/* Enable support for Intel GFNI instructions. */
+#undef ENABLE_GFNI_SUPPORT
 
 /* Define to support an HMAC based integrity check */
 #undef ENABLE_HMAC_BINARY_CHECK
@@ -68,6 +74,12 @@
 
 /* Enable support for Intel SSE4.1 instructions. */
 #undef ENABLE_SSE41_SUPPORT
+
+/* Enable support for ARMv9 SVE2 instructions. */
+#undef ENABLE_SVE2_SUPPORT
+
+/* Enable support for ARMv8 SVE instructions. */
+#undef ENABLE_SVE_SUPPORT
 
 /* Define FIPS module version for certification */
 #undef FIPS_MODULE_VERSION
@@ -108,11 +120,21 @@
 /* Define to 1 if the system has the type `byte'. */
 #undef HAVE_BYTE
 
+/* Defined if compiler supports clang PowerPC target attributes */
+#undef HAVE_CLANG_ATTRIBUTE_PPC_TARGET
+
 /* Define to 1 if you have the `clock' function. */
 #undef HAVE_CLOCK
 
 /* Define to 1 if you have the `clock_gettime' function. */
 #undef HAVE_CLOCK_GETTIME
+
+/* Defined if underlying compiler supports AArch64/NEON/crypto intrinsics */
+#undef HAVE_COMPATIBLE_CC_AARCH64_NEON_INTRINSICS
+
+/* Defined if underlying compiler supports AArch64/NEON/crypto intrinsics with
+   extra GCC flags */
+#undef HAVE_COMPATIBLE_CC_AARCH64_NEON_INTRINSICS_WITH_CFLAGS
 
 /* Defined if underlying compiler supports PowerPC AltiVec/VSX/crypto
    intrinsics */
@@ -121,6 +143,9 @@
 /* Defined if underlying compiler supports PowerPC AltiVec/VSX/crypto
    intrinsics with extra GCC flags */
 #undef HAVE_COMPATIBLE_CC_PPC_ALTIVEC_WITH_CFLAGS
+
+/* Defined if underlying compiler supports x86/AVX512 intrinsics */
+#undef HAVE_COMPATIBLE_CC_X86_AVX512_INTRINSICS
 
 /* Defined if underlying assembler is compatible with ARMv8/Aarch64 assembly
    implementations */
@@ -133,6 +158,14 @@
 /* Defined if underlying assembler is compatible with ARM assembly
    implementations */
 #undef HAVE_COMPATIBLE_GCC_ARM_PLATFORM_AS
+
+/* Defined if underlying assembler is compatible with i386 assembly
+   implementations */
+#undef HAVE_COMPATIBLE_GCC_I386_PLATFORM_AS
+
+/* Defined if underlying assembler is compatible with WIN32 assembly
+   implementations */
+#undef HAVE_COMPATIBLE_GCC_WIN32_PLATFORM_AS
 
 /* Defined if underlying assembler is compatible with WIN64 assembly
    implementations */
@@ -215,8 +248,15 @@
    */
 #undef HAVE_GCC_ATTRIBUTE_MS_ABI
 
+/* Defined if compiler supports "__attribute__ ((optimize))" function
+   attribute */
+#undef HAVE_GCC_ATTRIBUTE_OPTIMIZE
+
 /* Defined if a GCC style "__attribute__ ((packed))" is supported */
 #undef HAVE_GCC_ATTRIBUTE_PACKED
+
+/* Defined if compiler supports GCC PowerPC target attributes */
+#undef HAVE_GCC_ATTRIBUTE_PPC_TARGET
 
 /* Defined if compiler supports "__attribute__ ((sysv_abi))" function
    attribute */
@@ -239,14 +279,30 @@
 /* Defined if inline assembler supports AArch64 NEON instructions */
 #undef HAVE_GCC_INLINE_ASM_AARCH64_NEON
 
+/* Defined if inline assembler supports AArch64 SHA3/SHA512/SM3/SM4
+   instructions */
+#undef HAVE_GCC_INLINE_ASM_AARCH64_SHA3_SHA512_SM3_SM4
+
+/* Defined if inline assembler supports AArch64 SVE instructions */
+#undef HAVE_GCC_INLINE_ASM_AARCH64_SVE
+
+/* Defined if inline assembler supports AArch64 SVE2 instructions */
+#undef HAVE_GCC_INLINE_ASM_AARCH64_SVE2
+
 /* Defined if inline assembler supports AVX instructions */
 #undef HAVE_GCC_INLINE_ASM_AVX
 
 /* Defined if inline assembler supports AVX2 instructions */
 #undef HAVE_GCC_INLINE_ASM_AVX2
 
+/* Defined if inline assembler supports AVX512 instructions */
+#undef HAVE_GCC_INLINE_ASM_AVX512
+
 /* Defined if inline assembler supports BMI2 instructions */
 #undef HAVE_GCC_INLINE_ASM_BMI2
+
+/* Defined if inline assembler supports GFNI instructions */
+#undef HAVE_GCC_INLINE_ASM_GFNI
 
 /* Defined if inline assembler supports NEON instructions */
 #undef HAVE_GCC_INLINE_ASM_NEON
@@ -313,17 +369,14 @@
 /* Define to 1 if you have the `memmove' function. */
 #undef HAVE_MEMMOVE
 
-/* Define to 1 if you have the <memory.h> header file. */
-#undef HAVE_MEMORY_H
+/* Define to 1 if you have the <minix/config.h> header file. */
+#undef HAVE_MINIX_CONFIG_H
 
 /* Defined if the system supports an mlock() call */
 #undef HAVE_MLOCK
 
 /* Define to 1 if you have the `mmap' function. */
 #undef HAVE_MMAP
-
-/* Defined if the GNU Pth is available */
-#undef HAVE_PTH
 
 /* Define if we have pthread. */
 #undef HAVE_PTHREAD
@@ -339,6 +392,9 @@
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdio.h> header file. */
+#undef HAVE_STDIO_H
 
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
@@ -373,6 +429,9 @@
 /* Define to 1 if you have the `sysconf' function. */
 #undef HAVE_SYSCONF
 
+/* Define to 1 if you have the `sysctlbyname' function. */
+#undef HAVE_SYSCTLBYNAME
+
 /* Define to 1 if you have the `syslog' function. */
 #undef HAVE_SYSLOG
 
@@ -388,11 +447,11 @@
 /* Define to 1 if you have the <sys/random.h> header file. */
 #undef HAVE_SYS_RANDOM_H
 
-/* Define to 1 if you have the <sys/socket.h> header file. */
-#undef HAVE_SYS_SOCKET_H
-
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/sysctl.h> header file. */
+#undef HAVE_SYS_SYSCTL_H
 
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
@@ -433,8 +492,8 @@
 /* Define to 1 if you have the `waitpid' function. */
 #undef HAVE_WAITPID
 
-/* Define to 1 if you have the <ws2tcpip.h> header file. */
-#undef HAVE_WS2TCPIP_H
+/* Define to 1 if you have the <wchar.h> header file. */
+#undef HAVE_WCHAR_H
 
 /* Defined if this is not a regular release */
 #undef IS_DEVELOPMENT_VERSION
@@ -454,9 +513,6 @@
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
    */
 #undef LT_OBJDIR
-
-/* Define to use the (obsolete) malloc guarding feature */
-#undef M_GUARD
 
 /* defined to the name of the strong random device */
 #undef NAME_OF_DEV_RANDOM
@@ -503,10 +559,15 @@
 /* The size of `unsigned short', as computed by sizeof. */
 #undef SIZEOF_UNSIGNED_SHORT
 
+/* The size of `unsigned __int128', as computed by sizeof. */
+#undef SIZEOF_UNSIGNED___INT128
+
 /* The size of `void *', as computed by sizeof. */
 #undef SIZEOF_VOID_P
 
-/* Define to 1 if you have the ANSI C header files. */
+/* Define to 1 if all of the C90 standard headers exist (not just the ones
+   required in a freestanding environment). This macro is provided for
+   backward compatibility; new code need not use it. */
 #undef STDC_HEADERS
 
 /* Defined if this module should be included */
@@ -514,6 +575,9 @@
 
 /* Defined if this module should be included */
 #undef USE_ARCFOUR
+
+/* Defined if this module should be included */
+#undef USE_ARIA
 
 /* Defined if this module should be included */
 #undef USE_BLAKE2
@@ -547,9 +611,6 @@
 
 /* Defined if this module should be included */
 #undef USE_ELGAMAL
-
-/* Defined if the GNU Portable Thread Library should be used */
-#undef USE_GNU_PTH
 
 /* Defined if this module should be included */
 #undef USE_GOST28147
@@ -639,21 +700,87 @@
 #ifndef _ALL_SOURCE
 # undef _ALL_SOURCE
 #endif
+/* Enable general extensions on macOS.  */
+#ifndef _DARWIN_C_SOURCE
+# undef _DARWIN_C_SOURCE
+#endif
+/* Enable general extensions on Solaris.  */
+#ifndef __EXTENSIONS__
+# undef __EXTENSIONS__
+#endif
 /* Enable GNU extensions on systems that have them.  */
 #ifndef _GNU_SOURCE
 # undef _GNU_SOURCE
 #endif
-/* Enable threading extensions on Solaris.  */
+/* Enable X/Open compliant socket functions that do not require linking
+   with -lxnet on HP-UX 11.11.  */
+#ifndef _HPUX_ALT_XOPEN_SOCKET_API
+# undef _HPUX_ALT_XOPEN_SOCKET_API
+#endif
+/* Identify the host operating system as Minix.
+   This macro does not affect the system headers' behavior.
+   A future release of Autoconf may stop defining this macro.  */
+#ifndef _MINIX
+# undef _MINIX
+#endif
+/* Enable general extensions on NetBSD.
+   Enable NetBSD compatibility extensions on Minix.  */
+#ifndef _NETBSD_SOURCE
+# undef _NETBSD_SOURCE
+#endif
+/* Enable OpenBSD compatibility extensions on NetBSD.
+   Oddly enough, this does nothing on OpenBSD.  */
+#ifndef _OPENBSD_SOURCE
+# undef _OPENBSD_SOURCE
+#endif
+/* Define to 1 if needed for POSIX-compatible behavior.  */
+#ifndef _POSIX_SOURCE
+# undef _POSIX_SOURCE
+#endif
+/* Define to 2 if needed for POSIX-compatible behavior.  */
+#ifndef _POSIX_1_SOURCE
+# undef _POSIX_1_SOURCE
+#endif
+/* Enable POSIX-compatible threading on Solaris.  */
 #ifndef _POSIX_PTHREAD_SEMANTICS
 # undef _POSIX_PTHREAD_SEMANTICS
+#endif
+/* Enable extensions specified by ISO/IEC TS 18661-5:2014.  */
+#ifndef __STDC_WANT_IEC_60559_ATTRIBS_EXT__
+# undef __STDC_WANT_IEC_60559_ATTRIBS_EXT__
+#endif
+/* Enable extensions specified by ISO/IEC TS 18661-1:2014.  */
+#ifndef __STDC_WANT_IEC_60559_BFP_EXT__
+# undef __STDC_WANT_IEC_60559_BFP_EXT__
+#endif
+/* Enable extensions specified by ISO/IEC TS 18661-2:2015.  */
+#ifndef __STDC_WANT_IEC_60559_DFP_EXT__
+# undef __STDC_WANT_IEC_60559_DFP_EXT__
+#endif
+/* Enable extensions specified by ISO/IEC TS 18661-4:2015.  */
+#ifndef __STDC_WANT_IEC_60559_FUNCS_EXT__
+# undef __STDC_WANT_IEC_60559_FUNCS_EXT__
+#endif
+/* Enable extensions specified by ISO/IEC TS 18661-3:2015.  */
+#ifndef __STDC_WANT_IEC_60559_TYPES_EXT__
+# undef __STDC_WANT_IEC_60559_TYPES_EXT__
+#endif
+/* Enable extensions specified by ISO/IEC TR 24731-2:2010.  */
+#ifndef __STDC_WANT_LIB_EXT2__
+# undef __STDC_WANT_LIB_EXT2__
+#endif
+/* Enable extensions specified by ISO/IEC 24747:2009.  */
+#ifndef __STDC_WANT_MATH_SPEC_FUNCS__
+# undef __STDC_WANT_MATH_SPEC_FUNCS__
 #endif
 /* Enable extensions on HP NonStop.  */
 #ifndef _TANDEM_SOURCE
 # undef _TANDEM_SOURCE
 #endif
-/* Enable general extensions on Solaris.  */
-#ifndef __EXTENSIONS__
-# undef __EXTENSIONS__
+/* Enable X/Open extensions.  Define to 500 only if necessary
+   to make mbstate_t available.  */
+#ifndef _XOPEN_SOURCE
+# undef _XOPEN_SOURCE
 #endif
 
 
@@ -687,16 +814,6 @@
 /* Expose all libc features (__DARWIN_C_FULL). */
 #undef _DARWIN_C_SOURCE
 
-/* Define to 1 if on MINIX. */
-#undef _MINIX
-
-/* Define to 2 if the system does not provide POSIX.1 features except with
-   this defined. */
-#undef _POSIX_1_SOURCE
-
-/* Define to 1 if you need to in order for `stat' and other things to work. */
-#undef _POSIX_SOURCE
-
 /* To allow the use of Libgcrypt in multithreaded programs we have to use
     special features from the library. */
 #ifndef _REENTRANT
@@ -717,14 +834,11 @@
 #undef inline
 #endif
 
-/* Define to `int' if <sys/types.h> does not define. */
+/* Define as a signed integer type capable of holding a process identifier. */
 #undef pid_t
 
 /* Define to `unsigned int' if <sys/types.h> does not define. */
 #undef size_t
-
-/* type to use in place of socklen_t if not defined */
-#undef socklen_t
 
 /* Define to the type of an unsigned integer type wide enough to hold a
    pointer, if such a type exists, and if the system does not define it. */

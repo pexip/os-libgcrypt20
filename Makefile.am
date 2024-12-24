@@ -14,13 +14,13 @@
 # GNU Lesser General Public License for more details.
 #
 # You should have received a copy of the GNU Lesser General Public
-# License along with this program; if not, see <http://www.gnu.org/licenses/>.
+# License along with this program; if not, see <https://www.gnu.org/licenses/>.
 # SPDX-License-Identifier: LGPL-2.1-or-later
 
 # Location of the released tarball archives.  This is prefixed by
 # the variable RELEASE_ARCHIVE in ~/.gnupg-autogen.rc.  For example:
 # RELEASE_ARCHIVE=wk@somehost:archive/tarballs
-RELEASE_ARCHIVE_SUFFIX  = libgcrypt/v1.10
+RELEASE_ARCHIVE_SUFFIX  = libgcrypt/v1.11
 # The variable RELEASE_SIGNING_KEY in ~/.gnupg-autogen.rc is used
 # to specify the key for signing.  For example:
 # RELEASE_SIGNKEY=D8692123C4065DEA5E0F3AB5249B39D24F25E3B6
@@ -44,11 +44,12 @@ endif
 DIST_SUBDIRS = m4 compat mpi cipher random src doc tests
 SUBDIRS =         compat mpi cipher random src $(doc) tests
 
-EXTRA_DIST = autogen.sh autogen.rc README.GIT LICENSES      	           \
-             ChangeLog-2011 build-aux/ChangeLog-2011 doc/ChangeLog-2011    \
-             m4/ChangeLog-2011 cipher/ChangeLog-2011 src/ChangeLog-2011    \
-             random/ChangeLog-2011 tests/ChangeLog-2011 mpi/ChangeLog-2011 \
-             build-aux/git-log-footer build-aux/git-log-fix VERSION
+EXTRA_DIST = autogen.sh autogen.rc README.GIT LICENSES			   \
+	     ChangeLog-2011 build-aux/ChangeLog-2011 doc/ChangeLog-2011	   \
+	     m4/ChangeLog-2011 cipher/ChangeLog-2011 src/ChangeLog-2011	   \
+	     random/ChangeLog-2011 tests/ChangeLog-2011 mpi/ChangeLog-2011 \
+	     build-aux/libtool-patch.sed 				   \
+	     build-aux/git-log-footer build-aux/git-log-fix VERSION
 
 DISTCLEANFILES =
 

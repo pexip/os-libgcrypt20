@@ -1,0 +1,33 @@
+#!/bin/sh
+# Copyright 2019-2024 Collabora Ltd.
+# SPDX-License-Identifier: Expat
+
+set -eux
+
+WORKDIR="$(mktemp -d)"
+trap 'cd /; rm -fr "$WORKDIR"' 0 INT QUIT ABRT PIPE TERM
+
+if [ -n "${DEB_HOST_GNU_TYPE:-}" ]; then
+    CROSS_COMPILE="$DEB_HOST_GNU_TYPE-"
+else
+    CROSS_COMPILE=
+fi
+
+cat >"$WORKDIR/use.c"<<EOF
+#include <gcrypt.h>
+
+#include <stdio.h>
+
+int main(void)
+{
+    puts(gcry_check_version(NULL));
+    return 0;
+}
+EOF
+
+cd "$WORKDIR"
+
+# Deliberately word-splitting pkgconf's output:
+# shellcheck disable=SC2046
+"${CROSS_COMPILE}gcc" -ouse use.c $("${CROSS_COMPILE}pkgconf" --cflags --libs libgcrypt)
+./use

@@ -12,8 +12,8 @@ dnl MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 dnl Lesser General Public License for more details.
 dnl
 dnl You should have received a copy of the GNU Lesser General Public
-dnl License along with this library; if not, write to the Free Software
-dnl Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+dnl License along with this library; if not, see <https://www.gnu.org/licenses/>.
+dnl SPDX-License-Identifier: LGPL-2.1-or-later
 
 dnl Checks whether the stack can be marked nonexecutable by passing an
 dnl option to the C-compiler when acting on .s files.  Returns that
@@ -33,7 +33,7 @@ AC_MSG_RESULT($noexecstack_support)
 AC_CACHE_CHECK([whether assembler supports --noexecstack option],
 cl_cv_as_noexecstack, [dnl
   cat > conftest.c <<EOF
-void foo() {}
+void foo(void) {}
 EOF
   if AC_TRY_COMMAND([${CC} $CFLAGS $CPPFLAGS
                      -S -o conftest.s conftest.c >/dev/null]) \

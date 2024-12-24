@@ -271,7 +271,7 @@ test_cv_x448 (int testno, const char *k_str, const char *u_str,
   err = gcry_ecc_mul_point (GCRY_ECC_CURVE448, result, scalar, point);
   if (in_fips_mode)
     {
-      if (err != GPG_ERR_NOT_SUPPORTED)
+      if (gpg_err_code (err) != GPG_ERR_NOT_SUPPORTED)
         fail ("gcry_ecc_mul_point is not expected to work in FIPS mode for test %d: %s",
               testno, gpg_strerror (err));
       if (verbose > 1)
@@ -324,7 +324,7 @@ test_it (int testno, const char *k_str, int iter, const char *result_str)
   gcry_mpi_t mpi_k = NULL;
   gcry_mpi_t mpi_x = NULL;
   gcry_mpi_point_t P = NULL;
-  gcry_mpi_point_t Q;
+  gcry_mpi_point_t Q = NULL;
   int i;
   gcry_mpi_t mpi_kk = NULL;
 
@@ -339,7 +339,7 @@ test_it (int testno, const char *k_str, int iter, const char *result_str)
               testno);
       if (verbose > 1)
         info ("not executed in FIPS mode\n");
-      return;
+      goto leave;
     }
   Q = gcry_mpi_point_new (0);
 

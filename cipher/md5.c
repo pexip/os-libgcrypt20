@@ -15,8 +15,8 @@
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
+ * License along with this program; if not, see <https://www.gnu.org/licenses/>.
+ * SPDX-License-Identifier: LGPL-2.1-or-later
  *
  * According to the definition of MD5 in RFC 1321 from April 1992.
  * NOTE: This is *not* the same file as the one from glibc.
@@ -314,7 +314,7 @@ static const gcry_md_oid_spec_t oid_spec_md5[] =
 
 const gcry_md_spec_t _gcry_digest_spec_md5 =
   {
-    GCRY_MD_MD5, {0, 0},
+    GCRY_MD_MD5, {0, 1},
     "MD5", asn, DIM (asn), oid_spec_md5, 16,
     md5_init, _gcry_md_block_write, md5_final, md5_read, NULL,
     NULL,

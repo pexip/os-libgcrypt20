@@ -1,0 +1,42 @@
+debian/:
+ license: LGPL-2.1+
+ copyright: |
+   2001-2004 Ivo Timmermans <ivo@debian.org>
+   2002 Robert van der Meulen <rvdm@debian.org>
+   2004-2005 Matthias Urlichs <smurf@debian.org>
+   2006-2023 Andreas Metzler <ametzler@debian.org>
+   2006 James Westby <jw+debian@jameswestby.net>
+
+cipher/cipher-gcm-ppc.c:
+  'override-license': BSD-3-clause or GPL-1+
+random/jitterentropy*:
+  'override-license': BSD-3-clause or GPL-1+
+random/rndjent.c:
+  'override-license': BSD-3-clause or GPL-1+
+cipher/keccak-amd64-avx512.S:
+  'override-license': (BSD-3-clause or GPL-1+) and LGPL-2.1+
+autogen.sh:
+  license: FSFULLRWD
+
+build-aux/git-log-footer:
+  license: FSFAP
+doc/gcrypt.texi:
+  'override-license': GPL-2+
+tests/pkcs1v2-oaep.h:
+  license: FSFULLR
+tests/pkcs1v2-pss.h:
+  license: FSFULLR
+tests/pkcs1v2-v15c.h:
+  license: FSFULLR
+tests/pkcs1v2-v15s.h:
+  license: FSFULLR
+tests/basic_all_hwfeature_combinations.sh:
+  license: FSFULLR
+m4/gpg-error.m4:
+  license: FSFULLRWD
+src/libgcrypt.m4:
+  license: FSFULLRWD
+src/versioninfo.rc.in:
+  'override-license': FSFULLRWD
+m4/libtool.m4:
+  'override-license': FSFULLR

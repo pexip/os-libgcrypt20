@@ -4,7 +4,7 @@
  * This file is part of Libgcrypt.
  *
  * Libgcrypt is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser general Public License as
+ * it under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
  *
@@ -164,18 +164,22 @@ _gcry_cipher_poly1305_encrypt (gcry_cipher_hd_t c,
       return GPG_ERR_INV_LENGTH;
     }
 
+#ifdef USE_CHACHA20
   if (LIKELY(inbuflen > 0) && LIKELY(c->spec->algo == GCRY_CIPHER_CHACHA20))
     {
       return _gcry_chacha20_poly1305_encrypt (c, outbuf, inbuf, inbuflen);
     }
+#endif
 
   while (inbuflen)
     {
       size_t currlen = inbuflen;
 
       /* Since checksumming is done after encryption, process input in 24KiB
-       * chunks to keep data loaded in L1 cache for checksumming. */
-      if (currlen > 24 * 1024)
+       * chunks to keep data loaded in L1 cache for checksumming.  However
+       * only do splitting if input is large enough so that last chunks does
+       * not end up being short. */
+      if (currlen > 32 * 1024)
 	currlen = 24 * 1024;
 
       c->spec->stencrypt(&c->context.c, outbuf, (byte*)inbuf, currlen);
@@ -222,18 +226,22 @@ _gcry_cipher_poly1305_decrypt (gcry_cipher_hd_t c,
       return GPG_ERR_INV_LENGTH;
     }
 
+#ifdef USE_CHACHA20
   if (LIKELY(inbuflen > 0) && LIKELY(c->spec->algo == GCRY_CIPHER_CHACHA20))
     {
       return _gcry_chacha20_poly1305_decrypt (c, outbuf, inbuf, inbuflen);
     }
+#endif
 
   while (inbuflen)
     {
       size_t currlen = inbuflen;
 
       /* Since checksumming is done before decryption, process input in 24KiB
-       * chunks to keep data loaded in L1 cache for decryption. */
-      if (currlen > 24 * 1024)
+       * chunks to keep data loaded in L1 cache for decryption.  However only
+       * do splitting if input is large enough so that last chunks does not
+       * end up being short. */
+      if (currlen > 32 * 1024)
 	currlen = 24 * 1024;
 
       _gcry_poly1305_update (&c->u_mode.poly1305.ctx, inbuf, currlen);
