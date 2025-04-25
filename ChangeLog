@@ -1,16 +1,3842 @@
-2022-03-28  Werner Koch  <wk@gnupg.org>
+2024-06-19  Werner Koch  <wk@gnupg.org>
 
-	Release 1.10.1.
-	+ commit ae0e567820c37f9640440b3cff77d7c185aa6742
+	Release 1.11.0.
+	+ commit 9d94d7846cde272b8b1519ba96e53967bf0b90d2
 
 
-	hash: Add more OIDs.
-	+ commit 52fd2305ba8a0c53214016c11fdf03d47761ee8e
-	* cipher/sha256.c: Add X9.62 OID.
-	* cipher/sha512.c: Ditto.
+2024-06-14  NIIBE Yutaka  <gniibe@fsij.org>
+
+	m4: Update gpg-error.m4.
+	+ commit 89adba4518d2c7f83a37361f66b3ac290c96525c
+	* m4/gpg-error.m4: Update from libgpg-error master.
+
+2024-06-13  NIIBE Yutaka  <gniibe@fsij.org>
+
+	libgcrypt.m4: Fix setting/using GPG_ERROR_CONFIG.
+	+ commit 0fd9ec3403ea66d39f32602dce53bc5219e4c158
+	libgcrypt.m4 (_AM_PATH_GPGRT_CONFIG): Don't set GPG_ERROR_CONFIG and
+	gpg_error_config_version.
+
+2024-06-06  Jakub Jelen  <jjelen@redhat.com>
+
+	cipher:aeswrap: Fix padding length check.
+	+ commit dc8d84383a6bfa44f397132eae203efa0bf20e82
+	* cipher/cipher-aeswrap.c (_gcry_cipher_keywrap_decrypt_auto): When
+	padding length is 8, correctly return GPG_ERR_CHECKSUM.
+
+2024-05-21  Jakub Jelen  <jjelen@redhat.com>
+
+	mpi: Fix loop condition in bad point check.
+	+ commit 1875758440158fe1943d1b19b29d77421d269256
+	* mpi/ec.c (ec_p_init): Fix loop condition to avoid out-of-range read.
+
+2024-05-17  Werner Koch  <wk@gnupg.org>
+
+	build: Remove cruft from configure.ac.
+	+ commit 0526d65afd34f9282e7fd125df6ee9a3c757ae79
+	* configure.ac: Remove unused cruft.
+
+2024-05-14  NIIBE Yutaka  <gniibe@fsij.org>
+
+	m4: Include _AM_PATH_GPGRT_CONFIG definition.
+	+ commit ad3b599462bdbc459f6c7be867e9a12ab46481b3
+	* src/libgcrypt.m4: Find gpgrt-config.
+
+2024-05-09  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	random: fix o_flag_munging for -O1.
+	+ commit 5afadba008918d651afefb842ae123cc18454c74
+	* random/Makefile.am (o_flag_munging): Also convert -O1 to -O0.
+
+2024-05-08  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	chacha20-aarch64: use local symbols for read-only data.
+	+ commit 3f5989014a1b7c01aced88897d878ce5105d15df
+	* cipher/chacha20-aarch64.S: Remove '.globl' mark for RODATA section
+	objects.
+
+2024-05-07  simit.ghane  <simit.ghane@lge.com>
+
+	Fix building error with '-O2' in sysroot path.
+	+ commit b99952adc6ee611641709610d2e4dc90ba9acf37
+	* cipher/Makefile.am (o_flag_munging): Tweak the sed script.
+	* random/Makefile.am (o_flag_munging): Ditto.
+
+2024-05-07  NIIBE Yutaka  <gniibe@fsij.org>
+
+	cipher:kem: Remove the experimental KEMs (PGP and CMS).
+	+ commit c9affe97d20bc958d733206adf350214b32ae0b2
+	* src/gcrypt.h.in (enum gcry_kem_algos): Remove
+	GCRY_KEM_OPENPGP_X25519, GCRY_KEM_CMS_X25519_X963_SHA256, and
+	GCRY_KEM_CMS_X25519_HKDF_SHA256.
+	* cipher/kem.c (_gcry_kem_keypair, _gcry_kem_encap): Likewise.
+	(_gcry_kem_decap): Likewise.
+	* cipher/kem-ecc.c (algo_to_curve): Follow the removal.
+	(algo_to_seckey_len): Likewise.
+	(openpgp_kem_kdf, _gcry_openpgp_kem_encap): Remove.
+	(_gcry_openpgp_kem_decap, cms_kem_kdf): Remove.
+	(_gcry_cms_kem_encap, _gcry_cms_kem_decap): Remove.
+	* cipher/kem-ecc.h: Follow the removal.
+	* tests/t-kem.c (test_kem_openpgp_x25519) Remove.
+	(test_kem_cms_x25519): Remove.
+	(check_kem, main): Follow the change.
+
+2024-04-30  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	serpent-avx512-x86: fix CBC and CFB decryption with clang-18.
+	+ commit 5a653a9129d7cc2f203ab9ad37ccdbcb832337d1
+	* cipher/serpent-avx512-x86.c (serpent_avx512_blk32): Avoid
+	'_mm512_castsi128_si512' usage to prevent non-initialized
+	vector register parts getting XOR into calculations for
+	CBC and CFB decryption.
+
+2024-04-26  Werner Koch  <wk@gnupg.org>
+
+	Let gcry_print_config show whether it is amd64 or i686.
+	+ commit 0729fb84a6a1c038d4ed10f9c60be7df48558d9e
+	* src/global.c (print_config): Append a sub-cpu string.
+
+2024-04-25  Werner Koch  <wk@gnupg.org>
+
+	Require GpgRT 1.49.
+	+ commit f895a69d3b4bd5b8f6fab11345c2663947b7e5e3
+	* configure.ac (LIBGCRYPT_LT_REVISION): Require 1.49
+	* src/global.c (print_config): Repalce gpgrt backward compatibility.
+	* src/misc.c (_gcry_set_gpgrt_post_log_handler): Ditto.
+	(_gcry_logv): Use new gpgrt_logv_domain.
+
+2024-04-24  NIIBE Yutaka  <gniibe@fsij.org>
+
+	cipher:kem:ecc: Support NIST curves.
+	+ commit 005292cf9f41179247918711b2968dd188aae122
+	* cipher/kem-ecc (ECC_SECKEY_LEN_MAX): Fix for P521R1.
+	(algo_to_curve): Using canonical name, add NIST curves,
+	(algo_to_seckey_len): Likewise.
+	* cipher/kem.c (_gcry_kem_keypair, _gcry_kem_encap): Likewise.
+	(_gcry_kem_decap): Likewise.
+	* src/gcrypt.h.in (enum gcry_kem_algos): Likewise.
+
+	cipher:kem:ecc: Fix DHKEM implementation.
+	+ commit 118fa95d8d36efb07dbebdbcbc0e3408e69ac5d2
+	* cipher/kem-ecc.c (_gcry_ecc_dhkem_decap): Fix the size.
+
+2024-04-23  Werner Koch  <wk@gnupg.org>
+
+	cipher:kem:ecc: Support brainpoolP512r1.
+	+ commit 4fb99ec266e5d38e0f6df5c2fd27da71f2fb441f
+	* cipher/kem-ecc.c (algo_to_curve): Add GCRY_KEM_RAW_BP512.
+	(algo_to_seckey_len): Ditto.
+	* cipher/kem.c (_gcry_kem_keypair): Ditto.
+	(_gcry_kem_encap): Ditto.
+	(_gcry_kem_decap): Ditto.
+
+	Use explicit values for the gcry_kem_algos enum.
+	+ commit 66884c2d6b35bf418a267697a2726142a95188be
+	* src/gcrypt.h.in (enum gcry_kem_algos): Use explicit values for
+	improved ABI stability.
+	(GCRY_KEM_RAW_BP512): New.
+
+	cipher:kem:ecc: Fix for Weierstrass.
+	+ commit 7ad308434f159952baf578eca60efc1f5bf93019
+	* cipher/ecc-ecdh.c (_gcry_ecc_curve_mul_point): Use POINT_LEN and not
+	NBYTES to create mpi_u.
+
+	Divert log functions to the gpgrt log functions.
+	+ commit ab0bdc72c79d5655e63047f768a202e063d8c18b
+	* src/misc.c (my_gpgrt_post_fatal_handler): New.
+	(_gcry_set_gpgrt_post_log_handler): New.
+	(map_log_level): New.
+	(_gcry_logv): Use gcrypt log function unless a handler has been
+	installed.
+	* src/global.c (global_init): Install post log handler.
+	* src/gcrypt.h.in (gcry_set_log_handler): Deprecate.
+
+2024-04-22  NIIBE Yutaka  <gniibe@fsij.org>
+
+	cipher:kem:ecc: Support brainpoolP256r1 and brainpoolP384r1.
+	+ commit 9c65260f915f3eeebf10b51ab7c3c9b5f0004d9b
+	* cipher/kem.c (_gcry_kem_keypair): Support classic curves.
+	(_gcry_kem_encap, _gcry_kem_decap): Likewise.
+	* cipher/kem-ecc.c (algo_to_curve, algo_to_seckey_len): New.
+	(_gcry_ecc_raw_keypair): Support classic curves.
+	(_gcry_ecc_raw_encap, _gcry_ecc_raw_decap): Likewise.
+	(ecc_tweak_bits): Move to ...
+	* cipher/ecc-ecdh.c (ecc_tweak_bits): here.
+	(_gcry_ecc_curve_keypair): New.
+	(_gcry_ecc_curve_mul_point): Add length arguments.
+	* src/gcrypt-int.h (_gcry_ecc_curve_keypair): New.
+	* src/gcrypt.h.in: Add constants for brainpoolP256r1 and
+	brainpoolP384r1.
+
+2024-04-19  NIIBE Yutaka  <gniibe@fsij.org>
+
+	cipher:ecc: Return the result in SEC1 point format for Weierstrass.
+	+ commit 47f2cb8f6f35cf962158d9cffc79c23fab163585
+	* cipher/ecc-ecdh.c (_gcry_ecc_curve_mul_point): Fix for
+	MPI_EC_WEIERSTRASS curve.
+
+	cipher:ecc: Add _gcry_ecc_curve_mul_point function with curve name.
+	+ commit b1da8247dcbc036a5dc55dc7121ccd537c9b7ff3
+	* cipher/ecc-ecdh.c (_gcry_ecc_curve_mul_point): New.  Also support
+	Weierstrass curve as well as Montgomery one.
+	(_gcry_ecc_mul_point): Use _gcry_ecc_curve_mul_point.
+
+	cipher:kem: Rename Classic McEliece API constants.
+	+ commit 72b1b8d447fb8046e5546998619206646dde2ea7
+	* src/gcrypt.h.in (GCRY_KEM_CM6688128F): Rename.
+	* cipher/kem.c (_gcry_kem_keypair): Follow the change.
+	(_gcry_kem_encap, _gcry_kem_decap): Likewise.
+	* tests/t-kem.c (test_kem_mceliece6688128f): Likewise.
+	(main): Also change CLI option name.
+
+2024-04-18  NIIBE Yutaka  <gniibe@fsij.org>
+
+	cipher: More clean up for Classic McEliece implementation.
+	+ commit 9a552b80d6c44a05ab733e441664d19de6f23da3
+	* cipher/mceliece6688128f.h: Provide GCC_ATTR_UNUSED.
+	* cipher/mceliece6688128f.c: Use GCC_ATTR_UNUSED.
+
+	cipher: Fix comments of Classic McEliece implementation.
+	+ commit 6478203e77d173128c4c0810db6f41198c360ca2
+	* cipher/mceliece6688128f.c: Don't use C++-style comments for old
+	compilers (< C99).
+
+2024-04-17  Simon Josefsson  <simon@josefsson.org>
+
+	cipher: Add Classic McEliece mceliece6688128f.
+	+ commit 003367b91272f499d6eecb32ab9a09f383bdc788
+	* cipher/Makefile.am (libcipher_la_SOURCES): Add mceliece6688128f.{c,h}.
+	* cipher/mceliece6688128f.c, cipher/mceliece6688128f.h: New.
+	* tests/t-kem.c: Support mceliece6688128f.
+
+2024-04-16  NIIBE Yutaka  <gniibe@fsij.org>
+
+	cipher: Fix copyright notices for Kyber implementation.
+	+ commit eec1a576dbd080eb54ad7c6027271fe3f71c8847
+	* cipher/kyber-common.c: Fix copyright notice sentences.
+	* cipher/kyber-kdep.c, cipher/kyber.c, cipher/kyber.h: Likewise.
+
+2024-04-09  NIIBE Yutaka  <gniibe@fsij.org>
+
+	cipher: Add X448 based ECC KEM.
+	+ commit 40b4781022c5f5ebf1ec6e6d814f9c2a346cb3ca
+	* src/gcrypt.h.in (GCRY_KEM_RAW_X448, GCRY_KEM_DHKEM448): New.
+	* cipher/kem-ecc.c (_gcry_ecc_raw_encap): Support X448.
+	(ecc_dhkem_kdf, _gcry_ecc_dhkem_encap): Likewise.
+	(_gcry_ecc_dhkem_decap): Likewise.
+	* cipher/kem.c (_gcry_kem_keypair): Add support for GCRY_KEM_RAW_X448
+	and GCRY_KEM_DHKEM448.
+	(_gcry_kem_encap, _gcry_kem_decap): Likewise.
+
+2024-04-05  Werner Koch  <wk@gnupg.org>
+
+	Trailing comma removal for better portability.
+	+ commit 9e6db9d74631e623164319f1fc9713afdf9e3eb9
+	* cipher/kem.c (kem_names): Remove trailing comma.
+	* src/gcrypt.h.in (enum gcry_kem_algos): Ditto.
+
+	ecc: Add bp256, bp384, bp512 aliases for Brainpool curves.
+	+ commit d211e7fe967381bfb19e4f18e0be067c68200c50
+	* cipher/ecc-curves.c (curve_aliases): Add new aliases for Brainpool.
+
+2024-04-03  NIIBE Yutaka  <gniibe@fsij.org>
+
+	tests: Fix t-kem for tests with X25519 for FIPS mode.
+	+ commit a78dcad69872e1d6e6eb7ead174e398d9c7d4800
+	* tests/t-kem.c (test_kem_raw_x25519): It is expected to fail.
+	(test_kem_dhkem_x25519, test_kem_openpgp_x25519): Likewise.
+	(test_kem_cms_x25519): Likewise.
+
+2024-03-28  NIIBE Yutaka  <gniibe@fsij.org>
+
+	cipher:kem: Add ECC KEM for X25519.
+	+ commit 5da6c63fed34f6027a9531780252f0f54087c379
+	* cipher/Makefile.am (libcipher_la_SOURCES): Add kem-ecc.{c,h}.
+	* cipher/kem-ecc.c: New.
+	* cipher/kem-ecc.h: New.
+	* cipher/kem.c (_gcry_kem_keypair): Dispatch to _gcry_ecc_raw_keypair.
+	(_gcry_kem_encap): Dispatch to _gcry_ecc_raw_encap,
+	_gcry_ecc_dhkem_encap, _gcry_openpgp_kem_encap, and
+	_gcry_cms_kem_encap.
+	(_gcry_kem_decap): Dispatch to _gcry_ecc_raw_decap,
+	_gcry_ecc_dhkem_decap, _gcry_openpgp_kem_decap, and
+	_gcry_cms_kem_decap.
+	* src/gcrypt.h.in: Add constants for ECC KEM.
+	* tests/t-kem.c (test_kem_raw_x25519, test_kem_dhkem_x25519)
+	(test_kem_openpgp_x25519, test_kem_cms_x25519): New.
+	(check_kem, main): Add tests for ECC KEM.
+
+2024-03-27  NIIBE Yutaka  <gniibe@fsij.org>
+	    Falko Strenzke  <falko.strenzke@mtg.de>
+
+	tests:basic: Add cSHAKE test vectors.
+	+ commit b81076beba280c24923b0259a8973c777204c5df
+	* tests/basic.c (check_one_md): Extend with customization N and S.
+	(check_one_md_multi): Likewise.
+	(check_digests): Add test vectors for GCRY_MD_CSHAKE128 and
+	GCRY_MD_CSHAKE256.
+
+2024-03-27  NIIBE Yutaka  <gniibe@fsij.org>
+
+	md: Add cSHAKE digest algorithm and the implementation.
+	+ commit 065b3f4e0271cc410c002842ea640f93e56c6a20
+	* src/gcrypt.h.in (gcry_ctl_cmds): Add GCRYCTL_MD_CUSTOMIZE.
+	(gcry_md_algos): Add GCRY_MD_CSHAKE128 and GCRY_MD_CSHAKE256.
+	(struct gcry_cshake_customization): New.
+	* cipher/keccak.c (CSHAKE_DELIMITED_SUFFIX): New.
+	(keccak_init): Support GCRY_MD_CSHAKE128 and GCRY_MD_CSHAKE256.
+	(selftests_keccak): Likewise.
+	(cshake_input_n, cshake_input_s, _gcry_cshake_customize): New.
+	(cshake128_init, cshake256_init, cshake_hash_buffers): New.
+	(_gcry_cshake128_hash_buffers, _gcry_cshake256_hash_buffers): New.
+	(_gcry_digest_spec_cshake128, _gcry_digest_spec_cshake256): New.
+	* cipher/md.c (digest_list): Add cSHAKE md_specs.
+	(digest_list_algo301): Likewise.
+	(md_customize): New.
+	(_gcry_md_ctl): Support GCRYCTL_MD_CUSTOMIZE.
+	* src/cipher.h (_gcry_cshake_customize): New.
+	(_gcry_digest_spec_cshake128, _gcry_digest_spec_cshake256): New.
+	* src/fips.c (_gcry_fips_indicator_md): Support GCRY_MD_CSHAKE128 and
+	GCRY_MD_CSHAKE256.
+	* tests/basic.c (check_one_md): Support GCRY_MD_CSHAKE128 and
+	GCRY_MD_CSHAKE256 as xof.
+	(check_one_md_multi): Exclude GCRY_MD_CSHAKE128 and GCRY_MD_CSHAKE256
+	as xof.
+	* tests/bench-slope.c (hash_bench, kdf_bench): Exclude
+	GCRY_MD_CSHAKE128 and GCRY_MD_CSHAKE256.
+	* tests/benchmark.c (md_bench): Exclude GCRY_MD_CSHAKE128 and
+	GCRY_MD_CSHAKE256.
+
+2024-03-11  NIIBE Yutaka  <gniibe@fsij.org>
+
+	Add gcry_md_hash_buffers_ext function.
+	+ commit 3d48e6e37b040c955a84e58ce3147562fa74d1f3
+	* src/gcrypt.h.in (gcry_md_hash_buffers_ext): New.
+	* src/libgcrypt.def: Add gcry_md_hash_buffers_ext.
+	* src/libgcrypt.vers: Likewise.
+	* src/visibility.c: Add gcry_md_hash_buffers_ext.
+	* src/visibility.h: Add gcry_md_hash_buffers_ext.
+
+2024-03-05  NIIBE Yutaka  <gniibe@fsij.org>
+
+	kem: Fix the previous commit.
+	+ commit f4bcc69c3c9b0c2c948a9944cec7894cb590b211
+	* cipher/kem.c (kem_compute_keygrip): Rever the change.
+
+2024-03-04  NIIBE Yutaka  <gniibe@fsij.org>
+
+	cipher: Fix Kyber key in SEXP, and its keygrip computation.
+	+ commit 47c594386ebec3f9dea2d091c38cc7768a1840d9
+	* cipher/kem.c (kem_generate): Include public key part in SEXP of
+	private key.
+	(kem_compute_keygrip): Fix keygrip computation.
+
+	mpi: Fix ECC computation on hppa.
+	+ commit b757f4130af987bdfc769b754b6e9e27882c349c
+	* mpi/ec-inline.h [__hppa] (ADD4_LIMB32, SUB4_LIMB32): New.
+	* mpi/longlong.h [__hppa] (add_ssaaaa, sub_ddmmss): Add __CLOBBER_CC.
+
+2024-03-03  NIIBE Yutaka  <gniibe@fsij.org>
+
+	tests: Fix the previous commit.
+	+ commit 23ccf8eafbc452fa5cf466bee219846400bd2424
+	* tests/keygen.c (check_kem_keys): Those are not yet in the standard.
+
+2024-03-02  NIIBE Yutaka  <gniibe@fsij.org>
+
+	tests: Fix keygen for FIPS mode.
+	+ commit 58f93ea56f7173a5fc3f85710dbf167cb0e5e203
+	* tests/keygen.c (check_kem_keys): Care about FIPS mode.
+
+2024-02-29  NIIBE Yutaka  <gniibe@fsij.org>
+
+	mpi: Silence warning for some architecture.
+	+ commit 813a96de4ffec5d72dbb4473a42bd2b5b3f56b50
+	* mpi/mpih-const-time.c (mpih_ct_limb_greater_than): DIFF_LO is not
+	used.
+
+2024-02-22  Werner Koch  <wk@gnupg.org>
+
+	cipher: Add a way to get a keygrip for KEM algos.
+	+ commit 4db7f3b07be5fc7b4c1c3b2e7548167cb1968533
+	* src/gcrypt.h.in (GCRY_PK_KEM): New.
+	* cipher/kem.c (kem_infos): New.
+	(kem_names): New.
+	(kem_generate): New.
+	(kem_compute_keygrip): New.
+	(kem_get_nbits): New.
+	(_gcry_pubkey_spec_kem): New.
+	* cipher/pubkey.c (pubkey_list): Add spec for KEM.
+	* src/cipher.h (_gcry_pubkey_spec_kem): Declare.
+	(_gcry_pubkey_spec_elg_e): Remove this used declaration.
+
+	* tests/keygen.c (check_generated_kem_key): New.
+	(check_kem_keys): New.
+	(main): Add optional argument kem and all new function.
+
+	cipher: Slight refactoring of kem.c.
+	+ commit b36aee33dd00906a98d5d1295bf471140844f737
+	* cipher/kem.c (_gcry_kem_keypair): Do not claim used variables.
+	Slight refactoring to allow for a enum-case check.
+	(_gcry_kem_encap): Ditto.
+	(_gcry_kem_decap): Ditto.
+
+	* cipher/kyber.h (crypto_kem_keypair_3) [KYBER_K]: Fix syntax error.
+
+2024-02-09  Clemens Lang  <cllang@redhat.com>
+
+	sha3: Fill OIDs and partial ASN.1 structs.
+	+ commit b3750fb42a44760e65d8869bc9a64e79197ae96d
+	* cipher/keccak.c (sha3_224_asn): New.
+	(oid_spec_sha3_224, oid_spec_sha3_256): Update the OIDs.
+	(sha3_256_asn): Have a correct value.
+	(sha3_384_asn): Have a correct value.
+	(oid_spec_sha3_384, oid_spec_sha3_512): Update the OIDs.
+	(sha3_512_asn): Have a correct value.
+	(shake128_asn): Have a correct value.
+	(oid_spec_shake128, oid_spec_shake256): Update the OIDs.
+	(shake256_asn): Have a correct value.
+
+2024-02-06  Werner Koch  <wk@gnupg.org>
+
+	doc: Fix link to the s-expression description.
+	+ commit 52f18b9ffe6ce38eba159c39550c10a95bce3d11
+	Note that there is also thr description at
+
+	 https://people.csail.mit.edu/rivest/pubs
+	 /RL96.ver-1.1.html#secSexpressions
+
+2024-02-04  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	Fix Kyber segfaulting on Win64.
+	+ commit 0929a9f1ede27dc6c629a92d92002da14eafa68a
+	* cipher/kyber.c (prg, pkprf): Cast variadic parameters to expected
+	types ('void *' and 'size_t').
+
+	rijndael-s390x: fix AES256-XTS feature mask.
+	+ commit 679b07898897e16029dbf596dbcf0141ebb99792
+	* cipher/rijndael-s390x.c (_gcry_aes_s390x_setup_acceleration): Fix
+	AES256-XTS feature mask.
+
+2024-01-30  NIIBE Yutaka  <gniibe@fsij.org>
+
+	cipher:kdf: Add X963KDF for use in CMS.
+	+ commit 3abac420b30ad4aeef803b23995303ac6bb563fa
+	* src/gcrypt.h.in (gcry_kdf_algos): Add GCRY_KDF_X963_KDF.
+	* cipher/kdf.c (x963_kdf_open, x963_kdf_compute): New.
+	(x963_kdf_final, x963_kdf_close): New.
+	(_gcry_kdf_open, _gcry_kdf_final, _gcry_kdf_close): Add
+	support for GCRY_KDF_X963_KDF.
+
+	Fix the version script for non-existing symbols.
+	+ commit be328b4a3476d5cbe543a761c043c5923ea1e280
+	* src/libgcrypt.vers: Remove gcry_md_get and gcry_pk_register.
+
+2024-01-29  NIIBE Yutaka  <gniibe@fsij.org>
+
+	build: Use @FGREP@ by configure for libgcrypt-config.
+	+ commit 128121e74b66793fabd24e478df6ea2ab568e24a
+	* configure.ac (AC_PROG_FGREP): Add.
+	* src/libgcrypt-config.in: Use @FGREP@.
+
+2024-01-16  NIIBE Yutaka  <gniibe@fsij.org>
+
+	tests: Fix tests/basic.
+	+ commit 86812491c7541a6e76cc2f2c45538b4715121b88
+	* tests/basic.c (check_ecb_cipher): Use 'i' instead of '0'.
+
+	m4: Update acinclude.m4 to use $GREP.
+	+ commit 656ca459e3d87f91dc20a2fb1001344f4c872ee3
+	* acinclude.m4: Use $GREP, instead of egrep.  Simplify the detection.
+
+2024-01-15  NIIBE Yutaka  <gniibe@fsij.org>
+
+	cipher: Fix copyright notices for LGPL.
+	+ commit 2eaaa8846f226ccd54f3165afe10583936d9d940
+	* cipher/kem.c: Fix LGPL name, with correct capitalizing..
+	* cipher/kyber-common.c: Likewise.
+	* cipher/kyber-kdep.c: Likewise.
+	* cipher/kyber.c: Likewise.
+	* cipher/kyber.h: Likewise.
+	* cipher/sntrup761.c: Likewise.
+	* cipher/sntrup761.h: Likewise.
+
+	tests: Add known answers test for ML-KEM (Kyber).
+	+ commit 6765916e3b55dc45d93123e789973c7528df5232
+	* tests/Makefile.am (tests_bin): Add t-mlkem.
+	(EXTRA_DIST): Add t-mlkem.inp.
+	* tests/t-mlkem.c: New.
+	* tests/t-mlkem.inp: New.
+
+	cipher:kyber: Fix comment style.
+	+ commit 384638bc4a0dd4315ce2955d08f51f007ba88df9
+	* cipher/kyber-common.c: Fix comments.
+	* cipher/kyber-kdep.c: Likewise.
+	* cipher/kyber.c: Likewise.
+
+	cipher: Add use of the Kyber implementation.
+	+ commit f2f9d56358acf3b38764bc4465db627162f42bbf
+	* cipher/Makefile.am (EXTRA_DIST): Add kyber-common.c kyber-kdep.c.
+	(libcipher_la_SOURCES): Add kyber.c and kyber.h.
+	* cipher/kem.c (_gcry_kem_keypair): Add call to kyber_keypair.
+	(_gcry_kem_encap): Add call to kyber_encap.
+	(_gcry_kem_decap): Add call to kyber_decap.
+	* tests/t-common.h (show_note): Factor from existing uses.
+	(show_sexp, prepend_srcdir, read_textline, copy_data): Likewise.
+	(hex2buffer, reverse_buffer): Likewise.
+	* tests/t-kem.c (show_note): Remove.
+	(test_kem_sntrup761): Rename from test_kem.
+	(test_kem_mlkem512, test_kem_mlkem768, test_kem_mlkem1024): New.
+	(check_kem): Add N_LOOPS argument.  Call relevant tests by the
+	variable SELECTED_ALGO.
+	(main): Add option handling to select testing specific algorithm.
+
+	cipher:kyber: Modify VERIFY function.
+	+ commit 5c9c4dca39f2806443aaec60972e648715d3b048
+	* cipher/kyber-kdep.c (crypto_kem_dec): Use verify1.
+	* cipher/kyber.c (verify1): Return 1 when success.
+
+	cipher:kyber: Modification for xof_ routines.
+	+ commit fe3ecf810370086df40f4cc980d0a290e5f3a9a5
+	* cipher/kyber-kdep.c (gen_matrix): Remove comment for
+	gen_matrix.  Add calls to xof_init and xof_close.
+
+	cipher:kyber: Integrate into libgcrypt, adding glue code.
+	+ commit 4e9aa70078c5537f1c56f54e78d769c8b5dc9f0c
+	* cipher/kyber-common.c: Add copyright notice.
+	* cipher/kyber-kdep.c: Likewise.
+	* cipher/kyber.c: Likewise.
+	* cipher/kyber-kdep.c: Add #undef to clear the definitions.
+	* cipher/kyber.c: Integrate into libgcrypt, also allow standalone use.
+
+	cipher:kyber: Have cipher/kyber.h.
+	+ commit 31743c17d7bd1f6dc653e6dfcf76fab5356649ae
+	* cipher/kyber.h: New.
+
+	cipher:kyber: Move declarations to kyber-kdep.c.
+	+ commit b6e20ed580e08278eb963a87f6355c43ba0d34d2
+	* cipher/kyber.c: Move KYBER_K-dependent declarations into...
+	* cipher/kyber-kdep.c: ... here, or kyber.h.
+
+	cipher:kyber: Functions in poly for different KYBER_K.
+	+ commit efd55d9ecae549318425dc7a867c9698cbc78410
+	* cipher/kyber-common.c (load24_littleendian, cbd3): Fix the
+	compile-time condition.
+	(poly_cbd_eta1, poly_cbd_eta2): Remove.
+	(zetas): Don't export.
+	(poly_compress): Remove.
+	(poly_compress_128, poly_compress_160): New.
+	(poly_decompress): Remove.
+	(poly_decompress_128, poly_decompress_160): New.
+	(poly_getnoise_eta1): Remove.
+	(poly_getnoise_eta1_2): New.  Directly call cbd3.
+	(poly_getnoise_eta1_3_4): New.  Directly call cbd2.
+	(poly_getnoise_eta2):  Directly call cbd2.
+	* cipher/kyber.c: Fix declarations for poly_compress,
+	poly_decompress and poly_getnoise_eta1.
+
+	cipher:kyber: Make the implementation into three files.
+	+ commit 01a14c0df2957900903895a3c49de2bdb708816f
+	* cipher/kyber-common.c: New.  Common part.
+	* cipher/kyber-kdep.c: New. KYBER_K dependent part.
+	* cipher/kyber.c: Move functions and variables to two files.
+
+	cipher:kyber: Constants common and k-dependent.
+	+ commit fc35a5372a74c696f45b10dccbb84331673412b4
+	* cipher/kyber.c (KYBER_ETA1): Remove.
+	(KYBER_ETA1_2, KYBER_ETA1_3_4): New.
+	(KYBER_POLYCOMPRESSEDBYTES): Remove.
+	(KYBER_POLYCOMPRESSEDBYTES_2_3): New.
+	(KYBER_POLYCOMPRESSEDBYTES_4): New.
+
+	cipher:kyber: Export the KEM API only.
+	+ commit 34dd0a1a75b2ee37ccd1215235f8b9f00f38bff1
+	* cipher/kyber.c: Don't export other functions and data.
+
+	cipher: Editorial clean up cipher/kyber.c for headers.
+	+ commit 4b601fe5b3cff021e265df6eb64911e6a8105bd3
+	* cipher/kyber.c: Clean up.
+
+	cipher: Add headers to Kyber implementation.
+	+ commit 10e9bcd5c67ed40292b06901b38fa9b94ccc09ba
+	* cipher/kyber.c: Add headers from the reference implementation.
+
+	cipher: Put the original Kyber implementation.
+	+ commit 18e5c0d268b1aeac59f526b9730b39520750ca14
+	* cipher/kyber.c: Kyber reference implementation.
+
+	cipher: Allow standalone use of SNTRUP761 implementation.
+	+ commit bdadd65d440b7f689f49450530a548c32007f71b
+	* cipher/sntrup761.c [HAVE_CONFIG_H]: Conditionalize.
+
+2024-01-08  NIIBE Yutaka  <gniibe@fsij.org>
+
+	Avoid use of C99 feature for enum.
+	+ commit dbfb7cc76ef3f98fe62f0549b97d76f395864ae0
+	* src/gcrypt.h.in (enum gcry_kdf_algos): Remove last comma.
+	(enum gcry_kem_algos): Likewise.
+
+2023-12-21  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	bench-slope: restore compiler barriers for auto-GHZ check.
+	+ commit c9cb10f3be226dfd65c670ff2565d81dfc668376
+	* tests/bench-slope.c (auto_ghz_bench): Add memory barriers to
+	AUTO_GHZ_OPERATION macro when barrier is supported by compiler.
+
+	mpi/ec-inline: refactor i386 assembly to reduce register usage.
+	+ commit 956f1ed4ec6ead59dc56f574f943f1fe25dac723
+	* mpi/ec-inline.h [__i386__] (ADD2_LIMB32_CARRY_OUT)
+	(ADD2_LIMB32_CARRY_IN_OUT, ADD2_LIB32_CARRY_IN, SUB2_LIMB32_CARRY_OUT)
+	(SUB2_LIMB32_CARRY_IN_OUT, SUB2_LIB32_CARRY_IN, ADD8_LIMB32)
+	(ADD10_LIMB32, ADD14_LIMB32, SUB8_LIMB32, SUB10_LIMB32)
+	(SUB14_LIMB32): New.
+	[__i386__] (ADD4_LIMB32, ADD6_LIMB32, SUB4_LIMB32, SUB6_LIMB32): Rewrite
+	to use new *_CARRY_* macros.
+	[BYTES_PER_MPI_LIMB == 4] (ADD4_LIMB64): Use ADD8_LIMB32 if available.
+	[BYTES_PER_MPI_LIMB == 4] (ADD5_LIMB64): Use ADD10_LIMB32 if available.
+	[BYTES_PER_MPI_LIMB == 4] (ADD7_LIMB64): Use ADD14_LIMB32 if available.
+	[BYTES_PER_MPI_LIMB == 4] (SUB4_LIMB64): Use SUB8_LIMB32 if available.
+	[BYTES_PER_MPI_LIMB == 4] (SUB5_LIMB64): Use SUB10_LIMB32 if available.
+	[BYTES_PER_MPI_LIMB == 4] (SUB7_LIMB64): Use SUB14_LIMB32 if available.
+
+2023-12-16  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	mpi/ec-nist: fix for -Og build failure on i386.
+	+ commit 90097bd2f41c217dc5c666570e5680f432cf92d3
+	* mpi/ec-nist.c (_gcry_mpi_ec_nist256_mod)
+	(_gcry_mpi_ec_nist384_mod): Load p_mult constant with carry offset
+	to stack.
+
+2023-12-12  NIIBE Yutaka  <gniibe@fsij.org>
+
+	tests: Update digest values following input changes.
+	+ commit 4a104752d8a2f0ca15d7873011a14226925a773b
+	* tests/basic.c (check_digests): Update the values.
+
+2023-12-12  Andreas Metzler  <ametzler@bebt.de>
+
+	Point to gnu.org as canonical license location.
+	+ commit cd056b4d1614e9e245b66782b54aad1697e22a01
+
+
+	Fix license header inconsistency.
+	+ commit 25e93a02268b9f533b1ffa4f6a5fe47d686e2145
+
+
+	Unify capitalization of LGPL copyright statements.
+	+ commit ca5689367a837b6541307f6ae19e0176b051d06f
+
+
+2023-12-08  NIIBE Yutaka  <gniibe@fsij.org>
+
+	cipher: Fix sntrup761.h, so that it can be used outside.
+	+ commit ebc9aaacd62bbc7f048020531398ccb9f97e4437
+	* cipher/sntrup761.h [_GCRYPT_IN_LIBGCRYPT]: Ifdef-out
+	libgcrypt specific glue code.  Recover the constants.
+
+	cipher: Minor fix for C90 compiler.
+	+ commit 2149888d47afea9946c3a748310ad27dfcda48c3
+	* cipher/sntrup761.c (crypto_sort_int32): Declare A, before its use.
+
+2023-12-07  NIIBE Yutaka  <gniibe@fsij.org>
+
+	cipher: Add sntrup761 to KEM API.
+	+ commit 947ad42450eadec079a1c50deba90e6453f0113c
+	* cipher/kem.c (sntrup761_random): New glue code.
+	( _gcry_kem_keypair, _gcry_kem_encap, _gcry_kem_decap): Call sntrup761
+	functions.
+	* cipher/sntrup761.h: Add glue code to libgcrypt.
+	* src/visibility.h: Update for KEM functions.
+	* tests/t-kem.c: Fix for the final KEM API.
+
+2023-12-07  Simon Josefsson  <simon@josefsson.org>
+
+	cipher: Add Streamlined NTRU Prime sntrup761.
+	+ commit cf9923e1a59f2f535311f3676345d34e593ba108
+	* cipher/Makefile.am (libcipher_la_SOURCES): Add sntrup761.c and h.
+	* cipher/sntrup761.c: New.
+	* tests/Makefile.am (tests_bin): Add t-kem.
+	* tests/t-kem.c: New.
+
+2023-12-07  NIIBE Yutaka  <gniibe@fsij.org>
+
+	Add an API for Key Encapsulation Mechanism.
+	+ commit 7e503fa9170fd290105714d15a335f7748860e23
+	* cipher/Makefile.am (libcipher_la_SOURCES): Add kem.c.
+	* cipher/kem.c: New.
+	* src/gcrypt-int.h (_gcry_kem_keypair, _gcry_kem_encap)
+	(_gcry_kem_decap): New.
+	* src/gcrypt.h.in (gcry_kem_keypair, gcry_kem_encap)
+	(gcry_kem_decap): New.  Add constants.
+	* src/libgcrypt.def (gcry_kem_keypair, gcry_kem_encap)
+	(gcry_kem_decap): Add symbols.
+	* src/libgcrypt.vers: Likewise.
+
+2023-11-22  NIIBE Yutaka  <gniibe@fsij.org>
+
+	tests: Fix t-x448 for error handling.
+	+ commit dc1c916da4ba3960495bca450d8f4bc6897d9167
+	* tests/t-x448.c (test_cv_x448): Take the error code from ERR.
+
+2023-11-16  NIIBE Yutaka  <gniibe@fsij.org>
+
+	cipher: Fix return type of _gcry_ecc_mul_point.
+	+ commit 354e53558e55fe5bc8fa4be32e1c1bace7623536
+	* cipher/ecc-ecdh.c (_gcry_ecc_mul_point): Return gpg_err_code_t.
+	* src/gcrypt-int.h (_gcry_ecc_mul_point): Return gpg_err_code_t.
+	* src/visibility.c (gcry_ecc_mul_point): Follow the change.
+
+2023-11-04  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	mpih_mod: avoid unintentional conditional branch.
+	+ commit 39d5364a9557d6f423de117601cb1e6414814f47
+	* mpi/mpih-const-time.c (_gcry_mpih_mod): Avoid conditional branch
+	on the_bit extraction.
+
+	mpih-const-time: use constant-time comparisons conditional add/sub/abs.
+	+ commit c419a04d529af7b5fb43732ec2b4304166c2579a
+	* mpi/mpih-const-time.c (mpih_ct_limb_greater_than)
+	(mpih_ct_limb_less_than): New.
+	(_gcry_mpih_add_n_cond, _gcry_mpih_sub_n_cond, _gcry_mpih_abs_cond): Use
+	mpih_ct_limb_greater_than and mpih_ct_limb_less_than for comparisons.
+
+	const-time: add functions for generating masks from 0/1 input.
+	+ commit cf757cf90e9ae966b95dcebfd2f31b9212697f0c
+	* mpi/ec-nist.c (_gcry_mpi_ec_nist192_mod, _gcry_mpi_ec_nist224_mod)
+	(_gcry_mpi_ec_nist256_mod, _gcry_mpi_ec_nist384_mod): Use mask generating
+	functions.
+	* mpi/mpi-internal.h (ct_limb_gen_mask, ct_limb_gen_inv_mask): New.
+	* mpi/mpih-const-time.c (_gcry_mpih_set_cond, _gcry_mpih_add_n_cond)
+	(_gcry_mpih_sub_n_cond, _gcry_mpih_sub_n_cond, _gcry_mpih_swap_cond): Use
+	mask generating functions.
+	* mpi/mpiutil.c (_gcry_mpi_set_cond, _gcry_mpi_swap_cond): Use mask
+	generating functions.
+	* src/const-time.h (DEFINE_CT_TYPE_GEN_MASK, ct_uintptr_gen_mask)
+	(ct_ulong_gen_mask, DEFINE_CT_TYPE_GEN_INV_MASK, ct_uintptr_gen_inv_mask)
+	(ct_ulong_gen_inv_mask): New.
+	(DEFINE_CT_TYPE_SELECT_FUNC): Use mask generating functions.
+	* src/const-time.c (_gcry_ct_memmov_cond): Use mask generating functions.
+
+	ec: avoid unintentional condition branches for 25519, 448 and 256k1.
+	+ commit 305a65c1ede8f78160100478d46efa199d334a64
+	* mpi/ec.c (ec_addm_25519, ec_subm_25519, ec_mulm_25519, ec_addm_448)
+	(ec_subm_448, ec_mulm_448, ec_secp256k1_mod): Use mpih_limb_is_zero
+	and mpih_limb_is_not_zero instead of comparison to zero.
+
+	ec-nist: avoid unintentional conditional branch by comparison.
+	+ commit a9e7aa647e4b84964c76230370d71235383e5c2d
+	* mpi/ec-nist.c (_gcry_mpi_ec_nist521_mod): Use mpih_limb_is_not_zero.
+	* mpi/mpi-internal.h (mpih_limb_is_not_zero): New.
+
+	mpih_cmp_ui: avoid unintentional conditional branch.
+	+ commit aab6a42d5f44724b73a02598546a5e7d8b33298e
+	* mpi/mpi-internal.h (mpih_limb_is_zero): New.
+	* mpi/mpih-const-time.c (_gcry_mpih_cmp_ui): Use mpih_limb_is_zero
+	instead of comparison.
+
+	ec-nist: use global vone and vzero.
+	+ commit 5c5ba1ec2b505726ee1311339ac9e8b5c62cac4a
+	* mpi/ec-nist.c (vzero, vone): Remove.
+	(_gcry_mpi_ec_nist192_mod, _gcry_mpi_ec_nist224_mod)
+	(_gcry_mpi_ec_nist256_mod, _gcry_mpi_ec_nist384_mod): Use _gcry_ct_vzero
+	and _gcry_ct_vone.
+
+	mpiutil: use global vone and vzero.
+	+ commit d4aee9ace9a904446b987dddc2999119c4d62dae
+	* mpi/mpiutil.c (_gcry_mpi_set_cond, _gcry_mpi_swap_cond): Use
+	_gcry_ct_vzero and _gcry_ct_vone.
+
+	mpih-const-time: use global vzero/vone variable.
+	+ commit 179df341162c74da312f76363a0ff1f2f303aa78
+	* mpi/mpih-const-time.c (vzero, vone): Remove.
+	(_gcry_mpih_set_cond, _gcry_mpih_add_n_cond, _gcry_mpih_sub_n_cond)
+	(_gcry_mpih_swap_cond, _gcry_mpih_abs_cond): Use _gcry_ct_vzero and
+	_gcry_ct_vone.
+
+	const-time: ct_memmov_cond: switch to use dual mask approach.
+	+ commit 4d3e0e30b98b2acb90acb2792b8327c26824a66f
+	* src/const-time.c (_gcry_ct_memmov_cond): Use dual mask + AND/OR
+	instead of single mask + XOR.
+
+	const-time: prefix global symbols with _gcry_
+	+ commit 22dde5150ee2be01651410ed9756601ba6a29c93
+	* cipher/const-time.c (ct_not_memequal, ct_memequal)
+	(ct_memmov_cond): Rename these to ...
+	(_gcry_ct_not_memequal, _gcry_ct_memequal)
+	(_gcry_ct_memmov_cond): ... these.
+	* cipher/const-time.h (ct_not_memequal, ct_memequal)
+	(ct_memmov_cond): Rename these to ...
+	(_gcry_ct_not_memequal, _gcry_ct_memequal)
+	(_gcry_ct_memmov_cond): ... these.
+	(ct_not_memequal, ct_memequal, ct_memmov_cond): New macros.
+
+	mpih_set_cond: restore EM leakage mitigation.
+	+ commit 0c6ec6bbe788b8c4a6982b2128d442b51323c898
+	* mpi/mpih-const-time.c (_gcry_mpih_set_cond): Replace single mask + XOR
+	with dual mask + AND/OR; Add comment about reason for dual mask usage.
+	(_gcry_mpih_add_n_cond, _gcry_mpih_sub_n_cond, _gcry_mpih_swap_cond)
+	(_gcry_mpih_abs_cond): Add comment about reason for dual mask usage.
+
+	rsa, elgamal: avoid logical not operator in constant-time code.
+	+ commit 84f934c09afac18b3f4351646c0fe6f93aede277
+	* cipher/elgamal.c (elg_decrypt): Replace ! operator with calls to
+	ct_is_not_zero/ct_is_zero/ct_ulong_select.
+	* cipher/rsa-common.c (_gcry_rsa_pkcs1_decode_for_enc): Replace !
+	operator with call to ct_is_zero.
+	* cipher/rsa.c (rsa_decrypt): Replace ! operator with calls to
+	ct_is_not_zero/ct_is_zero/ct_ulong_select.
+	* src/const-time.c (_gcry_ct_vzero, _gcry_ct_vone): New.
+	* src/const-time.h (_gcry_ct_vzero, _gcry_ct_vone): New.
+	(ct_is_not_zero, ct_is_zero, DEFINE_CT_TYPE_SELECT_FUNC)
+	(ct_uintptr_select, ct_ulong_select): New.
+	(sexp_null_cond): Use ct_uintptr_select.
+
+	const-time: always avoid comparison operator for byte comparison.
+	+ commit 137e35ad47ee8734d0f3ffb6af1d1669c4621e0b
+	* configure.ac: Remove POSSIBLE_CONDITIONAL_BRANCH_IN_BYTE_COMPARISON
+	macro.
+	* src/const-time.h (ct_not_equal_byte): Remove
+	POSSIBLE_CONDITIONAL_BRANCH_IN_BYTE_COMPARISON ifdef.
+
+	Use single constant-time memory comparison implementation.
+	+ commit 1e9ddbd65c4627235611d75c3198c4ec197c9a05
+	* src/const-time.c (ct_not_memequal): Use original 'buf_eq_const'
+	implementation here.
+	(ct_memequal): New.
+	* cipher/bufhelp.h (buf_eq_const): Call to 'ct_memequal'.
+
+2023-11-01  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	bench-slope: update auto-GHZ for alderlake-P.
+	+ commit a047a9c7d10824593d5c9ae43d8a3d6319ef3c0b
+	* tests/bench-slope.c (vone): New.
+	(auto_ghz_bench): Remove memory barrier usage; Generate constant
+	values from volatile variable.
+
+2023-10-31  NIIBE Yutaka  <gniibe@fsij.org>
+
+	cipher: Fix ElGamal decryption.
+	+ commit 6d1d50ba3aad1850975f717adbedb4cb8b236fa7
+	* cipher/elgamal.c (elg_decrypt): Call sexp_build always.
+	* cipher/rsa.c (rsa_decrypt): Return an error code of sexp_build
+	when RC != 0.
+
+	rsa: Use memmov_independently when unpadding.
+	+ commit 58b62be844549ad3d57c507d834027f1e2756567
+	* cipher/rsa-common.c (memmov_independently): New.
+	(_gcry_rsa_pkcs1_decode_for_enc): Use memmov_independently.
+	(_gcry_rsa_oaep_decode): Use memmov_independently.
+
+	const-time: Add ct_memmov_cond, fix _gcry_mpih_set_cond.
+	+ commit bd08357436a9559766cd458d25781ee4f94012a2
+	* src/const-time.c (ct_memmov_cond): New.
+	* src/const-time.h (ct_memmov_cond): New.
+	* mpi/mpih-const-time.c (_gcry_mpih_set_cond): Use XOR and a MASK.
+
+2023-10-30  NIIBE Yutaka  <gniibe@fsij.org>
+
+	const-time: Use ct_not_memequal, instead.  Tested with AVR.
+	+ commit c31b70b2660c3d24bd54ee08c255c36d867fdea7
+	* cipher/rsa-common.c (_gcry_rsa_oaep_decode): Use ct_not_memequal.
+	* src/const-time.c (ct_not_memequal): Use ct_not_equal_byte.
+	* src/const-time.h (ct_not_memequal): Rename from ct_memequal.
+
+	build: Check if arch is VAX or compiler is MSVC.
+	+ commit c848459e512615c1865a23cf24debb3ad4a1e85b
+	* configure.ac (AH_BOTTOM): Add check for VAX and MSVC.
+	* src/const-time.h (POSSIBLE_CONDITIONAL_BRANCH_IN_BYTE_COMPARISON):
+	Rename.
+
+2023-10-27  NIIBE Yutaka  <gniibe@fsij.org>
+
+	rsa: Fix decoding of PKCS#1 v1.5 and OAEP padding.
+	+ commit 34c20427926010d6fa95b1666e4b1b60f60a8742
+	* src/Makefile.am (libgcrypt_la_SOURCES): Add const-time.h and
+	const-time.c.
+	* src/const-time.h (ct_not_equal_byte, sexp_null_cond): New.
+	(ct_memequal): New from NetBSD, modified return type and name.
+	* src/const-time.c: New.
+	* cipher/rsa-common.c (_gcry_rsa_pkcs1_decode_for_enc): Examine whole
+	sequence of the byte-array.  Use N0 to find the separator position, with
+	ct_not_equal_byte.  Return the MPI even when the case of an error.
+	* cipher/rsa-common.c (_gcry_rsa_oaep_decode): Use ct_memequal to
+	check LHASH.  Examine all the sequence of the byte-array.  Use N1 to
+	find the separator of 0x01.  Return the MPI even when the case of an
+	error.
+	* cipher/rsa.c (rsa_decrypt): Always build a SEXP.
+
+2023-10-06  NIIBE Yutaka  <gniibe@fsij.org>
+
+	sexp: Minor clean-up of sexp output handling.
+	+ commit 5e5dff0551fcd9a826db18188fa1e4a6ca45099a
+	* src/sexp.c (suitable_encoding): Remove check for starting zero.
+
+2023-10-05  NIIBE Yutaka  <gniibe@fsij.org>
+
+	doc: Minor style fixes.
+	+ commit edddc5738e6b1652ccc5db6861888de66112427f
+
+
+	sexp: String with \0 is considered "binary".
+	+ commit ddd41eb6ace02626b0bf7704fdec9b765fb717c4
+	* src/sexp.c (suitable_encoding): It's "binary" when
+	the buffer contains '\0'.
+
+2023-09-15  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	blake2-avx512: merge some of the gather loads.
+	+ commit 325786acd445f9e74e4c44ba86c5b4e06788ea46
+	* cipher/blake2b-amd64-avx512.S (GATHER_MSG_2, GATHER_MSG_3)
+	(GATHER_MSG_5, GATHER_MSG_6, GATHER_MSG_8, GATHER_MSG_9): New.
+	(LOAD_MSG_2, LOAD_MSG_3, LOAD_MSG_5, LOAD_MSG_6, LOAD_MSG_8)
+	(LOAD_MSG_9): Use GATHER_MSG_<number>.
+	(_blake2b_avx512_data): Add merged load masks ".L[4-7]_mask".
+	(_gcry_blake2b_transform_amd64_avx512): Load merged load masks
+	to %k[4-7] and clear registers on exit.
+	* cipher/blake2s-amd64-avx512.S (VPINSRD_KMASK, GATHER_MSG_2)
+	(GATHER_MSG_3, GATHER_MSG_5, GATHER_MSG_6, GATHER_MSG_8)
+	(GATHER_MSG_9): New.
+	(LOAD_MSG_2, LOAD_MSG_3, LOAD_MSG_5, LOAD_MSG_6, LOAD_MSG_8)
+	(LOAD_MSG_9): Use GATHER_MSG_<number>.
+	(_blake2s_avx512_data): Add merged load masks ".L[4-7]_mask".
+	(_gcry_blake2s_transform_amd64_avx512): Load merged load masks
+	to %k[4-7] and clear registers on exit.
+
+2023-09-01  NIIBE Yutaka  <gniibe@fsij.org>
+
+	build: Change the default for --with-libtool-modification.
+	+ commit 36d014f919d1c5f00dde4509da9b5e02895467c9
+	* configure.ac (--with-libtool-modification): default=never.
+
+2023-08-20  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	blake2b-avx512: replace VPGATHER with manual gather.
+	+ commit 59f14c1db37e16aba37af185dd0677f9783536ce
+	* cipher/blake2.c (blake2b_init_ctx): Remove HWF_INTEL_FAST_VPGATHER
+	check for AVX512 implementation.
+	* cipher/blake2b-amd64-avx512.S (R16, VPINSRQ_KMASK, .Lshuf_ror16)
+	(.Lk1_mask): New.
+	(GEN_GMASK, RESET_KMASKS, .Lgmask*): Remove.
+	(GATHER_MSG): Use manual gather instead of VPGATHER.
+	(ROR_16): Use vpshufb for small speed improvement on tigerlake.
+	(_gcry_blake2b_transform_amd64_avx512): New setup & clean-up for
+	kmask registers; Reduce excess loop aligned from 64B to 16B.
+
+	twofish-avx2-amd64: replace VPGATHER with manual gather.
+	+ commit ded3a1ec2ec6980750e3e9eabde001cdbebece51
+	* cipher/twofish-avx2-amd64.S (do_gather): New.
+	(g16): Switch to use 'do_gather' instead of VPGATHER instruction.
+	(__twofish_enc_blk16, __twofish_dec_blk16): Prepare stack
+	for 'do_gather'.
+	* cipher/twofish.c (twofish) [USE_AVX2]: Remove now unneeded
+	HWF_INTEL_FAST_VPGATHER check.
+
+	Avoid VPGATHER usage for most of Intel CPUs.
+	+ commit f2bf9997d46590e688bad213267b8fb466e95ecd
+	* cipher/blake2.c (blake2b_init_ctx): Check for fast VPGATHER
+	for AVX512 implementation.
+	* src/hwf-x86.c (detect_x86_gnuc): Do not enable
+	HWF_INTEL_FAST_VPGATHER for Intel CPUs suffering from
+	"Downfall" vulnerability.
+
+2023-08-16  NIIBE Yutaka  <gniibe@fsij.org>
+
+	build: New configure option --with-libtool-modification.
+	+ commit 2143503b8f56a4e6909dc8b4f86e20c8ad76aaed
+	* Makefile.am (EXTRA_DIST): Add build-aux/libtool-patch.sed.
+	* build-aux/libtool-patch.sed: New.
+	* configure.ac (--with-libtool-modification): New.
+	* build-aux/ltmain.sh: Revert our own local modification.
+
+2023-07-26  NIIBE Yutaka  <gniibe@fsij.org>
+
+	doc: yat2m-stamp should depend on version.texi.
+	+ commit f019c98fd418596074ffd2cc755be6c483aac932
+	* doc/Makefile.am (yat2m-stamp): Depend on version.texi.
+
+2023-07-17  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	hwf-x86: use CFI statements for 'is_cpuid_available'
+	+ commit a5f88f30ce612b0239b946c4424d81cf0d552e96
+	* src/hwf-x86.c (FORCE_FUNC_FRAME_POINTER): Remove.
+	(CFI_ADJUST_CFA_OFFSET, CFI_PUSH4, CFI_POP4): New.
+	(is_cpuid_available): Use CFI statements instead of frame-pointer
+	attribute.
+
+	configure: fix HAVE_GCC_ASM_CFI_DIRECTIVES check.
+	+ commit 35829d38d61fa3130d88eaeea1af2591a3f07208
+	* cipher/camellia-aesni-avx2-amd64.h (enc_blk1_32): Fix dual
+	CFI_ENDPROC() usage.
+	* configure.ac (gcry_cv_gcc_asm_cfi_directives): Add missing ';'
+	after 'void asmfunc(void)'.
+	* mpi/asm-common-i386.h: New.
+	* mpi/i386/syntax.h: Remove CFI macros and instead include
+	"asm-common-i386.h".
+
+	Add VAES/AVX2 accelerated i386 implementation for AES.
+	+ commit 4a42a042bcf6b25f13957207c2d13d420f450bb8
+	* cipher/Makefile.am: Add 'rijndael-vaes-i386.c' and
+	'rijndael-vaes-avx2-i386.S'.
+	* cipher/asm-common-i386.h: New.
+	* cipher/rijndael-internal.h (USE_VAES_I386): New.
+	* cipher/rijndael-vaes-avx2-i386.S: New.
+	* cipher/rijndael-vaes-i386.c: New.
+	* cipher/rijndael-vaes.c: Update header description (add 'AMD64').
+	* cipher/rijndael.c [USE_VAES]: Add 'USE_VAES_I386' to ifdef around
+	'_gcry_aes_vaes_*' function prototypes.
+	(setkey) [USE_VAES_I386]: Add setup of VAES/AVX2/i386 bulk functions.
+	* configure.ac: Add 'rijndael-vaes-i386.lo' and
+	'rijndael-vaes-avx2-i386.lo'.
+	(gcry_cv_gcc_amd64_platform_as_ok): Rename this to ...
+	(gcry_cv_gcc_x86_platform_as_ok): ... this and change to check for
+	both AMD64 and i386 assembler compatibility.
+	(gcry_cv_gcc_win32_platform_as_ok): New.
+
+	rijndael-vaes-avx2-amd64: avoid extra load in CFB & CBC IV handling.
+	+ commit 13f288edd5274880cf6833c80eba24183440a66d
+	* cipher/rijndael-vaes-avx2-amd64.S
+	(_gcry_vaes_avx2_cbc_dec_amd64, _gcry_vaes_avx2_cfb_dec_amd64): Avoid
+	duplicate memory load from source buffer.
+
+	rijndael-vaes-avx2-amd64: acceleration for OCB auth.
+	+ commit 6b47e85d65158f3b6b1c3c24476249bfe3a7f943
+	* cipher/rijndael-vaes-avx2-amd64.S
+	(_gcry_vaes_avx2_ocb_crypt_amd64): Add authentication mode support.
+	* cipher/rijndael-vaes.c (_gcry_vaes_avx2_ocb_crypt_amd64): Change
+	to return 'size_t' value.
+	(_gcry_aes_vaes_ocb_auth): New.
+	* cipher/rijndael.c (_gcry_aes_vaes_ocb_auth): New.
+	(do_setkey) [USE_VAES]: Add setup for 'bulk_ops->ocb_auth'.
+
+2023-07-14  Bernhard Reiter  <bernhard@intevation.de>
+
+	build: Fix the notice in configure.ac.
+	+ commit 77ce5866e06cb5ebd82a0ce34206395aa03b9352
+	* configure.ac: Fix typo.
+
+2023-07-12  NIIBE Yutaka  <gniibe@fsij.org>
+
+	Use unsigned int for a bit field.
+	+ commit e76e88eef7811ada4c6e1d57520ba8c439139782
+	* random/random-drbg.c (struct drbg_state_ops_s): Use unsigned.
+	(struct drbg_state_s): Likewise.
+	* src/hmac256.c (struct hmac256_context): Likewise.
+
+2023-06-28  NIIBE Yutaka  <gniibe@fsij.org>
+
+	cipher:ecc:fips: Only allow defined digest algo for EdDSA.
+	+ commit d15fe6aac10b0ffc2eb8974c23095d8123025e5c
+	* cipher/ecc.c (ecc_sign): Add the check if it's proper digest
+	algo for EdDSA on FIPS mode.
+
+	cipher:ecc:fips: Reject use of SHAKE when it's ECDSA with RFC6979.
+	+ commit f65c30d470f581e4df91a5aff8bb202ff0fd56ad
+	* cipher/ecc-ecdsa.c (_gcry_ecc_ecdsa_sign): Check if it's SHAKE.
+
+2023-06-25  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	keccak: add md_read support for SHAKE algorithms.
+	+ commit 794695ff45d64f6586d7f08e74c075c098ac3b5d
+	* cipher/hash-common.c (_gcry_hash_selftest_check_one): Adjust
+	for SHAKE algorithms now returning non-zero for digest length.
+	* cipher/keccak.c (KECCAK_CONTEXT_S): Add 'shake_in_extract_mode'
+	and 'shake_in_read_mode' flags.
+	(keccak_init): Initialize new context fields; set output length
+	for SHAKE algorithms.
+	(keccak_extract): Rename to ...
+	(do_keccak_extract): this and add return value.
+	(keccak_extract): New with 'shake_in_???_mode' checks & setup.
+	(keccak_shake_read): New.
+	(_gcry_sha3_hash_buffers): Adjust for 'spec->mdlen' not being
+	zero for SHAKE algorithms, instead check 'suffix' for type.
+	(_gcry_digest_spec_shake128): Set mdlen to 32 bytes; Set read
+	function.
+	(_gcry_digest_spec_shake256): Set mdlen to 64 bytes; Set read
+	function.
+	* cipher/md.c (md_extract): Pass return value from algo extract
+	function.
+	(_gcry_md_hash_buffers_extract): Adjust for 'spec->mdlen' not
+	being zero for SHAKE algorithms.
+	* src/cipher-proto.h (gcry_md_extract_t): Change return type
+	from 'void' to 'gpg_err_code_t'.
+	* tests/basic.c (check_one_md, check_one_md_multi): Adjust
+	for 'gcry_md_get_algo_dlen()' not being zero for SHAKE
+	algorithms.
+	(check_digests): Add md_read interface test-vectors for SHAKE128
+	and SHAKE256.
+
+2023-06-23  NIIBE Yutaka  <gniibe@fsij.org>
+
+	cipher:rsa: Add support of SHAKE as MGF.
+	+ commit 8802faadab79ec84714bbaf28eaa882860779cba
+	* cipher/rsa-common.c (_gcry_rsa_pss_encode): Support SHAKE.
+	(_gcry_rsa_pss_verify): Likewise.
+
+2023-06-16  NIIBE Yutaka  <gniibe@fsij.org>
+
+	tests: Allow KDF measurement in FIPS mode.
+	+ commit 70b1b036f3ee06c5894e996cbd742cf3c174ca79
+	* tests/bench-slope.c (bench_kdf_init): Tweak the iterations in FIPS
+	mode.
+	(bench_kdf_do_bench): Use larger values to avoid rejection in FIPS
+	mode.
+
+	cipher:kdf: Move FIPS mode check to _gcry_kdf_derive.
+	+ commit f4bff832c7f5a54879c1858d7b426cd12088c57c
+	* cipher/kdf.c (_gcry_kdf_pkdf2): Move the checks to...
+	(_gcry_kdf_derive): ... here.
+
+	Remove out of core handler setting message in FIPS mode.
+	+ commit 6c79dcddd151b6b01a760f7aab54e6882ea5a475
+	* src/global.c (_gcry_set_outofcore_handler): Don't call log_info.
+
+	cipher:ecc: Implement PCT for EdDSA.
+	+ commit 3ac2bba4a4b11388949e235d0d9555478468a379
+	* cipher/ecc.c (test_keys_eddsa_fips): New.
+	(ecc_generate): Use test_keys_eddsa_fips for EdDSA.
+
+	build: Detect broken GCC for x86/AVX512 intrinsics.
+	+ commit 97f4a94d5960bb53b690bbd5cdf87b64311e21cc
+	* configure.ac (HAVE_COMPATIBLE_CC_X86_AVX512_INTRINSICS): Check
+	the GCC bug 90980.
+
+	cipher:ecc: Add selftests for EdDSA.
+	+ commit 547dfb5aecc1ae057e0bc599e8565f8c3fb84894
+	* cipher/ecc.c (selftest_hash_sign_eddsa): New.
+	(selftests_ecc): Add IS_EDDSA argument.
+	(run_selftests): Add tests for Ed25519 and Ed448.
+	* src/g10lib.h (_gcry_hex2buffer): New.
+	* src/sexp.c (_gcry_hex2buffer): Add.
+
+2023-06-16  Jakub Jelen  <jjelen@redhat.com>
+
+	tests: EdDSA keys work in FIPS mode.
+	+ commit 73d2f5d93541747befe9a791991553d691f3a1ae
+	* tests/bench-slope.c (ecc_algo_fips_allowed): Adjust list of FIPS
+	  allowed algorithms.
+	* tests/benchmark.c (ecc_bench): Ditto.
+	* tests/curves.c (check_get_params): Ditto.
+	* tests/keygrip.c (global): Ditto.
+	* tests/pubkey.c (main): Run Ed25519 test in FIPS mode.
+	* tests/t-ed25519.c (one_test): Remove FIPS exception.
+	  (main): Do not record FIPS status.
+	* tests/t-ed448.c (one_test): Remove FIPS exception.
+	  (main): Do not record FIPS status.
+	* tests/keygen.c (check_ecc_keys): Remove FIPS exceptions.
+
+	ecc: Enable Ed25519 and Ed448 in FIPS mode.
+	+ commit c08ea202d91651b7c8f7ed37f5554330deac52b8
+	* cipher/ecc-curves.c (domain_parms): Flip the FIPS byte for EdDSA
+	  curves to enable them in FIPS mode
+	* src/fips.c (valid_string_in_sexp): Mark eddsa flag valid in FIPS mode
+
+2023-06-15  NIIBE Yutaka  <gniibe@fsij.org>
+
+	cipher:ecc: Fix EdDSA secret key check.
+	+ commit ed879d832659f51c40bfadcd3b96fb8890b1eefb
+	* cipher/ecc.c (check_secret_key): No reason to exclude EdDSA key.
+
+	context: Make the context chain-able.
+	+ commit f4019ed225bf4478b06fdb54e01bd7b9264694a9
+	* src/context.h (_gcry_ctx_alloc): Add NEXT argurment.
+	* src/context.c (struct gcry_context): Add NEXT field.
+	(_gcry_ctx_alloc): Support the NEXT field.
+	(_gcry_ctx_get_pointer): Allow access to the NEXT field.
+	(_gcry_ctx_release): Loop following NEXT.
+	* cipher/pubkey.c (struct pk_single_data): Remove CTX_NEXT.
+	(release_single_data): Remove.
+	(_gcry_pk_single_data_push): Call _gcry_ctx_alloc with NEXT.
+	(_gcry_pk_get_single_data): Use _gcry_ctx_get_pointer to
+	access NEXT.
+
+2023-06-14  NIIBE Yutaka  <gniibe@fsij.org>
+
+	cipher:pubkey: Fix non-use of flexible array member.
+	+ commit c160e1a85f8295e388de7a0b09a351bc271f0d95
+	* cipher/pubkey.c (struct pk_single_data): Use 1 as the size.
+	(_gcry_pk_single_data_push): Use offsetof.
+
+	cipher:ecc: Support gcry_pk_hash_sign/verify for EdDSA.
+	+ commit 86fcf8292208838b47c08e74cd0941694287e7dd
+	* cipher/pubkey.c (prepare_datasexp_to_be_signed): Allow HD=NULL,
+	and use of CTX for supplying input data and random_override.
+	(_gcry_pk_sign_md, _gcry_pk_verify_md): Support the case of HD==NULL.
+	(release_single_data): New.
+	(_gcry_pk_single_data_push, _gcry_pk_get_single_data): New.
+	(_gcry_pk_random_override_new, _gcry_pk_get_random_override): Remove.
+	* src/context.h (CONTEXT_TYPE_SINGLE_DATA): New.
+	(CONTEXT_TYPE_RANDOM_OVERRIDE): Remove.
+	* src/context.c (_gcry_ctx_alloc): Use CONTEXT_TYPE_SINGLE_DATA.
+	* src/gcrypt-int.h (_gcry_pk_single_data_push,
+	_gcry_pk_get_single_data): New.
+	(_gcry_pk_random_override_new, _gcry_pk_get_random_override): Remove.
+	* src/gcrypt.h.in (gcry_pk_input_data_push): New.
+	* src/visibility.c (gcry_pk_random_override_new): Follow the change.
+	* tests/t-ed25519.c (one_test): Use gcry_pk_hash_sign/verify API.
+	* tests/t-ed448.c (one_test): Use gcry_pk_hash_sign/verify API.
+
+2023-06-13  NIIBE Yutaka  <gniibe@fsij.org>
+
+	cipher:ecc: Fix public key computation for EdDSA.
+	+ commit 469919751d6eb46ceff9df80676416ca8f474459
+	* cipher/ecc-misc.c (_gcry_ecc_compute_public): Fix hard-coded length
+	for digest lower bits.
+
+2023-06-12  NIIBE Yutaka  <gniibe@fsij.org>
+
+	cipher:pubkey: Factor out data SEXP preparation.
+	+ commit 263aa80b39dcf6d98c475784b319cb91b87cec3b
+	* cipher/pubkey.c (prepare_datasexp_to_be_signed): New.
+	(_gcry_pk_sign_md, _gcry_pk_verify_md): Use the function.
+
+2023-06-09  NIIBE Yutaka  <gniibe@fsij.org>
+
+	cipher: Factor functions for ECC selftests.
+	+ commit e0f7e927c594bec46afc23b782526546d0024ff5
+	* cipher/ecc.c: Factor out data for ECC selftests.
+	(selftest_hash_sign, selftest_sign): Have more arguments.
+	(selftests_ecc): Rename from selftests_ecdsa, having more args.
+	Follow the change of selftest_hash_sign, selftest_sign with data.
+	(run_selftests): Call selftests_ecc with constants of ECDSA.
+
+2023-06-04  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	addm/subm/mulm: fix case when destination is same MPI as divider.
+	+ commit f490ffd739f713fcf0be35b7fbbb8502dea40a0c
+	* mpi/mpi-add.c (_gcry_mpi_addm, _gcry_mpi_subm): Take copy of M when
+	W and M are the same MPI.
+	* mpi/mpi-mul.c (_gcry_mpi_mulm): Likewise.
+	* tests/mpitests.c (test_addm_subm_mulm): New.
+	(main): Run addm/subm/mulm test.
+
+2023-06-01  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	twofish-avx2: de-unroll round function.
+	+ commit beeff8eda4a94187ee2c72c4372ab3e634335e45
+	* cipher/twofish-avx2-amd64.S (__twofish_enc_blk16)
+	(__twofish_dec_blk16): Use loop structure instead of unrolling.
+
+2023-05-28  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	serpent: add x86/AVX512 implementation.
+	+ commit ce95b6ec3554aec0e4a26f700889a19d85b5d9ac
+	* cipher/Makefile.am: Add `serpent-avx512-x86.c`; Add extra CFLAG
+	handling for `serpent-avx512-x86.o` and `serpent-avx512-x86.lo`.
+	* cipher/serpent-avx512-x86.c: New.
+	* cipher/serpent.c (USE_AVX512): New.
+	(serpent_context_t): Add `use_avx512`.
+	[USE_AVX512] (_gcry_serpent_avx512_cbc_dec)
+	(_gcry_serpent_avx512_cfb_dec, _gcry_serpent_avx512_ctr_enc)
+	(_gcry_serpent_avx512_ocb_crypt, _gcry_serpent_avx512_blk32): New.
+	(serpent_setkey_internal) [USE_AVX512]: Set `use_avx512` is
+	AVX512 HW available.
+	(_gcry_serpent_ctr_enc) [USE_AVX512]: New.
+	(_gcry_serpent_cbc_dec) [USE_AVX512]: New.
+	(_gcry_serpent_cfb_dec) [USE_AVX512]: New.
+	(_gcry_serpent_ocb_crypt) [USE_AVX512]: New.
+	(serpent_crypt_blk1_16): Rename to...
+	(serpent_crypt_blk1_32): ... this; Add AVX512 code-path; Adjust for
+	increase from max 16 blocks to max 32 blocks.
+	(serpent_encrypt_blk1_16): Rename to ...
+	(serpent_encrypt_blk1_32): ... this.
+	(serpent_decrypt_blk1_16): Rename to ...
+	(serpent_decrypt_blk1_32): ... this.
+	(_gcry_serpent_xts_crypt, _gcry_serpent_ecb_crypt): Increase bulk
+	block count from 16 to 32.
+	* configure.ac (gcry_cv_cc_x86_avx512_intrinsics)
+	(ENABLE_X86_AVX512_INTRINSICS_EXTRA_CFLAGS): New.
+	(GCRYPT_ASM_CIPHERS): Add `serpent-avx512-x86.lo`.
+
+2023-05-16  NIIBE Yutaka  <gniibe@fsij.org>
+
+	build: Sync libtool from libgpg-error for 64-bit Windows.
+	+ commit 01c0185e63605ec7e0b9e90ca99ef9f435b67261
+	* build-aux/ltmain.hs: Update from libgpg-error.
+
+2023-05-10  NIIBE Yutaka  <gniibe@fsij.org>
+
+	tests: Use -no-fast-install LDFLAGS for Windows.
+	+ commit 33f9f0dec26df64e8184395eb6554ee379a87e3d
+	* tests/Makefile.am [HAVE_W32_SYSTEM] (AM_LDFLAGS): Conditionalize.
+
+	w32: Silence GCC warning for -Wcast-function-type.
+	+ commit 501dee123efe3d7d9488bb806ac9af5f56053f06
+	* random/rndw32.c (init_system_rng): Add (void *).
+	(slow_gatherer): Likewise.
+
+2023-04-27  NIIBE Yutaka  <gniibe@fsij.org>
+
+	Update copyright notices to use URL.
+	+ commit f5284460ac4c8cc41ad9d39c5d15bd063710d956
+	* build-aux/db2any: Update copyright notice.
+	* cipher/arcfour.c, cipher/blowfish.ccipher/cast5.c: Likewise.
+	* cipher/crc-armv8-ce.c, cipher/crc-intel-pclmul.c: Likewise.
+	* cipher/crc-ppc.c, cipher/crc.c, cipher/des.c: Likewise.
+	* cipher/md2.c, cipher/md4.c, cipher/md5.c: Likewise.
+	* cipher/primegen.c, cipher/rfc2268.c, cipher/rmd160.c: Likewise.
+	* cipher/seed.c, cipher/serpent.c, cipher/tiger.c: Likewise.
+	* cipher/twofish.c: Likewise.
+	* mpi/alpha/mpih-add1.S, mpi/alpha/mpih-lshift.S: Likewise.
+	* mpi/alpha/mpih-mul1.S, mpi/alpha/mpih-mul2.S: Likewise.
+	* mpi/alpha/mpih-mul3.S, mpi/alpha/mpih-rshift.S: Likewise.
+	* mpi/alpha/mpih-sub1.S, mpi/alpha/udiv-qrnnd.S: Likewise.
+	* mpi/amd64/mpih-add1.S, mpi/amd64/mpih-lshift.S: Likewise.
+	* mpi/amd64/mpih-mul1.S, mpi/amd64/mpih-mul2.S: Likewise.
+	* mpi/amd64/mpih-mul3.S, mpi/amd64/mpih-rshift.S: Likewise.
+	* mpi/amd64/mpih-sub1.S, mpi/config.links: Likewise.
+	* mpi/generic/mpih-add1.c, mpi/generic/mpih-lshift.c: Likewise.
+	* mpi/generic/mpih-mul1.c, mpi/generic/mpih-mul2.c: Likewise.
+	* mpi/generic/mpih-mul3.c, mpi/generic/mpih-rshift.c: Likewise.
+	* mpi/generic/mpih-sub1.c, mpi/generic/udiv-w-sdiv.c: Likewise.
+	* mpi/hppa/mpih-add1.S, mpi/hppa/mpih-lshift.S: Likewise.
+	* mpi/hppa/mpih-rshift.S, mpi/hppa/mpih-sub1.S: Likewise.
+	* mpi/hppa/udiv-qrnnd.S, mpi/hppa1.1/mpih-mul1.S: Likewise.
+	* mpi/hppa1.1/mpih-mul2.S, mpi/hppa1.1/mpih-mul3.S: Likewise.
+	* mpi/hppa1.1/udiv-qrnnd.S, mpi/i386/mpih-add1.S: Likewise.
+	* mpi/i386/mpih-lshift.S, mpi/i386/mpih-mul1.S: Likewise.
+	* mpi/i386/mpih-mul2.S, mpi/i386/mpih-mul3.S: Likewise.
+	* mpi/i386/mpih-rshift.S, mpi/i386/mpih-sub1.S: Likewise.
+	* mpi/i386/syntax.h, mpi/longlong.h: Likewise.
+	* mpi/m68k/mc68020/mpih-mul1.S, mpi/m68k/mc68020/mpih-mul2.S: Likewise.
+	* mpi/m68k/mc68020/mpih-mul3.S, mpi/m68k/mpih-add1.S: Likewise.
+	* mpi/m68k/mpih-lshift.S, mpi/m68k/mpih-rshift.S: Likewise.
+	* mpi/m68k/mpih-sub1.S, mpi/m68k/syntax.h: Likewise.
+	* mpi/mips3/mpih-add1.S, mpi/mips3/mpih-lshift.S: Likewise.
+	* mpi/mips3/mpih-mul1.S, mpi/mips3/mpih-mul2.S: Likewise.
+	* mpi/mips3/mpih-mul3.S, mpi/mips3/mpih-rshift.S: Likewise.
+	* mpi/mips3/mpih-sub1.S, mpi/mpi-add.c: Likewise.
+	* mpi/mpi-bit.c, mpi/mpi-cmp.c, mpi/mpi-div.c: Likewise.
+	* mpi/mpi-gcd.c, mpi/mpi-inline.c, mpi/mpi-inline.h: Likewise.
+	* mpi/mpi-internal.h, mpi/mpi-mpow.c, mpi/mpi-mul.c: Likewise.
+	* mpi/mpi-scan.c, mpi/mpih-div.c, mpi/mpih-mul.c: Likewise.
+	* mpi/pa7100/mpih-lshift.S, mpi/pa7100/mpih-rshift.S: Likewise.
+	* mpi/power/mpih-add1.S, mpi/power/mpih-lshift.S: Likewise.
+	* mpi/power/mpih-mul1.S, mpi/power/mpih-mul2.S: Likewise.
+	* mpi/power/mpih-mul3.S, mpi/power/mpih-rshift.S: Likewise.
+	* mpi/power/mpih-sub1.S, mpi/powerpc32/mpih-add1.S: Likewise.
+	* mpi/powerpc32/mpih-lshift.S, mpi/powerpc32/mpih-mul1.S: Likewise.
+	* mpi/powerpc32/mpih-mul2.S, mpi/powerpc32/mpih-mul3.S: Likewise.
+	* mpi/powerpc32/mpih-rshift.S, mpi/powerpc32/mpih-sub1.S: Likewise.
+	* mpi/powerpc32/syntax.h, mpi/sparc32/mpih-add1.S: Likewise.
+	* mpi/sparc32/mpih-lshift.S, mpi/sparc32/mpih-rshift.S: Likewise.
+	* mpi/sparc32/udiv.S, mpi/sparc32v8/mpih-mul1.S: Likewise.
+	* mpi/sparc32v8/mpih-mul2.S, mpi/sparc32v8/mpih-mul3.S: Likewise.
+	* mpi/supersparc/udiv.S: Likewise.
+	* random/random.h, random/rndegd.c: Likewise.
+	* src/cipher.h, src/libgcrypt.def, src/libgcrypt.vers: Likewise.
+	* src/missing-string.c, src/mpi.h, src/secmem.h: Likewise.
+	* src/stdmem.h, src/types.h: Likewise.
+	* tests/aeswrap.c, tests/curves.c, tests/hmac.c: Likewise.
+	* tests/keygrip.c, tests/prime.c, tests/random.c: Likewise.
+	* tests/t-kdf.c, tests/testapi.c: Likewise.
+
+	Update m4 files and Makefiles.
+	+ commit 17a3394b47cb82535ef7187e8819931b00cf4fa6
+	* acinclude.m4: Use URL and add SPDX identifier.
+	* m4/noexecstack.m4: Likewise.
+	* Makefile.am: Likewise.
+	* doc/Makefile.am: Likewise.
+	* mpi/Makefile.am: Likewise.
+	* tests/Makefile.am: Likewise.
+
+2023-04-23  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	mpi: optimize mpi_rshift and mpi_lshift to avoid extra MPI copying.
+	+ commit fdf2e8ba654a4dcfee25586dd7e0749f2b7a92c0
+	* mpi/mpi-bit.c (_gcry_mpi_rshift): Refactor so that _gcry_mpih_rshift
+	is used to do the copying along with shifting when copying is needed
+	and refactor so that same code-path is used for both in-place and
+	copying operation.
+	(_gcry_mpi_lshift): Refactor so that _gcry_mpih_lshift is used to do
+	the copying along with shifting when copying is needed and refactor
+	so that same code-path is used for both in-place and copying operation.
+
+	mpi/amd64: optimize add_n and sub_n.
+	+ commit ad4ee8d52f7199ba8bdee767044337060529069f
+	* mpi/amd64/mpih-add1.S (_gcry_mpih_add_n): New implementation
+	with 4x unrolled fast-path loop.
+	* mpi/amd64/mpih-sub1.S (_gcry_mpih_sub_n): Likewise.
+
+	mpi/amd64: fix use of 'movd' for 64-bit register move in lshift&rshift.
+	+ commit 3e17e819a6a4d505828cf93fc2c258a753f1d38c
+	* mpi/amd64/mpih-lshift.S: Use 'movq' instead of 'movd' for moving
+	value to %rax.
+	* mpi/amd64/mpih-rshift.S: Likewise.
+
+	mpi: avoid MPI copy at gcry_mpi_sub.
+	+ commit 8b09db4cce1040f061034ab899cd1369a51dceeb
+	* mpi/mpi-add.c (_gcry_mpi_add): Rename function...
+	(_gcry_mpi_add_inv_sign): ... to this and add parameter for inverting
+	sign of second operand.
+	(_gcry_mpi_add): New.
+	(_gcry_mpi_sub): Remove mpi_copy and instead use new
+	'_gcry_mpi_add_inv_sign' function with inverted sign for second
+	operand.
+
+	bench-slope: add MPI benchmarking.
+	+ commit e90fbf6f8dacf280d03e557a65528fc2df24f1d7
+	* tests/bench-slope.c (MPI_START_SIZE, MPI_END_SIZE, MPI_STEP_SIZE)
+	(MPI_NUM_STEPS, bench_mpi_test, mpi_test_names, bench_mpi_mode)
+	(bench_mpi_hd, bench_mpi_init, bench_mpi_fre, bench_mpi_do_bench)
+	(mpi_ops, mpi_modes, mpi_bench_one, _mpi_bench, mpi_match_test)
+	(mpi_bench): New.
+	(print_help): Add mention of 'mpi'.
+	(main): Add "mpi" tests.
+
+	cipher: restore weak-key error-code after mode specific setkey.
+	+ commit 5d18b401f8a780e2465662e88cbac6974033bf3f
+	* cipher/cipher.c (cipher_setkey): Restore weak-key error-code
+	in case mode specific setkey returned success for the return code.
+
+2023-04-20  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	doc: add documentation for GCRYCTL_SET_ALLOW_WEAK_KEY.
+	+ commit f3ca9fa4f7e0aee1bb5012c419deb7b927da844d
+	* doc/gcrypt.texi: Add 'GCRYCTL_SET_ALLOW_WEAK_KEY' under
+	'gcry_cipher_ctl'.
+
+	Revert "cipher: Fix edge case for SET_ALLOW_WEAK_KEY."
+	+ commit 7146b69b490595d654228bae8c3fb5d1525e3b60
+	* cipher/cipher.c (cipher_setkey): Do not reset RC.
+
+2023-04-16  Werner Koch  <wk@gnupg.org>
+
+	cipher: Fix edge case for SET_ALLOW_WEAK_KEY.
+	+ commit 30840c2c45d718e0fd93cfd40771fbefa50e31f5
+	* cipher/cipher.c (cipher_setkey): Reset RC.
+
+2023-04-10  NIIBE Yutaka  <gniibe@fsij.org>
+
+	random: Use getrandom only when it's appropriate.
+	+ commit fa21ddc158b5d7b5900856e5b131071302217a51
+	* random/rndgetentropy.c (_gcry_rndgetentropy_gather_random)
+	[GRND_RANDOM]: Conditionalize the use of getrandom, as it's
+	not a portable function.
+
+2023-04-04  NIIBE Yutaka  <gniibe@fsij.org>
+
+	cipher: Enable the fast path to ChaCha20 only when supported.
+	+ commit 137f1fd82bc9136d434ca41f58d62091b64df6db
+	cipher/cipher-poly1305.c (_gcry_cipher_poly1305_encrypt)
+	(_gcry_cipher_poly1305_decrypt) [USE_CHACHA20]: Conditionalize.
+
+2023-04-03  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	cipher-gcm-ppc: tweak loop structure a bit.
+	+ commit 278ba98497e126358a6b0ee8b566cc62ebb96ab9
+	* cipher/cipher-gcm-ppc.c (_gcry_ghash_ppc_vpmsum): Increament
+	'buf' pointer right after use; Use 'for' loop for inner 4-blocks
+	loop to allow compiler to better optimize loop.
+
+2023-04-03  NIIBE Yutaka  <gniibe@fsij.org>
+
+	build: Allow build with -Oz.
+	+ commit 7edf1abb9a0d892a80cbf7ab42f64b2720671ee9
+	* cipher/Makefile.am [ENABLE_O_FLAG_MUNGING]: Support -Oz.
+	* random/Makefile.am [ENABLE_O_FLAG_MUNGING]: Support -Oz.
+
+2023-04-01  NIIBE Yutaka  <gniibe@fsij.org>
+
+	m4: Update gpg-error.m4.
+	+ commit bcf5922eaac274f5ace991ecace01e718a9fe964
+	* m4/gpg-error.m4: Update from libgpg-error master.
+
+2023-03-24  NIIBE Yutaka  <gniibe@fsij.org>
+
+	fips: More elaborate way of getting FIPS pk flags indicators.
+	+ commit 1c916b8c99ea0e30f1d81d606fd63b0c45657186
+	* src/fips.c (_gcry_fips_indicator_pk_flags): List more allowed string
+	in the S-expression.
+	* doc/gcrypt.texi: Add document for the FIPS service indicator
+	GCRYCTL_FIPS_SERVICE_INDICATOR_PK_FLAGS with example.
+
+2023-03-23  NIIBE Yutaka  <gniibe@fsij.org>
+
+	build: Update gpg-error.m4.
+	+ commit 0af15f1fa0ca277fba17b365519f710b41a5b78f
+	* m4/gpg-error.m4: Update from libgpg-error master.
+
+2023-03-19  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	camellia-simd128: use 8-bit right shift for rotate function.
+	+ commit 79a79d3dc6268f4d72597f7db6c83511dbbef645
+	* cipher/camellia-simd128.h (rol32_1_16): Use vpsrlb128 for uint8
+	right shift by 7 if available.
+
+	camellia-gfni: use GFNI for uint8 right shift in FLS.
+	+ commit 3c98ae9cb60a8a72d3fa6641e59775f98ec78786
+	* cipher/camellia-aesni-avx2-amd64.h (IF_GFNI, IF_NOT_GFNI): New.
+	[CAMELLIA_GFNI_BUILD] (rol32_1_32): Add GFNI variant which uses
+	vgf2p8affineqb for uint8 right shift by 7.
+	(fls32): Load 'right shift by 7' bit-matrix on GFNI build.
+	[CAMELLIA_GFNI_BUILD] (.Lright_shift_by_7): New.
+	* cipher/camellia-gfni-avx512-amd64.S (clear_regs): Don't clear %k1.
+	(rol32_1_64): Use vgf2p8affineqb for uint8 right shift by 7.
+	(fls64): Adjust for rol32_1_64 changes.
+	(.Lbyte_ones): Remove.
+	(.Lright_shift_by_7): New.
+	(_gcry_camellia_gfni_avx512_ctr_enc): Clear %k1 after use.
+
+2023-03-14  Jakub Jelen  <jjelen@redhat.com>
+
+	tests: Improve test coverage for FIPS service indicators.
+	+ commit fae63f517906ba8f46d255f1b5770665f2197ad9
+	* tests/basic.c (check_digests): Check the FIPS indicators.
+	(check_mac): Ditto.
+
+	fips: Explicitly disable overriding random in FIPS mode.
+	+ commit e0a5a9eb8301991c28fae8632add8dacce81aeb4
+	* src/fips.c: (_gcry_fips_indicator_function): Mark using random
+	override non-approved in FIPS mode.
+
+	fips: Explicitly allow only some PK flags.
+	+ commit 4c1c8a707f9652dbfad8f8b531d8b84556f655f1
+	* src/fips.c (_gcry_fips_indicator_pk_flags): New function for explicit
+	  FIPS indicator for public key algorithm flags.
+	* src/g10lib.h (_gcry_fips_indicator_pk_flags): New.
+	* src/gcrypt.h.in (GCRYCTL_FIPS_SERVICE_INDICATOR_PK_FLAGS): New.
+	* src/global.c (_gcry_vcontrol): Handle the new option.
+	* doc/gcrypt.texi: Document new options.
+
+2023-03-14  Tobias Heider  <tobias.heider@canonical.com>
+
+	doc: Document the new FIPS indicators.
+	+ commit 0b7ad923978f708b41933d6b91d3159ffc7a84a1
+	* doc/gcrypt.texi: Document the new options for FIPS indicators.
+
+2023-03-08  Tobias Heider  <tobias.heider@canonical.com>
+
+	fips: Unblock MD5 in fips mode but mark non-approved in indicator.
+	+ commit dc4a60e2d70bc52ba2955f8e676341d675ab89a0
+	* cipher/mac-hmac.c (_gcry_mac_type_spec_hmac_md5): Allow in fips mode.
+	* cipher/md5.c (_gcry_digest_spec_md5): Allow in fips mode.
+
+	fips: Add explicit indicators for md and mac algorithms.
+	+ commit c88672a327f6774a66d75a35f25266eec99b16f4
+	* src/fips.c (_gcry_fips_indicator_mac): New function indicating
+	non-approved mac algorithms.
+	(_gcry_fips_indicator_md): new functions indicating non-approved
+	message digest algorithms.
+	* src/g10lib.h (_gcry_fips_indicator_mac): New function.
+	(_gcry_fips_indicator_md): Ditto.
+	* src/gcrypt.h.in (enum gcry_ctl_cmds): New symbols,
+	GCRYCTL_FIPS_SERVICE_INDICATOR_MAC and
+	GCRYCTL_FIPS_SERVICE_INDICATOR_MD.
+	* src/global.c (_gcry_vcontrol): Handle new FIPS indicators.
+
+2023-03-07  Jakub Jelen  <jjelen@redhat.com>
+
+	kdf: Update tests in regards to the allowed parameters in FIPS mode.
+	+ commit f5fe94810f3099c9ccc2ca3a5891502922ab0576
+	* cipher/kdf.c (check_one): run selftests for more approved parameters
+	and check that wrong parameters correctly fail in FIPS mode.
+
+	fips: Check return value from ftell.
+	+ commit 3fd3bb31597f80c76a94ea62e42d58d796beabf1
+	* src/fips.c (get_file_offset): Check return value of ftell to be able
+	  to detect errors.
+
+	random: Remove unused SHA384 DRBGs.
+	+ commit 45b80678109e5817b7cd15566a9d6c96b064b95f
+	* random/random-drbg.c (global): Remove unused SHA384-based defines.
+	(drbg_cores): Remove SHA384 configurations.
+	(drbg_sec_strength): Remove unused SHA384.
+
+	visibility: Check FIPS operational status for MD+Sign operation.
+	+ commit 654d0dfa04993ebe28c0536d42f4bc6d87c28369
+	* src/visibility.c (gcry_pk_hash_sign): Check fips status before
+	calling the operation itself.
+	(gcry_pk_hash_verify): Ditto.
+
+	ecc: Make the PCT recoverable in FIPS mode and consistent with RSA.
+	+ commit 23a2d1285e35b2eb91bb422609eb1c965c8a9bf6
+	* cipher/ecc.c (test_keys_fips): Replace calls to log_fatal with
+	return code on error.
+	(ecc_generate): Signal error when PCT fails in FIPS mode.
+
+	ecc: Do not allow skipping tests in FIPS Mode.
+	+ commit 2ddeec574bc1ae90bb4242c4ce9ad9e7975a27bd
+	* cipher/ecc.c (ecc_generate): Do not allow skipping tests PCT tests
+	in FIPS mode.
+
+2023-03-06  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	rijndael-ppc: use vector registers for key schedule calculations.
+	+ commit 855f8c513d6db58cbc9d45f3e0bb2cee3ab5a189
+	* cipher/rijndael-ppc.c (_gcry_aes_sbox4_ppc8): Remove.
+	(bcast_u32_to_vec, u32_from_vec): New.
+	(_gcry_aes_ppc8_setkey): Use vectors for round key calculation
+	variables.
+
+	Add PowerPC vector implementation of SM4.
+	+ commit 0b2da804ee813eee22c386ba7f253415103b34ea
+	* cipher/Makefile.am: Add 'sm4-ppc.c'.
+	* cipher/sm4-ppc.c: New.
+	* cipher/sm4.c (USE_PPC_CRYPTO): New.
+	(SM4_context): Add 'use_ppc8le' and 'use_ppc9le'.
+	[USE_PPC_CRYPTO] (_gcry_sm4_ppc8le_crypt_blk1_16)
+	(_gcry_sm4_ppc9le_crypt_blk1_16, sm4_ppc8le_crypt_blk1_16)
+	(sm4_ppc9le_crypt_blk1_16): New.
+	(sm4_setkey) [USE_PPC_CRYPTO]: Set use_ppc8le and use_ppc9le
+	based on HW features.
+	(sm4_get_crypt_blk1_16_fn) [USE_PPC_CRYPTO]: Add PowerPC
+	implementation selection.
+
+2023-03-02  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	camellia-simd128: faster sbox filtering with uint8 right shift.
+	+ commit 6c05c808e4e848964f67157e80f1835c5146e2bc
+	* cipher/camellia-simd128.h (if_vpsrlb128)
+	(if_not_vpsrlb128): New.
+	(filter_8bit): Use 'vpsrlb128' when available on target
+	architecture (PowerPC and AArch64).
+
+	chacha20-ppc: do not generate p9 code when target attr unavailable.
+	+ commit 652598096325c2478d7d033585dadc13bec6fb1d
+	* cipher/chacha20-ppc.c (HAVE_FUNC_ATTR_TARGET): New.
+	(_gcry_chacha20_ppc9_blocks1, _gcry_chacha20_ppc9_blocks4)
+	(_gcry_chacha20_poly1305_ppc8_blocks4): Use inline functions
+	only if HAVE_FUNC_ATTR_TARGET is defined.
+
+2023-03-01  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	Fix "'inline' is not at beginning of declaration" warnings.
+	+ commit 0a5f7e9543a823034f6dd6dae2f647c4e213f213
+	* cipher/chacha20-ppc.c (chacha20_ppc_blocks1)
+	(chacha20_ppc_blocks4, chacha20_poly1305_ppc_blocks4): Move
+	'ASM_FUNC_ATTR_INLINE' right after 'static'.
+	* cipher/sha256-ppc.c (sha256_transform_ppc): Likewise.
+	* cipher/sha512-ppc.c (sha512_transform_ppc): Likewise.
+
+	Improve PPC target function attribute checks.
+	+ commit 66bae697a853b21e0a2ff2a5031d23e3691a9084
+	* configure.ac (gcry_cv_gcc_attribute_ppc_target)
+	(gcry_cv_clang_attribute_ppc_target): Add 'always_inline'
+	function to test.
+
+2023-02-28  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	camellia: add AArch64 crypto-extension implementation.
+	+ commit 898c857206ada06d70c5f46ac5adaa9d7058e672
+	* cipher/Makefile.am: Add 'camellia-aarch64-ce.(c|o|lo)'.
+	(aarch64_neon_cflags): New.
+	* cipher/camellia-aarch64-ce.c: New.
+	* cipher/camellia-glue.c (USE_AARCH64_CE): New.
+	(CAMELLIA_context): Add 'use_aarch64ce'.
+	(_gcry_camellia_aarch64ce_encrypt_blk16)
+	(_gcry_camellia_aarch64ce_decrypt_blk16)
+	(_gcry_camellia_aarch64ce_keygen, camellia_aarch64ce_enc_blk16)
+	(camellia_aarch64ce_dec_blk16, aarch64ce_burn_stack_depth): New.
+	(camellia_setkey) [USE_AARCH64_CE]: Set use_aarch64ce if HW has
+	HWF_ARM_AES; Use AArch64/CE key generation if supported by HW.
+	(camellia_encrypt_blk1_32, camellia_decrypt_blk1_32)
+	[USE_AARCH64_CE]: Add AArch64/CE code path.
+
+	camellia: add POWER8/POWER9 vcrypto implementation.
+	+ commit 6fa11d8b7070eb7c4c296c879213c9596bd00b1c
+	* cipher/Makefile.am: Add 'camellia-simd128.h',
+	'camellia-ppc8le.c' and 'camellia-ppc9le.c'.
+	* cipher/camellia-glue.c (USE_PPC_CRYPTO): New.
+	(CAMELLIA_context) [USE_PPC_CRYPTO]: Add 'use_ppc', 'use_ppc8'
+	and 'use_ppc9'.
+	[USE_PPC_CRYPTO] (_gcry_camellia_ppc8_encrypt_blk16)
+	(_gcry_camellia_ppc8_decrypt_blk16, _gcry_camellia_ppc8_keygen)
+	(_gcry_camellia_ppc9_encrypt_blk16)
+	(_gcry_camellia_ppc9_decrypt_blk16, _gcry_camellia_ppc9_keygen)
+	(camellia_ppc_enc_blk16, camellia_ppc_dec_blk16)
+	(ppc_burn_stack_depth): New.
+	(camellia_setkey) [USE_PPC_CRYPTO]: Setup 'use_ppc', 'use_ppc8'
+	and 'use_ppc9' and use PPC key-generation if HWF is available.
+	(camellia_encrypt_blk1_32)
+	(camellia_decrypt_blk1_32) [USE_PPC_CRYPTO]: Add 'use_ppc' paths.
+	(_gcry_camellia_ocb_crypt, _gcry_camellia_ocb_auth): Enable
+	generic bulk path when USE_PPC_CRYPTO is defined.
+	* cipher/camellia-ppc8le.c: New.
+	* cipher/camellia-ppc9le.c: New.
+	* cipher/camellia-simd128.h: New.
+	* configure.ac: Add 'camellia-ppc8le.lo' and 'camellia-ppc9le.lo'.
+
+2023-02-26  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	aes-amd64-vaes: fix fast exit path in XTS function.
+	+ commit 0d42d9674458a22cfccec419f4c358d743c5effb
+	* cipher/rijndael-vaes-avx2-amd64.S
+	(_gcry_vaes_avx2_xts_crypt_amd64): On fast exit path, compare
+	number of blocks left against '1' instead of '0' as following
+	branch is 'less than'.
+
+	ppc: add support for clang target attribute.
+	+ commit 937a76a34540bd2558f5b34a98fbe53227000646
+	* configure.ac (gcry_cv_clang_attribute_ppc_target): New.
+	* cipher/chacha20-ppc.c [HAVE_CLANG_ATTRIBUTE_PPC_TARGET]
+	(FUNC_ATTR_TARGET_P8, FUNC_ATTR_TARGET_P9): New.
+	* cipher/rijndael-ppc.c [HAVE_CLANG_ATTRIBUTE_PPC_TARGET]
+	(FPC_OPT_ATTR): New.
+	* cipher/rijndael-ppc9le.c [HAVE_CLANG_ATTRIBUTE_PPC_TARGET]
+	(FPC_OPT_ATTR): New.
+	* cipher/sha256-ppc.c [HAVE_CLANG_ATTRIBUTE_PPC_TARGET]
+	(FUNC_ATTR_TARGET_P8, FUNC_ATTR_TARGET_P9): New.
+	* cipher/sha512-ppc.c [HAVE_CLANG_ATTRIBUTE_PPC_TARGET]
+	(FUNC_ATTR_TARGET_P8, FUNC_ATTR_TARGET_P9): New.
+	(ror64): Remove unused function.
+
+	chacha20-ppc: use target and optimize attributes for P8 and P9.
+	+ commit f3d1d4a8c9f0df107a57e2cd3699253766d6e45a
+	* cipher/chacha20-ppc.c (_gcry_chacha20_ppc8_blocks1): Rename to...
+	(chacha20_ppc_blocks1): ...this; Add 'always inline' attribute.
+	(_gcry_chacha20_ppc8_blocks4): Rename to...
+	(chacha20_ppc_blocks4): ...this; Add 'always inline' attribute.
+	(_gcry_chacha20_poly1305_ppc8_blocks4): Rename to...
+	(chacha20_poly1305_ppc_blocks4): ...this; Add 'always inline'
+	attribute.
+	(FUNC_ATTR_OPT_O2, FUNC_ATTR_TARGET_P8, FUNC_ATTR_TARGET_P9): New.
+	(_gcry_chacha20_ppc8_blocks1, _gcry_chacha20_ppc8_blocks4)
+	(_gcry_chacha20_poly1305_ppc8_blocks4): New.
+	(_gcry_chacha20_ppc9_blocks1, _gcry_chacha20_ppc9_blocks4)
+	(_gcry_chacha20_poly1305_ppc9_blocks4): New.
+	* cipher/chacha20.c (CHACHA20_context_t): Add 'use_p9'.
+	(_gcry_chacha20_ppc9_blocks1, _gcry_chacha20_ppc9_blocks4)
+	(_gcry_chacha20_poly1305_ppc9_blocks4): New.
+	(chacha20_do_setkey): Set 'use_p9' if HW has HWF_PPC_ARCH_3_00.
+	(chacha20_blocks, do_chacha20_encrypt_stream_tail)
+	(_gcry_chacha20_poly1305_encrypt)
+	(_gcry_chacha20_poly1305_decrypt) [USE_PPC_VEC]: Add 'use_p9' paths.
+
+	aes-ppc: use target and optimize attributes for P8 and P9.
+	+ commit 100063cf4e1ca3350f05a343d8fa0ccf305debb1
+	* cipher/rijndael-ppc-functions.h: Add PPC_OPT_ATTR attribute
+	macro for all functions.
+	* cipher/rijndael-ppc.c (FUNC_ATTR_OPT, PPC_OPT_ATTR): New.
+	(_gcry_aes_ppc8_setkey, _gcry_aes_ppc8_prepare_decryption): Add
+	PPC_OPT_ATTR attribute macro.
+	* cipher/rijndael-ppc9le.c (FUNC_ATTR_OPT, PPC_OPT_ATTR): New.
+
+	aes-ppc: add CTR32LE bulk acceleration.
+	+ commit 84f2e2d0b51b7b3e75d96d8188ae6a8d8174542b
+	* cipher/rijndael-ppc-functions.h (CTR32LE_ENC_FUNC): New.
+	* cipher/rijndael-ppc.c (_gcry_aes_ppc8_ctr32le_enc): New.
+	* cipher/rijndael-ppc9le.c (_gcry_aes_ppc9le_ctr32le_enc): New.
+	* cipher/rijndael.c (_gcry_aes_ppc8_ctr32le_enc)
+	(_gcry_aes_ppc9le_ctr32le_enc): New.
+	(do_setkey): Setup _gcry_aes_ppc8_ctr32le_enc for POWER8 and
+	_gcry_aes_ppc9le_ctr32le_enc for POWER9.
+
+	aes-ppc: add ECB bulk acceleration for benchmarking purposes.
+	+ commit a7ebf9d52e67015c0ae175c0a9bbff9da9fe6f32
+	* cipher/rijndael-ppc-functions.h (ECB_CRYPT_FUNC): New.
+	* cipher/rijndael-ppc.c (_gcry_aes_ppc8_ecb_crypt): New.
+	* cipher/rijndael-ppc9le.c (_gcry_aes_ppc9le_ecb_crypt): New.
+	* cipher/rijndael.c (_gcry_aes_ppc8_ecb_crypt)
+	(_gcry_aes_ppc9le_ecb_crypt): New.
+	(do_setkey): Set up _gcry_aes_ppc8_ecb_crypt for POWER8 and
+	_gcry_aes_ppc9le_ecb_crypt for POWER9.
+
+	sha2-ppc: better optimization for POWER9.
+	+ commit 161614ecc1c20d94a8599888524b1d1fd0eb2754
+	* cipher/sha256-ppc.c: Change to use vector registers, generate
+	POWER8 and POWER9 from same code with help of 'target' and
+	'optimize' attribute.
+	* cipher/sha512-ppc.c: Likewise.
+	* configure.ac (gcry_cv_gcc_attribute_optimize)
+	(gcry_cv_gcc_attribute_ppc_target): New.
+
+2023-02-22  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	camellia-aesni-avx: speed up for round key broadcasting.
+	+ commit dd4cb5d75c8e4e666db4352d999b2111b9ddb80d
+	* cipher/camellia-aesni-avx2-amd64.h (roundsm16, fls16): Broadcast
+	round key bytes directly with 'vpshufb'.
+
+	camellia-avx2: speed up for round key broadcasting.
+	+ commit b9a9755742c7bf7ca8c007d33f98aaa076a382c7
+	* cipher/camellia-aesni-avx2-amd64.h (roundsm32, fls32): Use
+	'vpbroadcastb' for loading round key.
+	* cipher/camellia-glue.c (camellia_encrypt_blk1_32)
+	(camellia_decrypt_blk1_32): Adjust num_blks thresholds for AVX2
+	implementations, 2 blks for GFNI, 4 blks for VAES and 5 blks for AESNI.
+
+	camellia-gfni-avx512: speed up for round key broadcasting.
+	+ commit a4c22331f57d23832ddd019ac3108b5fa3dd942b
+	* cipher/camellia-gfni-avx512-amd64.S (roundsm64, fls64): Use
+	'vpbroadcastb' for loading round key.
+
+	camellia-avx2: add fast path for full 32 block ECB input.
+	+ commit 5f25ad09fdb5eb5f83f7cc4cefe79bbeab29fec8
+	* cipher/camellia-aesni-avx2-amd64.h (enc_blk1_32, dec_blk1_32): Add
+	fast path for 32 block input.
+
+	camellia: add CTR-mode byte addition for AVX/AVX2/AVX512 impl.
+	+ commit 87ae2a660d59751ddd7da40da05cfaee73f35ea7
+	* cipher/camellia-aesni-avx-amd64.S
+	(_gcry_camellia_aesni_avx_ctr_enc): Add byte addition fast-path.
+	* cipher/camellia-aesni-avx2-amd64.h (ctr_enc): Likewise.
+	* cipher/camellia-gfni-avx512-amd64.S
+	(_gcry_camellia_gfni_avx512_ctr_enc): Likewise.
+	* cipher/camellia-glue.c (CAMELLIA_context): Add 'use_avx2'.
+	(camellia_setkey, _gcry_camellia_ctr_enc, _gcry_camellia_cbc_dec)
+	(_gcry_camellia_cfb_dec, _gcry_camellia_ocb_crypt)
+	(_gcry_camellia_ocb_auth) [USE_AESNI_AVX2]: Use 'use_avx2' to check
+	if any of the AVX2 implementations is enabled.
+
+	camellia-aesni-avx: add acceleration for ECB/XTS/CTR32LE modes.
+	+ commit 926cc22058a39c7a931e14590eab6fd7a78ba455
+	* cipher/camellia-aesni-avx-amd64.S (_gcry_camellia_aesni_avx_ecb_enc)
+	(_gcry_camellia_aesni_avx_ecb_dec): New.
+	* cipher/camellia-glue.c (_gcry_camellia_aesni_avx_ecb_enc)
+	(_gcry_camellia_aesni_avx_ecb_dec): New.
+	(camellia_setkey): Always enable XTS/ECB/CTR32LE bulk functions.
+	(camellia_encrypt_blk1_32, camellia_decrypt_blk1_32)
+	[USE_AESNI_AVX]: Add AESNI/AVX code-path.
+
+	sm4: add CTR-mode byte addition for AVX/AVX2/AVX512 implementations.
+	+ commit 978b02fca682c9ecb71e30cdeeb6922fc8331f6e
+	* cipher/sm4-aesni-avx-amd64.S
+	(_gcry_sm4_aesni_avx_ctr_enc): Add byte addition fast-path.
+	* cipher/sm4-aesni-avx2-amd64.S
+	(_gcry_sm4_aesni_avx2_ctr_enc): Likewise.
+	* cipher/sm4-gfni-avx2-amd64.S
+	(_gcry_sm4_gfni_avx2_ctr_enc): Likewise.
+	* cipher/sm4-gfni-avx512-amd64.S
+	(_gcry_sm4_gfni_avx512_ctr_enc)
+	(_gcry_sm4_gfni_avx512_ctr_enc_blk32): Likewise.
+
+	aes-vaes-avx2: improve case when only CTR needs carry handling.
+	+ commit 8f7f5a9fc63968304bacedbc2f22b9f7188bbd53
+	* cipher/rijndael-vaes-avx2-amd64.S
+	(_gcry_vaes_avx2_ctr_enc_amd64): Add handling for the case when
+	only main counter needs carry handling but generated vector counters
+	do not.
+
+	aria-avx2: add VAES accelerated implementation.
+	+ commit caf402e9b41fff6cf39b914b088ea1e5f8fd3bd1
+	* cipher/aria-aesni-avx2-amd64.S (CONFIG_AS_VAES): New.
+	[CONFIG_AS_VAES]: Add VAES accelerated assembly macros and functions.
+	* cipher/aria.c (USE_VAES_AVX2): New.
+	(ARIA_context): Add 'use_vaes_avx2'.
+	(_gcry_aria_vaes_avx2_ecb_crypt_blk32)
+	(_gcry_aria_vaes_avx2_ctr_crypt_blk32)
+	(aria_avx2_ecb_crypt_blk32, aria_avx2_ctr_crypt_blk32): Add VAES/AVX2
+	code paths.
+	(aria_setkey): Enable VAES/AVX2 implementation based on HW features.
+
+	aria-avx512: small optimization for aria_diff_m.
+	+ commit f359a3ec7e845aa446836bd47994fe18d6d41e08
+	* cipher/aria-gfni-avx512-amd64.S (aria_diff_m): Use 'vpternlogq' for
+	3-way XOR operation.
+	---
+
+	Using vpternlogq gives small performance improvement on AMD Zen4. With
+	Intel tiger-lake speed is the same as before.
+
+	Benchmark on AMD Ryzen 9 7900X (zen4, turbo-freq off):
+
+	Before:
+	 ARIA128        |  nanosecs/byte   mebibytes/sec   cycles/byte  auto Mhz
+	        ECB enc |     0.203 ns/B      4703 MiB/s     0.953 c/B      4700
+	        ECB dec |     0.204 ns/B      4675 MiB/s     0.959 c/B      4700
+	        CTR enc |     0.207 ns/B      4609 MiB/s     0.973 c/B      4700
+	        CTR dec |     0.207 ns/B      4608 MiB/s     0.973 c/B      4700
+
+	After (~3% faster):
+	 ARIA128        |  nanosecs/byte   mebibytes/sec   cycles/byte  auto Mhz
+	        ECB enc |     0.197 ns/B      4847 MiB/s     0.925 c/B      4700
+	        ECB dec |     0.197 ns/B      4852 MiB/s     0.924 c/B      4700
+	        CTR enc |     0.200 ns/B      4759 MiB/s     0.942 c/B      4700
+	        CTR dec |     0.200 ns/B      4772 MiB/s     0.939 c/B      4700
+
+	Cc: Taehee Yoo <ap420073@gmail.com>
+
+	aria-avx: small optimization for aria_ark_8way.
+	+ commit 855f1551fd921ced652dc0c3c03601dfcd063f1c
+	* cipher/aria-aesni-avx-amd64.S (aria_ark_8way): Use 'vmovd' for
+	loading key material and 'vpshufb' for broadcasting from byte
+	locations 3, 2, 1 and 0.
+
+	aria: add x86_64 GFNI/AVX512 accelerated implementation.
+	+ commit 45351e6474cbbe5baaa4c488222610edc417176e
+	* cipher/Makefile.am: Add 'aria-gfni-avx512-amd64.S'.
+	* cipher/aria-gfni-avx512-amd64.S: New.
+	* cipher/aria.c (USE_GFNI_AVX512): New.
+	[USE_GFNI_AVX512] (MAX_PARALLEL_BLKS): New.
+	(ARIA_context): Add 'use_gfni_avx512'.
+	(_gcry_aria_gfni_avx512_ecb_crypt_blk64)
+	(_gcry_aria_gfni_avx512_ctr_crypt_blk64)
+	(aria_gfni_avx512_ecb_crypt_blk64)
+	(aria_gfni_avx512_ctr_crypt_blk64): New.
+	(aria_crypt_blocks) [USE_GFNI_AVX512]: Add 64 parallel block
+	AVX512/GFNI processing.
+	(_gcry_aria_ctr_enc) [USE_GFNI_AVX512]: Add 64 parallel block
+	AVX512/GFNI processing.
+	(aria_setkey): Enable GFNI/AVX512 based on HW features.
+	* configure.ac: Add 'aria-gfni-avx512-amd64.lo'.
+
+	aria: add x86_64 AESNI/GFNI/AVX/AVX2 accelerated implementations.
+	+ commit f4268a8f51a89a7c0374a23f669d7a19cad304ae
+	* cipher/Makefile.am: Add 'aria-aesni-avx-amd64.S' and
+	'aria-aesni-avx2-amd64.S'.
+	* cipher/aria-aesni-avx-amd64.S: New.
+	* cipher/aria-aesni-avx2-amd64.S: New.
+	* cipher/aria.c (USE_AESNI_AVX, USE_GFNI_AVX, USE_AESNI_AVX2)
+	(USE_GFNI_AVX2, MAX_PARALLEL_BLKS, ASM_FUNC_ABI, ASM_EXTRA_STACK): New.
+	(ARIA_context): Add 'use_aesni_avx', 'use_gfni_avx',
+	'use_aesni_avx2' and 'use_gfni_avx2'.
+	(_gcry_aria_aesni_avx_ecb_crypt_blk1_16)
+	(_gcry_aria_aesni_avx_ctr_crypt_blk16)
+	(_gcry_aria_gfni_avx_ecb_crypt_blk1_16)
+	(_gcry_aria_gfni_avx_ctr_crypt_blk16)
+	(aria_avx_ecb_crypt_blk1_16, aria_avx_ctr_crypt_blk16)
+	(_gcry_aria_aesni_avx2_ecb_crypt_blk32)
+	(_gcry_aria_aesni_avx2_ctr_crypt_blk32)
+	(_gcry_aria_gfni_avx2_ecb_crypt_blk32)
+	(_gcry_aria_gfni_avx2_ctr_crypt_blk32)
+	(aria_avx2_ecb_crypt_blk32, aria_avx2_ctr_crypt_blk32): New.
+	(aria_crypt_blocks) [USE_AESNI_AVX2]: Add 32 parallel block
+	AVX2/AESNI/GFNI processing.
+	(aria_crypt_blocks) [USE_AESNI_AVX]: Add 3 to 16 parallel block
+	AVX/AESNI/GFNI processing.
+	(_gcry_aria_ctr_enc) [USE_AESNI_AVX2]: Add 32 parallel block
+	AVX2/AESNI/GFNI processing.
+	(_gcry_aria_ctr_enc) [USE_AESNI_AVX]: Add 16 parallel block
+	AVX/AESNI/GFNI processing.
+	(_gcry_aria_ctr_enc, _gcry_aria_cbc_dec, _gcry_aria_cfb_enc)
+	(_gcry_aria_ecb_crypt, _gcry_aria_xts_crypt, _gcry_aria_ctr32le_enc)
+	(_gcry_aria_ocb_crypt, _gcry_aria_ocb_auth): Use MAX_PARALLEL_BLKS
+	for parallel processing width.
+	(aria_setkey): Enable AESNI/AVX, GFNI/AVX, AESNI/AVX2, GFNI/AVX2 based
+	on HW features.
+	* configure.ac: Add 'aria-aesni-avx-amd64.lo' and
+	'aria-aesni-avx2-amd64.lo'.
+	---
+
+	This patch adds AVX/AVX2/AESNI/GFNI accelerated ARIA block cipher
+	implementations for libgcrypt. This implementation is based on work
+	by Taehee Yoo, with following notable changes:
+	 - Integration to libgcrypt, use of 'aes-common-amd64.h'.
+	 - Use 'vmovddup' for loading GFNI constants.
+	 - Use round loop instead of unrolling for smaller code size and
+	   increased performance.
+	 - Use stack for temporary storage instead of external buffers.
+	 - Use merge ECB encryption/decryption to single function.
+	 - Add 1 to 15 blocks support for AVX ECB functions.
+	 - Add byte-addition fast path for CTR.
+
+	===
+
+	Benchmark on AMD Ryzen 9 7900X (zen4, turbo-freq off):
+
+	 AESNI/AVX:
+	 ARIA128        |  nanosecs/byte   mebibytes/sec   cycles/byte  auto Mhz
+	        ECB enc |     0.715 ns/B      1333 MiB/s      3.36 c/B      4700
+	        ECB dec |     0.712 ns/B      1339 MiB/s      3.35 c/B      4700
+	        CTR enc |     0.714 ns/B      1336 MiB/s      3.36 c/B      4700
+	        CTR dec |     0.714 ns/B      1335 MiB/s      3.36 c/B      4700
+
+	 GFNI/AVX:
+	 ARIA128        |  nanosecs/byte   mebibytes/sec   cycles/byte  auto Mhz
+	        ECB enc |     0.516 ns/B      1847 MiB/s      2.43 c/B      4700
+	        ECB dec |     0.519 ns/B      1839 MiB/s      2.44 c/B      4700
+	        CTR enc |     0.517 ns/B      1846 MiB/s      2.43 c/B      4700
+	        CTR dec |     0.518 ns/B      1843 MiB/s      2.43 c/B      4700
+
+	 AESNI/AVX2:
+	 ARIA128        |  nanosecs/byte   mebibytes/sec   cycles/byte  auto Mhz
+	        ECB enc |     0.416 ns/B      2292 MiB/s      1.96 c/B      4700
+	        ECB dec |     0.421 ns/B      2266 MiB/s      1.98 c/B      4700
+	        CTR enc |     0.415 ns/B      2298 MiB/s      1.95 c/B      4700
+	        CTR dec |     0.415 ns/B      2300 MiB/s      1.95 c/B      4700
+
+	 GFNI/AVX2:
+	 ARIA128        |  nanosecs/byte   mebibytes/sec   cycles/byte  auto Mhz
+	        ECB enc |     0.235 ns/B      4056 MiB/s      1.11 c/B      4700
+	        ECB dec |     0.234 ns/B      4079 MiB/s      1.10 c/B      4700
+	        CTR enc |     0.232 ns/B      4104 MiB/s      1.09 c/B      4700
+	        CTR dec |     0.233 ns/B      4094 MiB/s      1.10 c/B      4700
+
+	===
+
+	Benchmark on Intel Core i3-1115G4 (tiger-lake, turbo-freq off):
+
+	 AESNI/AVX:
+	 ARIA128        |  nanosecs/byte   mebibytes/sec   cycles/byte  auto Mhz
+	        ECB enc |      1.26 ns/B     757.6 MiB/s      3.77 c/B      2993
+	        ECB dec |      1.27 ns/B     753.1 MiB/s      3.79 c/B      2992
+	        CTR enc |      1.25 ns/B     760.3 MiB/s      3.75 c/B      2992
+	        CTR dec |      1.26 ns/B     759.1 MiB/s      3.76 c/B      2992
+
+	 GFNI/AVX:
+	 ARIA128        |  nanosecs/byte   mebibytes/sec   cycles/byte  auto Mhz
+	        ECB enc |     0.967 ns/B     986.6 MiB/s      2.89 c/B      2992
+	        ECB dec |     0.966 ns/B     987.1 MiB/s      2.89 c/B      2992
+	        CTR enc |     0.972 ns/B     980.8 MiB/s      2.91 c/B      2993
+	        CTR dec |     0.971 ns/B     982.5 MiB/s      2.90 c/B      2993
+
+	 AESNI/AVX2:
+	 ARIA128        |  nanosecs/byte   mebibytes/sec   cycles/byte  auto Mhz
+	        ECB enc |     0.817 ns/B      1167 MiB/s      2.44 c/B      2992
+	        ECB dec |     0.819 ns/B      1164 MiB/s      2.45 c/B      2992
+	        CTR enc |     0.819 ns/B      1164 MiB/s      2.45 c/B      2992
+	        CTR dec |     0.819 ns/B      1164 MiB/s      2.45 c/B      2992
+
+	 GFNI/AVX2:
+	 ARIA128        |  nanosecs/byte   mebibytes/sec   cycles/byte  auto Mhz
+	        ECB enc |     0.506 ns/B      1886 MiB/s      1.51 c/B      2992
+	        ECB dec |     0.505 ns/B      1887 MiB/s      1.51 c/B      2992
+	        CTR enc |     0.564 ns/B      1691 MiB/s      1.69 c/B      2992
+	        CTR dec |     0.565 ns/B      1689 MiB/s      1.69 c/B      2992
+
+	===
+
+	Benchmark on AMD Ryzen 7 5800X (zen3, turbo-freq off):
+
+	 AESNI/AVX:
+	 ARIA128        |  nanosecs/byte   mebibytes/sec   cycles/byte  auto Mhz
+	        ECB enc |     0.921 ns/B      1035 MiB/s      3.50 c/B      3800
+	        ECB dec |     0.922 ns/B      1034 MiB/s      3.50 c/B      3800
+	        CTR enc |     0.923 ns/B      1033 MiB/s      3.51 c/B      3800
+	        CTR dec |     0.923 ns/B      1033 MiB/s      3.51 c/B      3800
+
+	 AESNI/AVX2:
+	 ARIA128        |  nanosecs/byte   mebibytes/sec   cycles/byte  auto Mhz
+	        ECB enc |     0.559 ns/B      1707 MiB/s      2.12 c/B      3800
+	        ECB dec |     0.560 ns/B      1703 MiB/s      2.13 c/B      3800
+	        CTR enc |     0.570 ns/B      1672 MiB/s      2.17 c/B      3800
+	        CTR dec |     0.568 ns/B      1679 MiB/s      2.16 c/B      3800
+
+	===
+
+	Benchmark on AMD EPYC 7642 (zen2):
+
+	 AESNI/AVX:
+	 ARIA128        |  nanosecs/byte   mebibytes/sec   cycles/byte  auto Mhz
+	        ECB enc |      1.22 ns/B     784.5 MiB/s      4.01 c/B      3298
+	        ECB dec |      1.22 ns/B     784.8 MiB/s      4.00 c/B      3292
+	        CTR enc |      1.22 ns/B     780.1 MiB/s      4.03 c/B      3299
+	        CTR dec |      1.22 ns/B     779.1 MiB/s      4.04 c/B      3299
+
+	 AESNI/AVX2:
+	 ARIA128        |  nanosecs/byte   mebibytes/sec   cycles/byte  auto Mhz
+	        ECB enc |     0.735 ns/B      1298 MiB/s      2.42 c/B      3299
+	        ECB dec |     0.738 ns/B      1292 MiB/s      2.44 c/B      3299
+	        CTR enc |     0.732 ns/B      1303 MiB/s      2.41 c/B      3299
+	        CTR dec |     0.732 ns/B      1303 MiB/s      2.41 c/B      3299
+
+	===
+
+	Benchmark on Intel Core i5-6500 (skylake):
+
+	 AESNI/AVX:
+	 ARIA128        |  nanosecs/byte   mebibytes/sec   cycles/byte  auto Mhz
+	        ECB enc |      1.24 ns/B     766.6 MiB/s      4.48 c/B      3598
+	        ECB dec |      1.25 ns/B     764.9 MiB/s      4.49 c/B      3598
+	        CTR enc |      1.25 ns/B     761.7 MiB/s      4.50 c/B      3598
+	        CTR dec |      1.25 ns/B     761.6 MiB/s      4.51 c/B      3598
+
+	 AESNI/AVX2:
+	 ARIA128        |  nanosecs/byte   mebibytes/sec   cycles/byte  auto Mhz
+	        ECB enc |     0.829 ns/B      1150 MiB/s      2.98 c/B      3599
+	        ECB dec |     0.831 ns/B      1147 MiB/s      2.99 c/B      3598
+	        CTR enc |     0.829 ns/B      1150 MiB/s      2.98 c/B      3598
+	        CTR dec |     0.828 ns/B      1152 MiB/s      2.98 c/B      3598
+
+	===
+
+	Benchmark on Intel Core i5-2450M (sandy-bridge, turbo-freq off):
+
+	 AESNI/AVX:
+	 ARIA128        |  nanosecs/byte   mebibytes/sec   cycles/byte  auto Mhz
+	        ECB enc |      2.11 ns/B     452.7 MiB/s      5.25 c/B      2494
+	        ECB dec |      2.10 ns/B     454.5 MiB/s      5.23 c/B      2494
+	        CTR enc |      2.10 ns/B     453.2 MiB/s      5.25 c/B      2494
+	        CTR dec |      2.10 ns/B     453.2 MiB/s      5.25 c/B      2494
+
+	[v2]
+	 - Optimization for CTR mode: Use CTR byte-addition path when
+	   counter carry-overflow happen only on ctr-variable but not in
+	   generated counter vector registers.
+
+	Cc: Taehee Yoo <ap420073@gmail.com>
+
+2023-01-21  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	asm-common-aarch64: fix read-only section for Windows target.
+	+ commit 833a904faf2b90a1b1d1b58e1e9a12f2e8e2378c
+	* cipher/asm-common-aarch64.h (SECTION_RODATA): Use .rdata for
+	_WIN32.
+
+2023-01-19  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	aarch64-asm: align functions to 16 bytes.
+	+ commit 6f8e750c42ffd34900fad30540e92e382111d567
+	* cipher/camellia-aarch64.S: Align functions to 16 bytes.
+	* cipher/chacha20-aarch64.S: Likewise.
+	* cipher/cipher-gcm-armv8-aarch64-ce.S: Likewise.
+	* cipher/crc-armv8-aarch64-ce.S: Likewise.
+	* cipher/rijndael-aarch64.S: Likewise.
+	* cipher/rijndael-armv8-aarch64-ce.S: Likewise.
+	* cipher/sha1-armv8-aarch64-ce.S: Likewise.
+	* cipher/sha256-armv8-aarch64-ce.S: Likewise.
+	* cipher/sha512-armv8-aarch64-ce.S: Likewise.
+	* cipher/sm3-aarch64.S: Likewise.
+	* cipher/sm3-armv8-aarch64-ce.S: Likewise.
+	* cipher/sm4-aarch64.S: Likewise.
+	* cipher/sm4-armv8-aarch64-ce.S: Likewise.
+	* cipher/sm4-armv9-aarch64-sve-ce.S: Likewise.
+	* cipher/twofish-aarch64.S: Likewise.
+	* mpi/aarch64/mpih-add1.S: Likewise.
+	* mpi/aarch64/mpih-mul1.S: Likewise.
+	* mpi/aarch64/mpih-mul2.S: Likewise.
+	* mpi/aarch64/mpih-mul3.S: Likewise.
+	* mpi/aarch64/mpih-sub1.S: Likewise.
+
+	aarch64-asm: move constant data to read-only section.
+	+ commit b3d7d520a0aab8b3356749fa4765a7f1f5c676d6
+	* cipher/asm-common-aarch64.h (SECTION_RODATA)
+	(GET_DATA_POINTER): New.
+	(GET_LOCAL_POINTER): Remove.
+	* cipher/camellia-aarch64.S: Move constant data to read-only data
+	section; Remove unneeded '.ltorg'.
+	* cipher/chacha20-aarch64.S: Likewise.
+	* cipher/cipher-gcm-armv8-aarch64-ce.S: Likewise.
+	* cipher/crc-armv8-aarch64-ce.S: Likewise.
+	* cipher/rijndael-aarch64.S: Likewise.
+	* cipher/sha1-armv8-aarch64-ce.S: Likewise.
+	* cipher/sha256-armv8-aarch64-ce.S: Likewise.
+	* cipher/sm3-aarch64.S: Likewise.
+	* cipher/sm3-armv8-aarch64-ce.S: Likewise.
+	* cipher/sm4-aarch64.S: Likewise.
+	* cipher/sm4-armv9-aarch64-sve-ce.S: Likewise.
+	* cipher/twofish-aarch64.S: Likewise.
+
+	s390x-asm: move constant data to read-only section.
+	+ commit 65f52773d4bb59a4ea4b7e373fe79b3559ddf312
+	* cipher/chacha20-s390x.S: Move constant data to read-only
+	section; Align functions to 16 bytes.
+	* cipher/poly1305-s390x.S: Likewise.
+
+	powerpc-asm: move constant data to read-only section.
+	+ commit d0a109148b799e6ba24bb0e030009e5ac3eaf5dc
+	* cipher/chacha20-p10le-8x.s: Move constant data to read-only
+	section.
+
+	mpi/amd64: align functions and inner loops to 16 bytes.
+	+ commit 12ad3ea6b49b12ba7ca44bc77e4e87025a6fd095
+	* mpi/amd64/mpih-add1.S: Align function and inner loop to 16 bytes.
+	* mpi/amd64/mpih-lshift.S: Likewise.
+	* mpi/amd64/mpih-mul1.S: Likewise.
+	* mpi/amd64/mpih-mul2.S: Likewise.
+	* mpi/amd64/mpih-mul3.S: Likewise.
+	* mpi/amd64/mpih-rshift.S: Likewise.
+	* mpi/amd64/mpih-sub1.S: Likewise.
+
+	amd64-asm: move constant data to read-only section for cipher algos.
+	+ commit 208b1f3a7bd8709889aa566ff030bcff57ce1cfd
+	* cipher/camellia-aesni-avx-amd64.S: Move constant data to
+	read-only section.
+	* cipher/camellia-aesni-avx2-amd64.h: Likewise.
+	* cipher/camellia-gfni-avx512-amd64.S: Likewise.
+	* cipher/chacha20-amd64-avx2.S: Likewise.
+	* cipher/chacha20-amd64-avx512.S: Likewise.
+	* cipher/chacha20-amd64-ssse3.S: Likewise.
+	* cipher/des-amd64.s: Likewise.
+	* cipher/rijndael-ssse3-amd64-asm.S: Likewise.
+	* cipher/rijndael-vaes-avx2-amd64.S: Likewise.
+	* cipher/serpent-avx2-amd64.S: Likewise.
+	* cipher/sm4-aesni-avx-amd64.S: Likewise.
+	* cipher/sm4-aesni-avx2-amd64.S: Likewise.
+	* cipher/sm4-gfni-avx2-amd64.S: Likewise.
+	* cipher/sm4-gfni-avx512-amd64.S: Likewise.
+	* cipher/twofish-avx2-amd64.S: Likewise.
+
+	amd64-asm: align functions to 16 bytes for cipher algos.
+	+ commit 9d62c54de2b0cd3b1849a27f8998e1f0d43f1583
+	* cipher/blowfish-amd64.S: Align functions to 16 bytes.
+	* cipher/camellia-aesni-avx-amd64.S: Likewise.
+	* cipher/camellia-aesni-avx2-amd64.h: Likewise.
+	* cipher/camellia-gfni-avx512-amd64.S: Likewise.
+	* cipher/cast5-amd64.S: Likewise.
+	* cipher/chacha20-amd64-avx2.S: Likewise.
+	* cipher/chacha20-amd64-ssse3.S: Likewise.
+	* cipher/des-amd64.s: Likewise.
+	* cipher/rijndael-amd64.S: Likewise.
+	* cipher/rijndael-ssse3-amd64-asm.S: Likewise.
+	* cipher/salsa20-amd64.S: Likewise.
+	* cipher/serpent-avx2-amd64.S: Likewise.
+	* cipher/serpent-sse2-amd64.S: Likewise.
+	* cipher/sm4-aesni-avx-amd64.S: Likewise.
+	* cipher/sm4-aesni-avx2-amd64.S: Likewise.
+	* cipher/sm4-gfni-avx2-amd64.S: Likewise.
+	* cipher/twofish-amd64.S: Likewise.
+	* cipher/twofish-avx2-amd64.S: Likewise.
+
+	amd64-asm: move constant data to read-only section for hash/mac algos.
+	+ commit 14137d685cf8d779ac4656b64b7d5adcdcf90e3a
+	* cipher/asm-common-amd64.h (SECTION_RODATA): New.
+	* cipher/blake2b-amd64-avx2.S: Use read-only section for constant
+	data.
+	* cipher/blake2b-amd64-avx512.S: Likewise.
+	* cipher/blake2s-amd64-avx.S: Likewise.
+	* cipher/blake2s-amd64-avx512.S: Likewise.
+	* cipher/poly1305-amd64-avx512.S: Likewise.
+	* cipher/sha1-avx-amd64.S: Likewise.
+	* cipher/sha1-avx-bmi2-amd64.S: Likewise.
+	* cipher/sha1-avx2-bmi2-amd64.S: Likewise.
+	* cipher/sha1-ssse3-amd64.S: Likewise.
+	* cipher/sha256-avx-amd64.S: Likewise.
+	* cipher/sha256-avx2-bmi2-amd64.S: Likewise.
+	* cipher/sha256-ssse3-amd64.S: Likewise.
+	* cipher/sha512-avx-amd64.S: Likewise.
+	* cipher/sha512-avx2-bmi2-amd64.S: Likewise.
+	* cipher/sha512-avx512-amd64.S: Likewise.
+	* cipher/sha512-ssse3-amd64.S: Likewise.
+	* cipher/sha3-avx-bmi2-amd64.S: Likewise.
+
+2023-01-17  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	tests/bench-slope: skip CPU warm-up in regression tests.
+	+ commit ec57b50bc60a6a5cc98249e2607b4e31bdcba553
+	* tests/bench-slope.c (warm_up_cpu): Skip in regression tests.
+
+	tests/basic: perform x86 vector cluttering only when __SSE2__ is set.
+	+ commit 308a70ac9907de136fae86db40ebe25c904167a2
+	* tests/basic.c (CLUTTER_VECTOR_REGISTER_AMD64)
+	(CLUTTER_VECTOR_REGISTER_I386): Set only if __SSE2__ defined.
+	(clutter_vector_registers) [CLUTTER_VECTOR_REGISTER_AMD64]: Remove
+	__SSE2__ check for "xmm" clobbers.
+	(clutter_vector_registers) [CLUTTER_VECTOR_REGISTER_I386]: Likewise.
+
+	tests/basic: fix clutter vector register asm for amd64 and i386.
+	+ commit 1a758b08bba09a7bba72b764d4f7c6c7c8f08cf1
+	* tests/basic.c (clutter_vector_registers): Pass data pointers through
+	single register for CLUTTER_VECTOR_REGISTER_AMD64 and
+	CLUTTER_VECTOR_REGISTER_I386 as compiler might attempt to allocate
+	separate pointer register for each "m" operator.
+
+	avx512: tweak zmm16-zmm31 register clearing.
+	+ commit 7de2fb66e065a97f121bd16ab37efba32983a6bd
+	* cipher/asm-common-amd64.h (spec_stop_avx512): Clear ymm16
+	before and after vpopcntb.
+	* cipher/camellia-gfni-avx512-amd64.S (clear_zmm16_zmm31): Clear
+	YMM16-YMM31 registers instead of XMM16-XMM31.
+	* cipher/chacha20-amd64-avx512.S (clear_zmm16_zmm31): Likewise.
+	* cipher/keccak-amd64-avx512.S (clear_regs): Likewise.
+	(clear_avx512_4regs): Clear all 4 registers with XOR.
+	* cipher/cipher-gcm-intel-pclmul.c (_gcry_ghash_intel_pclmul)
+	(_gcry_polyval_intel_pclmul): Clear YMM16-YMM19 registers instead of
+	ZMM16-ZMM19.
+	* cipher/poly1305-amd64-avx512.S (POLY1305_BLOCKS): Clear YMM16-YMM31
+	registers after vector processing instead of XMM16-XMM31.
+	* cipher/sha512-avx512-amd64.S
+	(_gcry_sha512_transform_amd64_avx512): Likewise.
+
+2023-01-06  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	aria: add generic 2-way bulk processing.
+	+ commit 5e1a04f77933a8295df69d818e9effc076dc68cd
+	* cipher/aria.c (ARIA_context): Add 'bulk_prefetch_ready'.
+	(aria_crypt_2blks, aria_crypt_blocks, aria_enc_blocks, aria_dec_blocks)
+	(_gcry_aria_ctr_enc, _gcry_aria_cbc_enc, _gcry_aria_cbc_dec)
+	(_gcry_aria_cfb_enc, _gcry_aria_cfb_dec, _gcry_aria_ecb_crypt)
+	(_gcry_aria_xts_crypt, _gcry_aria_ctr32le_enc, _gcry_aria_ocb_crypt)
+	(_gcry_aria_ocb_auth): New.
+	(aria_setkey): Setup 'bulk_ops' function pointers.
+
+	Add ARIA block cipher.
+	+ commit 316c6d7715d931a0fbe3ebc4e20e6f4d77b716cb
+	* cipher/Makefile.am: Add 'aria.c'.
+	* cipher/aria.c: New.
+	* cipher/cipher.c (cipher_list, cipher_list_algo301): Add ARIA cipher
+	specs.
+	* cipher/mac-cmac.c (map_mac_algo_to_cipher): Add GCRY_MAC_CMAC_ARIA.
+	(_gcry_mac_type_spec_cmac_aria): New.
+	* cipher/mac-gmac.c (map_mac_algo_to_cipher): Add GCRY_MAC_GMAC_ARIA.
+	(_gcry_mac_type_spec_gmac_aria): New.
+	* cipher/mac-internal.h (_gcry_mac_type_spec_cmac_aria)
+	(_gcry_mac_type_spec_gmac_aria)
+	(_gcry_mac_type_spec_poly1305mac_aria): New.
+	* cipher/mac-poly1305.c (poly1305mac_open): Add GCRY_MAC_GMAC_ARIA.
+	(_gcry_mac_type_spec_poly1305mac_aria): New.
+	* cipher/mac.c (mac_list, mac_list_algo201, mac_list_algo401)
+	(mac_list_algo501): Add ARIA MAC specs.
+	* configure.ac (available_ciphers): Add 'aria'.
+	(GCRYPT_CIPHERS): Add 'aria.lo'.
+	(USE_ARIA): New.
+	* doc/gcrypt.texi: Add GCRY_CIPHER_ARIA128, GCRY_CIPHER_ARIA192,
+	GCRY_CIPHER_ARIA256, GCRY_MAC_CMAC_ARIA, GCRY_MAC_GMAC_ARIA and
+	GCRY_MAC_POLY1305_ARIA.
+	* src/cipher.h (_gcry_cipher_spec_aria128, _gcry_cipher_spec_aria192)
+	(_gcry_cipher_spec_aria256): New.
+	* src/gcrypt.h.in (gcry_cipher_algos): Add GCRY_CIPHER_ARIA128,
+	GCRY_CIPHER_ARIA192 and GCRY_CIPHER_ARIA256.
+	(gcry_mac_algos): GCRY_MAC_CMAC_ARIA, GCRY_MAC_GMAC_ARIA and
+	GCRY_MAC_POLY1305_ARIA.
+	* tests/basic.c (check_ecb_cipher, check_ctr_cipher)
+	(check_cfb_cipher, check_ocb_cipher) [USE_ARIA]: Add ARIA test-vectors.
+	(check_ciphers) [USE_ARIA]: Add GCRY_CIPHER_ARIA128, GCRY_CIPHER_ARIA192
+	and GCRY_CIPHER_ARIA256.
+	(main): Also run 'check_bulk_cipher_modes' for 'cipher_modes_only'-mode.
+	* tests/bench-slope.c (bench_mac_init): Add GCRY_MAC_POLY1305_ARIA
+	setiv-handling.
+	* tests/benchmark.c (mac_bench): Likewise.
+
+2023-01-04  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	sm4: add missing OCB 16-way GFNI-AVX512 path.
+	+ commit 30c9a1d101b45908a17c68fa50f4cdf9bd113792
+	* cipher/sm4.c (_gcry_sm4_ocb_crypt) [USE_GFNI_AVX512]: Add 16-way
+	GFNI-AVX512 handling.
+
+	bulkhelp: change bulk function definition to allow modifying context.
+	+ commit 86db4b02c6e5fd41ae958fb5e1fcf3e296a820ad
+	* cipher/bulkhelp.h (bulk_crypt_fn_t): Make 'ctx' non-constant and
+	change 'num_blks' from 'unsigned int' to 'size_t'.
+	* cipher/camellia-glue.c (camellia_encrypt_blk1_32)
+	(camellia_encrypt_blk1_64, camellia_decrypt_blk1_32)
+	(camellia_decrypt_blk1_64): Adjust to match 'bulk_crypt_fn_t'.
+	* cipher/serpent.c (serpent_crypt_blk1_16, serpent_encrypt_blk1_16)
+	(serpent_decrypt_blk1_16): Likewise.
+	* cipher/sm4.c (crypt_blk1_16_fn_t, _gcry_sm4_aesni_avx_crypt_blk1_8)
+	(sm4_aesni_avx_crypt_blk1_16, _gcry_sm4_aesni_avx2_crypt_blk1_16)
+	(sm4_aesni_avx2_crypt_blk1_16, _gcry_sm4_gfni_avx2_crypt_blk1_16)
+	(sm4_gfni_avx2_crypt_blk1_16, _gcry_sm4_gfni_avx512_crypt_blk1_16)
+	(_gcry_sm4_gfni_avx512_crypt_blk32, sm4_gfni_avx512_crypt_blk1_16)
+	(_gcry_sm4_aarch64_crypt_blk1_8, sm4_aarch64_crypt_blk1_16)
+	(_gcry_sm4_armv8_ce_crypt_blk1_8, sm4_armv8_ce_crypt_blk1_16)
+	(_gcry_sm4_armv9_sve_ce_crypt, sm4_armv9_sve_ce_crypt_blk1_16)
+	(sm4_crypt_blocks, sm4_crypt_blk1_32, sm4_encrypt_blk1_32)
+	(sm4_decrypt_blk1_32): Likewise.
+	* cipher/twofish.c (twofish_crypt_blk1_16, twofish_encrypt_blk1_16)
+	(twofish_decrypt_blk1_16): Likewise.
+
+	Add GMAC-SM4 and Poly1305-SM4.
+	+ commit d1ccc409d4c655f695c7dc042a629a8898bd14eb
+	* cipher/cipher.c (cipher_list_algo301): Remove comma at the end
+	of last entry.
+	* cipher/mac-gmac.c (map_mac_algo_to_cipher): Add SM4.
+	(_gcry_mac_type_spec_gmac_sm4): New.
+	* cipher/max-internal.h (_gcry_mac_type_spec_gmac_sm4)
+	(_gcry_mac_type_spec_poly1305mac_sm4): New.
+	* cipher/mac-poly1305.c (poly1305mac_open): Add SM4.
+	(_gcry_mac_type_spec_poly1305mac_sm4): New.
+	* cipher/mac.c (mac_list, mac_list_algo401, mac_list_algo501): Add
+	GMAC-SM4 and Poly1304-SM4.
+	(mac_list_algo101): Remove comma at the end of last entry.
+	* cipher/md.c (digest_list_algo301): Remove comma at the end of
+	last entry.
+	* doc/gcrypt.texi: Add GCRY_MAC_GMAC_SM4 and GCRY_MAC_POLY1305_SM4.
+	* src/gcrypt.h.in (GCRY_MAC_GMAC_SM4, GCRY_MAC_POLY1305_SM4): New.
+	* tests/bench-slope.c (bench_mac_init): Setup IV for
+	GCRY_MAC_POLY1305_SM4.
+	* tests/benchmark.c (mac_bench): Likewise.
+
+	Fix compiler warnings seen with clang-powerpc64le target.
+	+ commit f2153d797f43a5fc8b80c2d908bf7dd6ad1fcc2a
+	* cipher/rijndael-ppc-common.h (asm_sbox_be): New.
+	* cipher/rijndael-ppc.c (_gcry_aes_sbox4_ppc8): Use 'asm_sbox_be'
+	instead of 'vec_sbox_be' since this instrinsics has different
+	prototype definition on GCC and Clang ('vector uchar' vs 'vector
+	ulong long').
+	* cipher/sha256-ppc.c (vec_ror_u32): Remove unused function.
+
+2022-12-14  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	Add clang support for ARM 32-bit assembly.
+	+ commit 02d5d1d97b3f281cf9c854d7143e346ab76fa384
+	* configure.ac (gcry_cv_gcc_arm_platform_as_ok)
+	(gcry_cv_gcc_inline_asm_neon): Remove % prefix from register names.
+	* cipher/cipher-gcm-armv7-neon.S (vmull_p64): Prefix constant values
+	with # character instead of $.
+	* cipher/blowfish-arm.S: Remove % prefix from all register names.
+	* cipher/camellia-arm.S: Likewise.
+	* cipher/cast5-arm.S: Likewise.
+	* cipher/rijndael-arm.S: Likewise.
+	* cipher/rijndael-armv8-aarch32-ce.S: Likewise.
+	* cipher/sha512-arm.S: Likewise.
+	* cipher/sha512-armv7-neon.S: Likewise.
+	* cipher/twofish-arm.S: Likewise.
+	* mpi/arm/mpih-add1.S: Likewise.
+	* mpi/arm/mpih-mul1.S: Likewise.
+	* mpi/arm/mpih-mul2.S: Likewise.
+	* mpi/arm/mpih-mul3.S: Likewise.
+	* mpi/arm/mpih-sub1.S: Likewise.
+
+	rijndael-ppc: fix wrong inline assembly constraint.
+	+ commit 3d20308cc529b53d49954e9f0b8d10fa14422303
+	* cipher/rijndael-ppc-function.h (CBC_ENC_FUNC): Fix outiv constraint.
+
+	Fix building AVX512 Intel-syntax assembly with x86-64 clang.
+	+ commit 31837163fbc36680140a17892374380a214c5d16
+	* cipher/asm-common-amd64.h (spec_stop_avx512_intel_syntax): New.
+	* cipher/poly1305-amd64-avx512.S: Use spec_stop_avx512_intel_syntax
+	instead of spec_stop_avx512.
+	* cipher/sha512-avx512-amd64.S: Likewise.
+
+2022-12-14  NIIBE Yutaka  <gniibe@fsij.org>
+
+	build: Fix m4 macros for strict C compiler.
+	+ commit e3b441214f93d8f61875b8223480e57afa2a3f10
+	* m4/ax_cc_for_build.m4: Fix for no arg.
+	* m4/noexecstack.m4: Likewise.
+
+	build: Fix configure.ac for strict C99.
+	+ commit f62d5cf9f2683efa867fb04332c84ec899818d22
+	* configure.ac: More fixes for other architecture.
+
+2022-12-13  NIIBE Yutaka  <gniibe@fsij.org>
+
+	build: Fix configure.ac for strict C99.
+	+ commit 693ffa145378682229473b0e811a9cea7c4d307a
+	* configure.ac: Add function declarations for asm functions.
+
+2022-12-12  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	avx512: tweak AVX512 spec stop, use common macro in assembly.
+	+ commit 8b4e0e9e9a3696be1404938226f0ec3582f12258
+	* cipher/cipher-gcm-intel-pclmul.c: Use xmm registers for AVX512
+	spec stop.
+	* cipher/asm-common-amd64.h (spec_stop_avx512): New.
+	* cipher/blake2b-amd64-avx512.S: Use spec_stop_avx512.
+	* cipher/blake2s-amd64-avx512.S: Likewise.
+	* cipher/camellia-gfni-avx512-amd64.S: Likewise.
+	* cipher/chacha20-avx512-amd64.S: Likewise.
+	* cipher/keccak-amd64-avx512.S: Likewise.
+	* cipher/poly1305-amd64-avx512.S: Likewise.
+	* cipher/sha512-avx512-amd64.S: Likewise.
+	* cipher/sm4-gfni-avx512-amd64.S: Likewise.
+	---
+
+	chacha20-avx512: add handling for any input block count and tweak 16 block code a bit
+	+ commit 996f81dd86ab299f92df581edad49e69ee932139
+	* cipher/chacha20-amd64-avx512.S: Add tail handling for 8/4/2/1
+	blocks; Rename `_gcry_chacha20_amd64_avx512_blocks16` to
+	`_gcry_chacha20_amd64_avx512_blocks`; Tweak 16 parallel block processing
+	for small speed improvement.
+	* cipher/chacha20.c (_gcry_chacha20_amd64_avx512_blocks16): Rename to ...
+	(_gcry_chacha20_amd64_avx512_blocks): ... this.
+	(chacha20_blocks) [USE_AVX512]: Add AVX512 code-path.
+	(do_chacha20_encrypt_stream_tail) [USE_AVX512]: Change to handle any
+	number of full input blocks instead of multiples of 16.
+
+2022-12-06  Jakub Jelen  <jjelen@redhat.com>
+
+	fips,rsa: Prevent usage of X9.31 keygen in FIPS mode.
+	+ commit 06ea5b5332ffdb44a0a394d766be8989bcb6a95c
+	* cipher/rsa.c (rsa_generate): Do not accept use-x931 or derive-parms
+	in FIPS mode.
+	* tests/pubkey.c (get_keys_x931_new): Expect failure in FIPS mode.
+	(check_run): Skip checking X9.31 keys in FIPS mode.
+	* doc/gcrypt.texi: Document "test-parms" and clarify some cases around
+	the X9.31 keygen.
+
+2022-11-30  Jakub Jelen  <jjelen@redhat.com>
+
+	rsa: Prevent usage of long salt in FIPS mode.
+	+ commit bf1e62e59200b2046680d1d3d1599facc88cfe63
+	* cipher/rsa-common.c (_gcry_rsa_pss_encode): Prevent usage of large
+	  salt lengths
+	  (_gcry_rsa_pss_verify): Ditto.
+	* tests/basic.c (check_pubkey_sign): Check longer salt length fails in
+	  FIPS mode
+	* tests/t-rsa-pss.c (one_test_sexp): Fix function name in error message
+
+2022-11-21  NIIBE Yutaka  <gniibe@fsij.org>
+
+	random:w32: Don't emit message for diskperf when it's not useful.
+	+ commit 35abf4d2eb582b78873aa324f6d02976788ffbbc
+	* random/rndw32.c (slow_gatherer): Suppress emitting by log_info.
+
+2022-11-18  Jakub Jelen  <jjelen@redhat.com>
+
+	fips: Mark AES key wrapping as approved.
+	+ commit c34c9e70055ee43e5ef257384fa15941f064e5a4
+	* src/fips.c (_gcry_fips_indicator_cipher): Add key wrapping mode as
+	approved.
+
+	pkdf2: Add checks for FIPS.
+	+ commit f4a861f3e5ae82f278284061e4829c03edf9c3a7
+	* cipher/kdf.c (_gcry_kdf_pkdf2): Require 8 chars passphrase for FIPS.
+	Set bounds for salt length and iteration count in FIPS mode.
+
+2022-11-01  NIIBE Yutaka  <gniibe@fsij.org>
+
+	build: Prefer gpgrt-config when available.
+	+ commit 0dcb7e05c9e1c9c2a23abe0a0390680741b61414
+	* src/libgcrypt.m4: Overriding the decision by
+	--with-libgcrypt-prefix, use gpgrt-config libgcrypt when gpgrt-config
+	is available.
+
+2022-10-26  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	sha3-avx512: fix for "x32" target.
+	+ commit eab1caae7bd529c09d809d4d7c64c97ab7abeab8
+	* cipher/keccak.c (_gcry_keccak_absorb_blocks_avx512): Change size_t
+	to u64; change 'const byte **new_lanes' to 'u64 *new_lanes'.
+	(keccak_absorb_lanes64_avx512): Get new lines pointer from assembly
+	through 'u64' type.
+
+	serpent: accelerate XTS and ECB modes.
+	+ commit 8a1fe5f78f9fed32cd641b3d9d02197f7ba394d8
+	* cipher/serpent-armv7-neon.S (_gcry_serpent_neon_blk8): New.
+	* cipher/serpent-avx2-amd64.S (_gcry_serpent_avx2_blk16): New.
+	* cipher/serpent-sse2-amd64.S (_gcry_serpent_sse2_blk8): New.
+	* cipher/serpent.c (_gcry_serpent_sse2_blk8)
+	(_gcry_serpent_avx2_blk16, _gcry_serpent_neon_blk8)
+	(_gcry_serpent_xts_crypt, _gcry_serpent_ecb_crypt)
+	(serpent_crypt_blk1_16, serpent_encrypt_blk1_16)
+	(serpent_decrypt_blk1_16): New.
+	(serpent_setkey): Setup XTS and ECB bulk functions.
+
+	serpent: fix compiler warning on 32-bit ARM.
+	+ commit b50b7ea5cabaf3729afe370b285d78fff9e27d31
+	* cipher/serpent.c (_gcry_serpent_ocb_crypt)
+	(_gcry_serpent_ocb_auth) [USE_NEON]: Cast "Ls" to 'const void **'.
+
+	twofish: accelerate XTS and ECB modes.
+	+ commit d078a928f5c6024fde89388582b83742d2b8638a
+	* cipher/twofish-amd64.S (_gcry_twofish_amd64_blk3): New.
+	* cipher/twofish-avx2-amd64.S (_gcry_twofish_avx2_blk16): New.
+	(_gcry_twofish_xts_crypt, _gcry_twofish_ecb_crypt)
+	(_gcry_twofish_avx2_blk16, _gcry_twofish_amd64_blk3)
+	(twofish_crypt_blk1_16, twofish_encrypt_blk1_16)
+	(twofish_decrypt_blk1_16): New.
+	(twofish_setkey): Setup XTS and ECB bulk functions.
+
+	sm4: accelerate ECB (for benchmarking)
+	+ commit 14f39993d632815db68a5dca90e021891c9547ab
+	* cipher/sm4.c (_gcry_sm4_ecb_crypt): New.
+	(sm4_setkey): Setup ECB bulk function.
+
+	sm4: fix lookup-table prefetching.
+	+ commit a43e03ef842b2bb93b10cd2b85230af1f0269ca0
+	* cipher/sm4.c (sm4_expand_key): Prefetch sbox table.
+	(sm4_get_crypt_blk1_16_fn): Do not prefetch sbox table.
+	(sm4_expand_key, _gcry_sm4_ctr_enc, _gcry_sm4_cbc_dec)
+	(_gcry_sm4_cfb_dec): Prefetch sbox table if table look-up
+	implementation is used.
+
+	camellia: accelerate ECB (for benchmarking)
+	+ commit 6475d0915ffecc54a8d1105262edb28ff4026803
+	* cipher/bulkhelp.h (bulk_ecb_crypt_128): New.
+	* cipher/camellia-glue.c (_gcry_camellia_ecb_crypt): New.
+	(camellia_setkey): Select ECB bulk function with AESNI/AVX2, VAES/AVX2
+	and GFNI/AVX2.
+
+	rijndael-vaes: align asm functions.
+	+ commit 7c1aa4c9452aa1259039680bc1d5ba15124c5f76
+	* cipher/rijndael-vaes-avx2-amd64.S: Align functions to 16 bytes.
+
+	rijndael: add ECB acceleration (for benchmarking purposes)
+	+ commit 84f3d41acb2377d1ed0c2b9e8268de9d35e90af0
+	* cipher/cipher-internal.h (cipher_bulk_ops): Add 'ecb_crypt'.
+	* cipher/cipher.c (do_ecb_crypt): Use bulk function if available.
+	* cipher/rijndael-aesni.c (do_aesni_enc_vec8): Change asm label
+	'.Ldeclast' to '.Lenclast'.
+	(_gcry_aes_aesni_ecb_crypt): New.
+	* cipher/rijndael-armv8-aarch32-ce.S (_gcry_aes_ecb_enc_armv8_ce)
+	(_gcry_aes_ecb_dec_armv8_ce): New.
+	* cipher/rijndael-armv8-aarch64-ce.S (_gcry_aes_ecb_enc_armv8_ce)
+	(_gcry_aes_ecb_dec_armv8_ce): New.
+	* cipher/rijndael-armv8-ce.c (_gcry_aes_ocb_enc_armv8_ce)
+	(_gcry_aes_ocb_dec_armv8_ce, _gcry_aes_ocb_auth_armv8_ce): Change
+	return value from void to size_t.
+	(ocb_crypt_fn_t, xts_crypt_fn_t): Remove.
+	(_gcry_aes_armv8_ce_ocb_crypt, _gcry_aes_armv8_ce_xts_crypt): Remove
+	indirect function call; Return value from called function (allows tail
+	call optimization).
+	(_gcry_aes_armv8_ce_ocb_auth): Return value from called function (allows
+	tail call optimization).
+	(_gcry_aes_ecb_enc_armv8_ce, _gcry_aes_ecb_dec_armv8_ce)
+	(_gcry_aes_armv8_ce_ecb_crypt): New.
+	* cipher/rijndael-vaes-avx2-amd64.S
+	(_gcry_vaes_avx2_ecb_crypt_amd64): New.
+	* cipher/rijndael-vaes.c (_gcry_vaes_avx2_ecb_crypt_amd64)
+	(_gcry_aes_vaes_ecb_crypt): New.
+	* cipher/rijndael.c (_gcry_aes_aesni_ecb_crypt)
+	(_gcry_aes_vaes_ecb_crypt, _gcry_aes_armv8_ce_ecb_crypt): New.
+	(do_setkey): Setup ECB bulk function for x86 AESNI/VAES and ARM CE.
+
+	mpi/longlong: update powerpc macros from GCC.
+	+ commit bf5ec001dfcbd4a293d0bd577fd70a0f8286c4e6
+	* mpi/longlong.h [__powerpc__, __powerpc64__]: Update macros.
+
+	hwf-x86: enable VPGATHER usage for AMD CPUs with AVX512.
+	+ commit 4b1cb76e3587a8fdf59673a8368d47e4cd2fe151
+	* src/hwf-x86.c (detect_x86_gnuc): Move model based checks and
+	forced soft hwfeatures enablement at end; Enable VPGATHER for
+	AMD CPUs with AVX512.
+
+	sha512-avx512: enable only on Intel CPUs for now.
+	+ commit c0f85e0c8657030eb979a465199a07e2819f81e4
+	* cipher/sha512.c (sha512_init_common): Enable AVX512 implementation
+	only for Intel CPUs.
+
+2022-10-26  Jakub Jelen  <jjelen@redhat.com>
+
+	hmac,hkdf: Check the HMAC key length in FIPS mode.
+	+ commit b095ea7559734f519fbe92d570afe567330eb474
+	* src/visibility.c (gcry_md_setkey): Add the check here, too.
+
+	Revert "kdf:pkdf2: Require longer input when FIPS mode."
+	+ commit 47db7fe3a0c36523d2ccec31705cffff9a2337bc
+	* cipher/kdf.c (_gcry_kdf_pkdf2): Remove the length limitation of
+	  passphrase input length.
+
+2022-10-24  NIIBE Yutaka  <gniibe@fsij.org>
+
+	build: Update gpg-error.m4.
+	+ commit 12b3bc5a0d9c453d02ae229aadfee82808c10220
+	* m4/gpg-error.m4: Update from libgpg-error 1.46.
+
+2022-10-19  Jakub Jelen  <jjelen@redhat.com>
+
+	tests: Use proper format string for size_t.
+	+ commit b77e7a225bc40ea09fa66969625b97b09a1cbf23
+
+
+	cipher: Do not run RSA encryption selftest by default.
+	+ commit 4e7941587c95fc3ae5fb5686346855395ef6754b
+	* cipher/rsa.c (selftests_rsa): Skip encryption selftest as this
+	  operation is not claimed as part of the certification.
+
+	Revert "tests: Expect the RSA PKCS #1.5 encryption to fail in FIPS mode"
+	+ commit 7468cdfc8b6aa0c6e17c41218d5c5f2b575b16e4
+	This reverts commit f736f3c70182d9c948f9105eb769c47c5578df35. The pubkey
+	encryption has already separate explicit FIPS service indicator.
+
+	Revert "Do not allow PKCS #1.5 padding for encryption in FIPS"
+	+ commit e83280b36be3be3775427c5842f4274d01992763
+	This reverts commit c7709f7b23848abf4ba65cb99cb2a9e9c7ebdefc. The pubkey
+	encryption has already separate explicit FIPS service indicator.
+
+	Revert "tests: Expect the OEAP tests to fail in FIPS mode."
+	+ commit 9d56af04dce0795d30374fd575a8500fcf0ae158
+	This reverts commit 249ca431ef881d510b90a5d3db9cd8507c4d697b. The pubkey
+	encryption has already separate explicit FIPS service indicator.
+
+	Revert "fips: Disable RSA-OAEP padding in FIPS mode."
+	+ commit a7b5cab05f6a7de23c565b1303eb3f198d0b7e2b
+	This reverts commit e552e37983da0c54840786eeff34481685fde1e9. The pubkey
+	encryption has already separate explicit FIPS service indicator.
+
+	fips: Mark gcry_pk_encrypt/decrypt function non-approved.
+	+ commit 05cb8355d3e66f15425ad85ae2203882e80f4792
+	* src/fips.c (_gcry_fips_indicator_function): Add
+	gcry_pk_encrypt/decrypt as non-approved.
+
+	fips: Fix fips indicator function.
+	+ commit c5de9e77fb332939695918710b0842030515cce0
+	* src/fips.c (_gcry_fips_indicator_function): Fix typo in sign/verify
+	function names.
+
+2022-10-08  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	doc: fix RFC reference for GCM-SIV.
+	+ commit 94dcd2cf5cd17244eaa96920218f32b64c0cec44
+	* doc/gcrypt.texi: Fix GCM-SIV RFC reference to RFC-8452.
+
+	mpi/longlong.h: i386: use tzcnt instruction for trailing zeros.
+	+ commit f01d4b7a601f68e52c7c7b4647bfe97cb60be26e
+	* mpi/longlong.h [__i386__] (count_trailing_zeros): Add 'rep' prefix
+	for 'bsfq'.
+
+	mpi/longlong.h: x86-64: use tzcnt instruction for trailing zeros.
+	+ commit 38bd31bc46b992f68c9455ed50a6280943fe6a75
+	* mpi/longlong.h [__x86_64__] (count_trailing_zeros): Add 'rep' prefix
+	for 'bsfq'.
+
+	mpi/longlong: fix generic smul_ppmm ifdef.
+	+ commit d67f453d1b9de0ddb579de3a14ca8a3801bfead6
+	* mpi/longlong.h [!umul_ppmm] (smul_ppmm): Change ifdef
+	from !defined(umul_ppmm) to !defined(smul_ppmm).
+
+	mpi/longlong: provide generic implementation using double word type.
+	+ commit aef0ddf4d37ae7667cdf49d406e740e8d8d311cd
+	* configure.ac: Add check for 'unsigned __int128'.
+	* mpi/longlong.h (UDWtype): Define for 32-bit or 64-bit when
+	'unsigned long long' or 'unsigned __int128' is available.
+	(add_ssaaaa, sub_ddmmss, umul_ppmm, udiv_qrnnd) [UDWtype]: New.
+
+2022-10-06  Jakub Jelen  <jjelen@redhat.com>
+
+	tests: Reproducer for short dklen in FIPS mode.
+	+ commit efdc87b305ff326f37acd3a9c2606de24a706cce
+	* tests/t-kdf.c (check_pbkdf2): Add test vector with short dklen and
+	  verify it fails in FIPS mode
+
+	random: Extend the comment about FIPS specifics.
+	+ commit 6e832840a8b7cdd30f77e66685ad0de863d7e84d
+	* random/rndgetentropy.c (_gcry_rndgetentropy_gather_random): Clarify
+	  description of the chainging DRBG in FIPS mode.
+
+2022-10-04  Jakub Jelen  <jjelen@redhat.com>
+
+	random: Get maximum 32B of entropy at once in FIPS Mode.
+	+ commit a6a6e94027abf18a51f5f93bf9fb2cfe5496bdf8
+	* random/rndgetentropy.c (_gcry_rndgetentropy_gather_random): In fips
+	mode, gather max 32 B of strong entropy for initialization.
+
+2022-10-02  Jakub Jelen  <jjelen@redhat.com>
+
+	tests: Avoid memory leak.
+	+ commit 567bc62e1c3046594088de7209fee7c545ece1e3
+	* tests/hashtest.c (run_longtest): Avoid memory leak on error
+
+2022-10-02  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	t-rsa-testparm: fix 'function declaration isn’t a prototype' warning.
+	+ commit 0909186b9e66aa3a8fac7b2571915c45a7bfaeb3
+	* cipher/t-rsa-testparm.c (check_rsa_testparm): Define parameters as
+	void.
+
+	tests/benchmark: remove VLA usage.
+	+ commit 6419fbb1d3dd365a89623a94448a0335ae4a8554
+	* cipher/benchmark.c (ccm_aead_init): Avoid VLA in stack array.
+
+	tests/bench-slope: remove VLA usage.
+	+ commit 335b8eb1211b3b67541c689da949101db3b669fd
+	* tests/bench-slope.c (bench_set_cipher_key): New.
+	(bench_encrypt_init, bench_xts_encrypt_init): Use
+	'bench_set_cipher_key' to remove VLA usage.
+
+	cipher-ccm: remove VLA usage.
+	+ commit ce60a68a1172ea20c1ff72e27e4b0115d805bf48
+	* cipher/cipher-ccm.c (do_cbc_mac): Avoid VLA for stack array.
+
+	mpi/ec: remove VLA usage.
+	+ commit 9978fc22045ca7623a6e0cbf704fb48ab1550419
+	* mpi/ec-nist.c (_gcry_mpi_ec_nist192_mod, _gcry_mpi_ec_nist224_mod)
+	(_gcry_mpi_ec_nist256_mod, _gcry_mpi_ec_nist384_mod)
+	(_gcry_mpi_ec_nist521_mod): Avoid VLA for arrays.
+	* mpi/ec.c (ec_secp256k1_mod): Avoid VLA for arrays.
+
+2022-09-27  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	tests/hashtest: add hugeblock & disable-hwf options and 6 gig test vectors
+	+ commit 0cb29a5736cfcd6bce4ce2495cd0481f0bdb34a4
+	* .gitignore: Add 'tests/hashtest-6g'.
+	* configure.ac: Add 'tests/hashtest-6g'.
+	* tests/Makefile: Add 'hashtest-6g'.
+	* tests/hashtest-6g.in: New.
+	* tests/hashtest-256g.in: Add SHA3-512 to algos.
+	* tests/hashtest.c (use_hugeblock): New.
+	(testvectors): Add 256 GiB test vectors for BLAKE2S, BLAKE2B and
+	whirlpool; Add 6 GiB test vectors for SHA1, SHA256, SHA512, SHA3, SM3,
+	BLAKE2S, BLAKE2B, WHIRLPOOL, CRC32 and CRC24.
+	(run_longtest); Use huge 5 GiB pattern block when requested.
+	(main): Add '--hugeblock' and '--disable-hwf' options.
+	* tests/testdrv.c: Add 'hashtest-6g'; Add SHA3 to 'hashtest-256g'.
+
+2022-09-27  Jakub Jelen  <jjelen@redhat.com>
+
+	keccak: Use size_t to avoid integer overflow.
+	+ commit 9c828129b2058c3f36e07634637929a54e8377ee
+	* cipher/keccak-armv7-neon.S: Fix function name in comment and change
+	  parameter type to size_t.
+	* cipher/keccak.c (keccak_ops_t): Change absorb function signature to
+	  use size_t.
+	  (keccak_absorb_lanes64_avx512): Change nlanes type to size_t.
+	  (_gcry_keccak_absorb_lanes64_armv7_neon): Ditto.
+	  (keccak_absorb_lanes64_armv7_neon): Ditto.
+	  (keccak_absorb_lanes32bi): Ditto.
+	  (keccak_absorb_lanes32bi_bmi2): Ditto.
+	  (keccak_write): Change nlanes variable to use size_t and avoid
+	  overflow when calculating count.
+	* cipher/keccak_permute_64.h (KECCAK_F1600_ABSORB_FUNC_NAME): Change
+	  nlanes argument to use size_t.
+
+2022-09-27  Tobias Heider  <tobias.heider@canonical.com>
+
+	kdf:pkdf2: Check minimum allowed key size when running in FIPS mode.
+	+ commit 3c04b692de1e7b45b764ff8d66bf84609b012e3a
+	* cipher/kdf.c (_gcry_kdf_pkdf2): Add output length check.
+
+2022-09-27  NIIBE Yutaka  <gniibe@fsij.org>
+
+	kdf:pkdf2: Require longer input when FIPS mode.
+	+ commit 857e6f467d0fc9fd858a73d84122695425970075
+	* cipher/kdf.c (_gcry_kdf_pkdf2): Add length check.
+
+2022-09-22  Clemens Lang  <cllang@redhat.com>
+
+	fips: Skip PCT if RSA keygen test-parms specified.
+	+ commit c20022ffd4ad2cea51928a109dfa102d711d30ac
+	* cipher/rsa.c (rsa_generate): Skip PCT is test-parms were specified.
+	* tests/t-rsa-testparm.c: Add test for this functionality
+	* tests/Makefile.am: Add test to build system
+
+2022-09-16  NIIBE Yutaka  <gniibe@fsij.org>
+
+	More clean up.
+	+ commit 82226dad7ae0effa0d96645476f0401f94361141
+	* cipher/cipher-ccm.c (_gcry_cipher_ccm_tag): Add static qualifier.
+	* mpi/ec-ed25519.c: Include ec-internal.h.
+	* src/secmem.c (MB_WIPE_OUT): Remove extra semicolon.
+
+	Move function prototype to cipher.h.
+	+ commit f97b2f706dd0a8820828e9015340a895539ed216
+	* cipher/kdf-internal.h: Move from here.
+	* src/cipher.h (blake2b_vl_hash): To here.
+
+	Minor clean up.
+	+ commit 984d94fa9ffff69bd1bdb5d418889d2e6b2745e2
+	* mpi/mpi-internal.h: Remove extra semicolon from the macro.
+	* mpi/mpih-mul.c: Likewise.
+	* src/cipher-proto.h: Remove duplication for enum pk_encoding.
+	* mpi/mpi-pow.c (_gcry_mpi_powm): Initialize XSIZE.
+
+	Fix _gcry_err_code_to_errno.
+	+ commit 3962623fe6de5c6d6604db90c8c0869fc3d3b7cf
+	* src/gcrypt-int.h: Use gpg_err_code_to_errno.
+
+	Fix use of noreturn.
+	+ commit 000c50e0781920d691cc60c345a7bd4d770e92d5
+	* doc/yat2m.c: Use __noreturn__.
+	* src/g10lib.h: Likewise.
+
+2022-09-08  NIIBE Yutaka  <gniibe@fsij.org>
+
+	Silence compiler warnings for unused internal value.
+	+ commit 37dc9f8fd00a3aff175f34f094557899207d7ef8
+	* cipher/primegen.c (gen_prime): Fix write only variable.
+	* src/dumpsexp.c (parse_and_print): Likewise.
+
+	Fix function prototypes.
+	+ commit 10d9878dd84fe89a598b6d5ac313869e5f8ffdae
+	* random/random-csprng.c (random_poll): It's no args.
+	* src/secmem.c (_gcry_secmem_module_init): Likewise.
+	(_gcry_secmem_term): Likewise.
+
+2022-08-26  NIIBE Yutaka  <gniibe@fsij.org>
+
+	cipher: Check arguments for setup_geniv.
+	+ commit c9008345c114ddf2f2ecbfe8dbab03c6d0649408
+	* cipher/cipher.c (_gcry_cipher_setup_geniv): Validate the lengths.
+
+2022-08-25  NIIBE Yutaka  <gniibe@fsij.org>
+
+	cipher: Support internal generation of IV for AEAD cipher mode.
+	+ commit 373b1f6c17948fa7d31880c3705391bef08a0471
+	* cipher/cipher-gcm.c (_gcry_cipher_gcm_setiv_zero): New.
+	(_gcry_cipher_gcm_encrypt, _gcry_cipher_gcm_decrypt)
+	(_gcry_cipher_gcm_authenticate): Use _gcry_cipher_gcm_setiv_zero.
+	* cipher/cipher-internal.h (struct gcry_cipher_handle): Add aead field.
+	* cipher/cipher.c (_gcry_cipher_setiv): Check calling setiv to reject
+	direct invocation in FIPS mode.
+	(_gcry_cipher_setup_geniv, _gcry_cipher_geniv): New.
+	* doc/gcrypt.texi: Add explanation for two new functions.
+	* src/gcrypt-int.h (_gcry_cipher_setup_geniv, _gcry_cipher_geniv): New.
+	* src/gcrypt.h.in (enum gcry_cipher_geniv_methods): New.
+	(gcry_cipher_setup_geniv, gcry_cipher_geniv): New.
+	* src/libgcrypt.def (gcry_cipher_setup_geniv, gcry_cipher_geniv): Add.
+	* src/libgcrypt.vers: Likewise.
+	* src/visibility.c (gcry_cipher_setup_geniv, gcry_cipher_geniv): Add.
+	* src/visibility.h: Likewise.
+
+2022-08-23  Jakub Jelen  <jjelen@redhat.com>
+
+	tests: Expect the OEAP tests to fail in FIPS mode.
+	+ commit 249ca431ef881d510b90a5d3db9cd8507c4d697b
+	* tests/basic.c (check_pubkey_crypt): Expect the OAEP padding encryption
+	  to fail in FIPS mode
+	* tests/pkcs1v2.c (check_oaep): Expect the OAEP tests to fail in FIPS
+	  mode
+
+	fips: Disable RSA-OAEP padding in FIPS mode.
+	+ commit e552e37983da0c54840786eeff34481685fde1e9
+	* cipher/pubkey-util.c (_gcry_pk_util_data_to_mpi): Block OAEP padding
+	  in FIPS mode for encryption
+	* cipher/rsa.c (rsa_decrypt): Block OAEP padding in FIPS mode for
+	  decryption
+
+	gcrypt.h: Fix function name in comment.
+	+ commit 0d69847e41e1803654180544fffd4cba3f49cb12
+
+
+	random: Use getrandom (GRND_RANDOM) in FIPS mode.
+	+ commit aab1d63e4def41593312f76de016c885ffafecde
+	* random/rndgetentropy.c (_gcry_rndgetentropy_gather_random): Use
+	  GRND_RANDOM in FIPS Mode
+
+	Simplify the PCT for RSA and ECDSA.
+	+ commit a527d252b89958864153da9ad149e97bb96e1692
+	Could be squashed.
+
+	* cipher/ecc.c (test_keys_fips): Simplify to accept key in SEXP format
+	  (nist_generate_key): Skip call to test keys
+	  (ecc_generate): Call test keys in FIPS mode later, when we have
+	  complete SEXP key structure.
+	* cipher/rsa.c (test_keys_fips): Simplify to accept key in SEXP format
+	  (generate_fips): Skip selftest at this stage
+	  (rsa_generate): Test the keys later when we already have key in SEXP
+	  format
+
+	ecc: Run PCT also with the digest step.
+	+ commit d259993b9456c7abe465f234c4a6f9688a16db40
+	* cipher/ecc.c (test_keys_fips): New function
+	  (nist_generate_key): In FIPS mode, execute new PCT test
+	---
+
+	rsa: Run PCT in FIPS mode also with digest step.
+	+ commit 505f048cac8e5af92d3431bd97ade492d1a30bc2
+	* cipher/rsa.c (test_keys_fips): New.
+	(generate_fips): Call test_keys_fips.
+
+	fips: Add function-name based FIPS indicator.
+	+ commit 05a9c9d1ba1db6c1cd160fba979e9ddf4700a0c0
+	* doc/gcrypt.texi: Document the new function-based fips indicator
+	  GCRYCTL_FIPS_SERVICE_INDICATOR_FUNCTION
+	* src/fips.c (_gcry_fips_indicator_function): New function indicating
+	  non-approved functions.
+	* src/gcrypt.h.in (enum gcry_ctl_cmds): New symbol
+	  GCRYCTL_FIPS_SERVICE_INDICATOR_FUNCTION
+	* src/global.c (_gcry_vcontrol): Handle new FIPS indicator.
+
+	fips: Run digest&sign self tests for RSA and ECC in FIPS mode.
+	+ commit 1fc7bfc351ba1d7fa31c0c62a24ad78e9e1cfd5b
+	* cipher/ecc.c (selftest_hash_sign): Implement digest & sign KAT
+	 (selftests_ecdsa): Run the original basic test only with extended tests
+	 (run_selftests): Pass-through the extended argument
+	* cipher/rsa.c (selftest_hash_sign_2048): Implement digest & sign KAT
+	 (selftests_rsa): Run the original basic test only with extended tests
+	 (run_selftests): Pass-through the extended argument
+
+2022-08-18  Milan Broz  <gmazyland@gmail.com>
+
+	kdf: Allow empty password for Argon2.
+	+ commit a20700c55f0eb8dbb8368b756a571c116163a0bc
+	* cipher/kdf.c (_gcry_kdf_open) allow empty password for Argon2.
+
+	kdf: Restructure KDF test vectors.
+	+ commit 8a1f50e66364389b8a867801ead8327a663b0c03
+	* tests/t-kdf.c: Restructure KDF test vectors to allow easy addition
+	  new vectors. Also remove some ugly C code like goto again.
+
+2022-08-02  Clemens Lang  <cllang@redhat.com>
+
+	tests/basic: Add ifdefs for SM4 and CAMELLIA tests.
+	+ commit 97e2c237f15dcdb44152887f4773f1f212b529bd
+	* tests/basic.c (check_gcm_siv_cipher): Do not run test vectors that
+	  are known to fail when compiled without support for SM4 or CAMELLIA.
+
+2022-08-01  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	basic: gcm-siv: add fips checks for SM4 and CAMELLIA128.
+	+ commit a8f66410ca0ded040abea4790efaeb36bb4ccc91
+	* tests/basic.c (check_gcm_siv_cipher): Add 'flags' for test vectors
+	and set FLAG_NOFIPS for SM4 and CAMELLIA128 test vectors; Add FIPS check
+	for test vectors; Change printing "aes-gcm-siv" on fail messages to
+	"algo %d GCM-SIV".
+
+2022-07-31  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	sm4: fix unused parameter compiler warning.
+	+ commit a0c933f6fed0612558ff75fb23cbf78e2dea1f16
+	* cipher/sm4.c (sm4_get_crypt_blk1_16_fn): '(void)'-access ctx
+	parameter to avoid compiler warning on powerpc.
+
+2022-07-31  Tianjia Zhang  <tianjia.zhang@linux.alibaba.com>
+
+	sm4: add ARMv8 CE accelerated implementation for XTS mode.
+	+ commit 8287dea8379fa9e43dc331c6bd444dd25a962e4b
+	* cipher/sm4-armv8-aarch64-ce.S (_gcry_sm4_armv8_ce_xts_crypt): New.
+	* cipher/sm4.c (_gcry_sm4_armv8_ce_xts_crypt): New.
+	(_gcry_sm4_xts_crypt) [USE_ARM_CE]: Add ARMv8 CE implementation for XTS.
+
+2022-07-31  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	Simplify AES key schedule implementation.
+	+ commit db5136c4d9331c001bbe91cfe6625ae7738f8575
+	* cipher/rijndael-armv8-ce.c (_gcry_aes_armv8_ce_setkey): New key
+	schedule with simplified structure and less stack usage.
+	* cipher/rijndael-internal.h (RIJNDAEL_context_s): Add
+	'keyschedule32b'.
+	(keyschenc32b): New.
+	* cipher/rijndael-ppc-common.h (vec_u32): New.
+	* cipher/rijndael-ppc.c (vec_bswap32_const): Remove.
+	(_gcry_aes_sbox4_ppc8): Optimize for less instructions emitted.
+	(keysched_idx): New.
+	(_gcry_aes_ppc8_setkey): New key schedule with simplified structure.
+	* cipher/rijndael-tables.h (rcon): Remove.
+	* cipher/rijndael.c (sbox4): New.
+	(do_setkey): New key schedule with simplified structure and less
+	stack usage.
+
+	rijndael-ppc: small speed-up for CBC and CFB encryption.
+	+ commit 2ac6c24aa53024eb415d49f52229e868f72f47f8
+	* cipher/rijndael-ppc-common.h (AES_ENCRYPT_ALL): Remove
+	* cipher/rijndael-ppc-functions.h (CFB_ENC_FUNC)
+	(CBC_ENC_FUNC): Removed two block unrolled loop; Optimized single
+	block loop for shorter critical-path.
+
+2022-07-25  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	sha512: add AArch64 crypto/SHA512 extension implementation.
+	+ commit e51d3b8330a1d4b15e3484df90646e075c02f54b
+	* cipher/Makefile.am: Add 'sha512-armv8-aarch64-ce.S'.
+	* cipher/sha512-armv8-aarch64-ce.S: New.
+	* cipher/sha512.c (ATTR_ALIGNED_64, USE_ARM64_SHA512): New.
+	(k): Make array aligned to 64 bytes.
+	[USE_ARM64_SHA512] (_gcry_sha512_transform_armv8_ce): New.
+	[USE_ARM64_SHA512] (do_sha512_transform_armv8_ce): New.
+	(sha512_init_common) [USE_ARM64_SHA512]: Use ARMv8-SHA512 accelerated
+	implementation if HW feature available.
+	* configure.ac: Add 'sha512-armv8-aarch64-ce.lo'.
+	(gcry_cv_gcc_inline_asm_aarch64_sha3_sha512_sm3_sm4)
+	(HAVE_GCC_INLINE_ASM_AARCH64_SHA3_SHA512_SM3_SM4): New.
+
+	blake2: add AVX512 accelerated implementations.
+	+ commit 909daa700e4b45d75469df298ee564b8fc2f4b72
+	* cipher/Makefile.am: Add 'blake2b-amd64-avx512.S' and
+	'blake2s-amd64-avx512.S'.
+	* cipher/blake2.c (USE_AVX512): New.
+	(ASM_FUNC_ABI): Setup attribute if USE_AVX2 or USE_AVX512 enabled in
+	addition to USE_AVX.
+	(BLAKE2B_CONTEXT_S, BLAKE2S_CONTEXT_S): Add 'use_avx512'.
+	(_gcry_blake2b_transform_amd64_avx512)
+	(_gcry_blake2s_transform_amd64_avx512): New.
+	(blake2b_transform, blake2s_transform) [USE_AVX512]: Add AVX512 path.
+	(blake2b_init_ctx, blake2s_init_ctx) [USE_AVX512]: Use AVX512 if HW
+	feature available.
+	* cipher/blake2b-amd64-avx512.S: New.
+	* cipher/blake2s-amd64-avx512.S: New.
+	* configure.ac: Add 'blake2b-amd64-avx512.lo' and
+	'blake2s-amd64-avx512.lo'.
+
+	sha3: Add x86-64 AVX512 accelerated implementation.
+	+ commit beaad75f4655e5316ce24f75ef172c231fd47fc1
+	* LICENSES: Add 'cipher/keccak-amd64-avx512.S'.
+	* configure.ac: Add 'keccak-amd64-avx512.lo'.
+	* cipher/Makefile.am: Add 'keccak-amd64-avx512.S'.
+	* cipher/keccak-amd64-avx512.S: New.
+	* cipher/keccak.c (USE_64BIT_AVX512, ASM_FUNC_ABI): New.
+	[USE_64BIT_AVX512] (_gcry_keccak_f1600_state_permute64_avx512)
+	(_gcry_keccak_absorb_blocks_avx512, keccak_f1600_state_permute64_avx512)
+	(keccak_absorb_lanes64_avx512, keccak_avx512_64_ops): New.
+	(keccak_init) [USE_64BIT_AVX512]: Enable x86-64 AVX512 implementation
+	if supported by HW features.
+
+2022-07-21  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	sm4-arm-sve-ce: use 32 parallel blocks for XTS and CTR32LE.
+	+ commit dca0bd133dd08ec88e0b4c454cfc26c9093572a9
+	* cipher/sm4.c (sm4_crypt_blk1_32) [USE_ARM_SVE_CE]: Add SVE-SM4 code
+	path.
+
+	sm4 & camellia: add generic bulk acceleration for CTR32LE mode (GCM-SIV)
+	+ commit cf956793afc2cdbd3b20caa3d186ccb8023b804c
+	* cipher/bulkhelp.h (bulk_ctr32le_enc_128): New.
+	* cipher/camellia-glue.c (_gcry_camellia_ctr32le_enc): New.
+	(camellia_setkey): Setup `bulk_ops->ctr32le_enc` if any AVX2
+	implementation is available.
+	* cipher/sm4.c (_gcry_sm4_ctr32le_enc): New.
+	(sm4_setkey): Setup `bulk_ops->ctr32le_enc`.
+	* tests/basic.c (check_gcm_siv_cipher): Add large bulk encryption
+	test vectors for SM4 and CAMELLIA128.
+
+	sm4: add amd64 GFNI/AVX512 implementation.
+	+ commit eaed633c1662d8a98042ac146c981113f2807b22
+	* cipher/Makefile.am: Add 'sm4-gfni-avx512-amd64.S'.
+	* cipher/sm4-gfni-avx512-amd64.S: New.
+	* cipher/sm4-gfni.c (USE_GFNI_AVX512): New.
+	(SM4_context): Add 'use_gfni_avx512' and 'crypt_blk1_16'.
+	(_gcry_sm4_gfni_avx512_expand_key, _gcry_sm4_gfni_avx512_ctr_enc)
+	(_gcry_sm4_gfni_avx512_cbc_dec, _gcry_sm4_gfni_avx512_cfb_dec)
+	(_gcry_sm4_gfni_avx512_ocb_enc, _gcry_sm4_gfni_avx512_ocb_dec)
+	(_gcry_sm4_gfni_avx512_ocb_auth, _gcry_sm4_gfni_avx512_ctr_enc_blk32)
+	(_gcry_sm4_gfni_avx512_cbc_dec_blk32)
+	(_gcry_sm4_gfni_avx512_cfb_dec_blk32)
+	(_gcry_sm4_gfni_avx512_ocb_enc_blk32)
+	(_gcry_sm4_gfni_avx512_ocb_dec_blk32)
+	(_gcry_sm4_gfni_avx512_crypt_blk1_16)
+	(_gcry_sm4_gfni_avx512_crypt_blk32, sm4_gfni_avx512_crypt_blk1_16)
+	(sm4_crypt_blk1_32, sm4_encrypt_blk1_32, sm4_decrypt_blk1_32): New.
+	(sm4_expand_key): Add GFNI/AVX512 code-path
+	(sm4_setkey): Use GFNI/AVX512 if supported by CPU; Setup
+	`ctx->crypt_blk1_16`.
+	(sm4_encrypt, sm4_decrypt, sm4_get_crypt_blk1_16_fn, _gcry_sm4_ctr_enc)
+	(_gcry_sm4_cbc_dec, _gcry_sm4_cfb_dec, _gcry_sm4_ocb_crypt)
+	(_gcry_sm4_ocb_auth) [USE_GFNI_AVX512]: Add GFNI/AVX512 code path.
+	(_gcry_sm4_xts_crypt): Change parallel block size from 16 to 32.
+	* configure.ac: Add 'sm4-gfni-avx512-amd64.lo'.
+
+2022-07-21  Tianjia Zhang  <tianjia.zhang@linux.alibaba.com>
+
+	Add SM4 ARMv9 SVE CE assembly implementation.
+	+ commit 2dc2654006746a25f9cb6b24786867f1725ac244
+	* cipher/Makefile.am: Add 'sm4-armv9-aarch64-sve-ce.S'.
+	* cipher/sm4-armv9-aarch64-sve-ce.S: New.
+	* cipher/sm4.c (USE_ARM_SVE_CE): New.
+	(SM4_context) [USE_ARM_SVE_CE]: Add 'use_arm_sve_ce'.
+	(_gcry_sm4_armv9_sve_ce_crypt, _gcry_sm4_armv9_sve_ce_ctr_enc)
+	(_gcry_sm4_armv9_sve_ce_cbc_dec, _gcry_sm4_armv9_sve_ce_cfb_dec)
+	(sm4_armv9_sve_ce_crypt_blk1_16): New.
+	(sm4_setkey): Enable ARMv9 SVE CE if supported by HW.
+	(sm4_get_crypt_blk1_16_fn) [USE_ARM_SVE_CE]: Add ARMv9 SVE CE
+	bulk functions.
+	(_gcry_sm4_ctr_enc, _gcry_sm4_cbc_dec, _gcry_sm4_cfb_dec)
+	[USE_ARM_SVE_CE]: Add ARMv9 SVE CE bulk functions.
+	* configure.ac: Add 'sm4-armv9-aarch64-sve-ce.lo'.
+
+	Add ARMv9 SVE2 and optional Crypto Extension HW features.
+	+ commit ea5e71f9c8eb32d8b820be85eb34a8926cfa834d
+	* configure.ac (sve2support, gcry_cv_gcc_inline_asm_aarch64_sve2)
+	(ENABLE_SVE2_SUPPORT): New.
+	* doc/gcrypt.texi: Add "sve2, sveaes, svepmull, svesha3, svesm4" to
+	ARM hardware features list.
+	* src/g10lib.h (HWF_ARM_SVE2, HWF_ARM_SVEAES, HWF_ARM_SVEPMULL)
+	(HWF_ARM_SVESHA3, HWF_ARM_SVESM4): New.
+	* src/hwf-arm.c (arm_features): Add
+	"sve2, sveaes, svepmull, svesha3, svesm4".
+	* src/hwfeatures.c (hwflist): Add
+	"arm-sve2, arm-sveaes, arm-svepmull, arm-svesha3, arm-svesm4".
+
+	Add detection for HW feature "ARMv8 SVE"
+	+ commit 8921b5221e333626884ad291881f79e0583d574a
+	* configure.ac (svesupport, gcry_cv_gcc_inline_asm_aarch64_sve)
+	(ENABLE_SVE_SUPPORT): New.
+	* doc/gcrypt.texi: Add "arm-sve" to HW features list.
+	* src/g10lib.h (HWF_ARM_SVE): New.
+	* src/hwf-arm.c (arm_features): Add "sve".
+	* src/hwfeatures.c (hwflist): Add "arm-sve".
+
+2022-07-21  NIIBE Yutaka  <gniibe@fsij.org>
+
+	Cleanup for type definitions of byte, ushort, u32, and u64.
+	+ commit 3494140847cb8056d017418fefa25e7bbcfaa32c
+	* src/types.h: Use macros defined by configure script.
+	* src/hmac256.c: Fix for HAVE_U32.
+	* cipher/poly1305.c: Fix for HAVE_U64.
+
+2022-07-20  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	visibility: add missing fips_is_operational check for gcry_md_extract.
+	+ commit 434a58d0e784958d56ad4eceebec10ee97933108
+	* src/visibility.c (gcry_md_extract): Add 'fips_is_operational' check.
+
+	hwf-x86: fix UBSAN warning.
+	+ commit 9636c88262fc5704cb4136cae975932acee6d08f
+	* src/hwf-x86.c (detect_x86_gnuc): Change `(1 << 31)` to `(1U << 31)`
+	to fix undefined behaviour.
+
+	hwf-arm: add ARM HW feature detection support for MacOS.
+	+ commit 4abcedcea82036b18b3906e99f8aaf0a1f6c8b9a
+	* configure.ac: Add detection for header 'sys/sysctl.h' and system
+	function 'sysctlbyname'.
+	* src/hwf-arm.c (HAS_APPLE_SYSCTLBYNAME)
+	(detect_arm_apple_sysctlbyname): New.
+	(detect_arm_hwf_by_toolchain) [__ARM_FEATURE_CRYPTO]: Also check for
+	ENABLE_ARM_CRYPTO_SUPPORT.
+	(_gcry_hwf_detect_arm) [HAS_APPLE_SYSCTLBYNAME]: Check HWFs with
+	'detect_arm_apple_sysctlbyname' function.
+
+2022-07-19  NIIBE Yutaka  <gniibe@fsij.org>
+
+	cipher: Add buildhelp.h to source to be distributed.
+	+ commit 9a134fb7f286b94904585f3c3958c944999f20cc
+	* cipher/Makefile.am (libcipher_la_SOURCES): Add bulkhelp.h.
+
+	build: Fix configure script.
+	+ commit 2efb90104591eda490d9f7ba281aa29bceb92487
+	* configure.ac (AC_USE_SYSTEM_EXTENSIONS): Use it earlier.
+
+	build: Update config.guess, config.sub, and config.rpath.
+	+ commit e633cc3315aa350d9d28cc27a6deb6304c68ef77
+	* build-aux/config.guess: Update from upstream.
+	* build-aux/config.sub: Ditto.
+	* build-aux/config.rpath: Update from gettext 0.21.
+
+2022-07-07  NIIBE Yutaka  <gniibe@fsij.org>
+
+	cipher: Fix gcry_pk_hash_verify for explicit hash.
+	+ commit b2a64ed4f34abbd3871336503bec5ffeb3ad547b
+	* cipher/pubkey.c (_gcry_pk_verify_md): Implement support of explicit
+	hash.
+	* tests/t-ecdsa.c (one_test_sexp): Use explicit hash.
+
+2022-07-07  Clemens Lang via Gcrypt-devel  <gcrypt-devel@lists.gnupg.org>
+
+	tests/t-kdf: Test KDF FIPS indicator.
+	+ commit 37b812f5e2a3c80d4bc104512248a07268f3c98b
+	 * tests/t-kdf.c (check_fips_indicators): Add test for gcry_control
+	   (GCRYCTL_FIPS_SERVICE_INDICATOR_KDF).
+
+	tests: Test gcry_pk_hash_sign w/explicit hash algo.
+	+ commit 45a139b166a3fa18eb1eddf7e02b5cdd890a6c37
+	 * tests/t-ecdsa.c (one_test_sexp): Re-run signature operation with hash
+	   algorithm explicitly specified in data_tmpl as documented in the
+	   manpage.
+
+2022-07-06  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	sm4: fix wrong macro used for GFNI/AVX2 code-path.
+	+ commit 66ef99bb1804d754edaa5d6b37651e92e918540e
+	* cipher/sm4.c (sm4_get_crypt_blk1_16_fn): Use USE_GFNI_AVX2 for
+	GFNI/AVX2 block.
+
+	sm4: fix use of GFNI/AVX2 accelerated key expansion.
+	+ commit 935e211af145c559c9147026339ceb947edb6d6a
+	* cipher/sm4.c [USE_GFNI_AVX2] (_gcry_sm4_gfni_avx_expand_key): Remove.
+	[USE_GFNI_AVX2] (_gcry_sm4_gfni_avx2_expand_key): New.
+	(sm4_expand_key): Change '_gcry_sm4_gfni_avx_expand_key' to
+	'_gcry_sm4_gfni_avx2_expand_key'.
+
+	camellia-gfni-avx512: remove copy-paste / leftover extra instructions.
+	+ commit 99b7375bd6162c7c3f481ab6d0d106bfcb5b2b07
+	* cipher/camellia-gfni-avx512-amd64.S: Remove extranous copy-pasted
+	instructions after `.Lbswap128_mask` constant; Remove left-over plaintext
+	xorring in OCB encryption input loading macro.
+
+	camellia-gfni-avx512: add missing register clearing on function exits.
+	+ commit ac14d9ee7a094a2b9a26b1e3f4d36f59dbf68b40
+	* cipher/camellia-gfni-avx512-amd64.S: Add clear_regs() at externally
+	visible function epilogues.
+
+	tests/basic: enable IV checks for CBC/CFB/CTR bulk tests.
+	+ commit fd3ed68754eb1741cef22bce8bc2957f3853a292
+	* cipher/cipher.c (_gcry_cipher_ctl): Add handling for
+	'PRIV_CIPHERCTL_GET_COUNTER'.
+	* src/gcrypt-testapi.h (PRIV_CIPHERCTL_GET_COUNTER): New.
+	* tests/basic.c (cipher_cbc_bulk_test, cipher_cfb_bulk_test): Restore
+	IV checks by reading current IV from CBC/CFB cipher handle using
+	PRIV_CIPHERCTL_GET_INPUT_VECTOR.
+	(cipher_ctr_bulk_test): Restore counter checks by reading current
+	counter from CTR cipher handle using PRIV_CIPHERCTL_GET_COUNTER.
+
+2022-07-06  NIIBE Yutaka  <gniibe@fsij.org>
+
+	cipher,chacha20: Conditionalize a variable.
+	+ commit 8d5053fb08cf2a38360be2d2f5534b137c299e74
+	* cipher/chacha20.c (_gcry_chacha20_poly1305_decrypt): Only
+	use skip_stitched when one of macros is defined.
+
+2022-07-06  Clemens Lang  <cllang@redhat.com>
+
+	tests/basic: Skip non-FIPS tests in FIPS mode.
+	+ commit 9d6203532d9012ff82aa218bd1a17797cf8017e5
+	* tests/basic.c (check_pubkey): Skip non-FIPS tests in FIPS mode, fixes
+	  a logic error previously introduced in e9698002.
+
+2022-07-05  NIIBE Yutaka  <gniibe@fsij.org>
+
+	kdf: Fix memory leak on error.
+	+ commit e2a7a0c9f5d258051b26babeac20e4a7cfb5a6ac
+	* cipher/kdf.c (hkdf_open): Free the memory on the error path.
+
+2022-07-01  Clemens Lang  <cllang@redhat.com>
+
+	fips: Skip selftests of unsupported PK algos.
+	+ commit c5480b4934bb0adecdfc29a47b5e123f995507e1
+	* src/fips.c (run_pubkey_selftests): Do not run selftests for disabled
+	  public key algorithms.
+
+	build: Skip PK-specific tests if algo is disabled.
+	+ commit 56000fb5c42f01f1ced4e3dd0bb30662c0ba87c3
+	* configure.ac: Define AM_CONDITIONALs for USE_DSA, USE_RSA,
+	  USE_ELGAMAL, USE_ECC so Makefiles can depend on them.
+	* tests/Makefile.am: Skip tests that test only one public key algorithm
+	  if that algorithm is disabled.
+
+	tests/keygen.c: Skip unavailable PK algorithms.
+	+ commit 572b0bf9668d6a01cd7ce1c2227d5a4899ad3502
+	* tests/keygen.c (show_mpi, check_rsa_keys, check_elg_keys,
+	  check_dsa_keys, check_generated_ecc_key, check_ecc_keys): Skip tests
+	  if the required public key algorithm is not available.
+
+	tests/benchmark: Skip unavailable PK algorithms.
+	+ commit 78c0d76f809262184ef0198be087fc2b133c880b
+	* tests/benchmark.c (cipher_bench, rsa_bench, elg_bench, dsa_bench,
+	  ecc_bench): Do not run benchmarks for PK algorithms that are not
+	  supported in the current build.
+
+	tests/basic: Skip tests if PK algo is unavailable.
+	+ commit e78cf3df23a2bf33dc7fdc99e55949732521668d
+	* tests/basic.c (check_pubkey): Skip tests if the required public key
+	  algorithm is not available.
+
+	tests/pubkey: Skip tests if PK algo is unavailable.
+	+ commit 4f4da6cbf065b3ae675e2b0d3ff56765025c2852
+	* tests/pubkey.c (check_run, main): Skip tests for unavailable
+	  algorithms.
+
+	kdf: Skip tests if hash algo is not available.
+	+ commit 96fafffeeba5899d3d1b4d68ce99faed23cef641
+	* tests/t-kdf.c (check_openpgp, check_pbkdf2): Test digest availability.
+
+2022-06-24  NIIBE Yutaka  <gniibe@fsij.org>
+
+	hmac,hkdf: Allow use of shorter salt for HKDF.
+	+ commit 58c92098d053aae7c78cc42bdd7c80c13efc89bb
+	* cipher/md.c (prepare_macpads): Move the check to...
+	* src/visibility.c (gcry_mac_setkey): ... here.
+	* tests/t-kdf.c (check_hkdf): No failure is expected.
+
+2022-06-21  NIIBE Yutaka  <gniibe@fsij.org>
+
+	kdf,fips: Modify HKDF test for FIPS mode.
+	+ commit 07722d89bac1a739b084b4412c3ff42e215d5968
+	* tests/t-kdf.c (check_hkdf): Check if shorter salts are rejected
+	correctly when FIPS mode.
+
+	kdf: Add input check for hkdf.
+	+ commit e0f0c788dc0f268965c0f63eb33d9f98c0575d58
+	* cipher/kdf.c (hkdf_open): Validate the output size.
+
+2022-06-16  NIIBE Yutaka  <gniibe@fsij.org>
+
+	kdf: Add HKDF of RFC5869.
+	+ commit fbddfb964f0b1c1ec131194b2273c3f834041c84
+	* src/gcrypt.h.in (GCRY_KDF_HKDF): New.
+	* cipher/kdf.c (hkdf_open, hkdf_compute, hkdf_final, hkdf_close): New.
+	(_gcry_kdf_open, _gcry_kdf_compute, _gcry_kdf_final, _gcry_kdf_close):
+	Handle GCRY_KDF_HKDF.
+	* tests/t-kdf.c (check_hkdf): New.  Test vectors from RFC5869.
+	(main): Call check_hkdf.
+
+2022-06-12  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	ppc: enable P10 assembly with ENABLE_FORCE_SOFT_HWFEATURES on arch-3.00.
+	+ commit 2c5e5ab6843d747c4b877d2c6f47226f61e9ff14
+	* cipher/chacha20.c (chacha20_do_setkey) [USE_PPC_VEC]: Enable
+	P10 assembly for HWF_PPC_ARCH_3_00 if ENABLE_FORCE_SOFT_HWFEATURES is
+	defined.
+	* cipher/poly1305.c (poly1305_init) [POLY1305_USE_PPC_VEC]: Likewise.
+	* cipher/rijndael.c (do_setkey) [USE_PPC_CRYPTO_WITH_PPC9LE]: Likewise.
+	---
+
+	This change allows testing P10 implementations with P9 and with QEMU-PPC.
+
+2022-06-12  Danny Tsen  <dtsen@us.ibm.com>
+
+	Chacha20/poly1305 - Optimized chacha20/poly1305 for P10 operation.
+	+ commit 88fe7ac33eb4cb4dff76a5cc7fca50da5fb0ee3a
+	* configure.ac: Added chacha20 and poly1305 assembly implementations.
+	* cipher/chacha20-p10le-8x.s: (New) - support 8 blocks (512 bytes)
+	unrolling.
+	* cipher/poly1305-p10le.s: (New) - support 4 blocks (128 bytes)
+	unrolling.
+	* cipher/Makefile.am: Added new chacha20 and poly1305 files.
+	* cipher/chacha20.c: Added PPC p10 le support for 8x chacha20.
+	* cipher/poly1305.c: Added PPC p10 le support for 4x poly1305.
+	* cipher/poly1305-internal.h: Added PPC p10 le support for poly1305.
+	---
+
+	[jk: cosmetic changes to C code]
+	[jk: fix building on ppc64be]
+
+2022-06-08  NIIBE Yutaka  <gniibe@fsij.org>
+
+	kdf: Add support for One-Step KDF with MAC.
+	+ commit 6d32bf80846a22568575a101a3fe6769ab058bb9
+	* src/gcrypt.h.in (GCRY_KDF_ONESTEP_KDF_MAC): New.
+	* cipher/kdf.c (onestep_kdf_mac_open, onestep_kdf_mac_compute): New.
+	(onestep_kdf_mac_final, onestep_kdf_mac_close): New.
+	(_gcry_kdf_open, _gcry_kdf_compute, _gcry_kdf_final, _gcry_kdf_close):
+	Add support for GCRY_KDF_ONESTEP_KDF_MAC.
+
+2022-06-07  NIIBE Yutaka  <gniibe@fsij.org>
+
+	kdf: Add One-Step KDF with hash.
+	+ commit f8c983cb14f8ba0921ce8fa52ea3519feae07861
+	* src/gcrypt.h.in (GCRY_KDF_ONESTEP_KDF): New.
+	* cipher/kdf.c (onestep_kdf_open, onestep_kdf_compute): New.
+	(onestep_kdf_final): New.
+	(_gcry_kdf_open, _gcry_kdf_compute, _gcry_kdf_final): Add
+	GCRY_KDF_ONESTEP_KDF support.
+	* tests/t-kdf.c (check_onestep_kdf): Add the test.
+	(main): Call check_onestep_kdf.
+
+	Fix for struct gcry_thread_cbs.
+	+ commit 8d8e80ad753645b5fcbe28bb3e768079415ef848
+	* src/gcrypt.h.in (struct gcry_thread_cbs): Since it's no use any
+	more, even internally, use _GCRY_GCC_ATTR_DEPRECATED instead.
+
+2022-06-01  NIIBE Yutaka  <gniibe@fsij.org>
+
+	secmem: Remove RISC OS support.
+	+ commit fd9aa21983a114e1aab605536bc2371235e9a060
+	* src/secmem.c [__riscos__]: Remove.
+
+	secmem: Clean up ERRNO handling.
+	+ commit d7c900a97b62a44d6667e065c6d2384136aefa63
+	* src/secmem.c (lock_pool_pages): Use ERR only for the return value
+	from mlock.
+
+	secmem: Remove getting cap_ipc_lock by capabilities support.
+	+ commit 43f51d0ec6b50a6317a6e67642bc87b9ddf45927
+	* src/secmem.c (lock_pool_pages): Remove escalation of the capability.
+
+2022-05-31  Jakub Jelen  <jjelen@redhat.com>
+
+	Fix memory leaks in tests.
+	+ commit ef2e1523c33c3143b4fee0c00f88a5a0842b337f
+	* tests/aeswrap.c (check_one_with_padding): Free hd on error paths
+	* tests/basic.c (check_ccm_cipher): Free context on error paths
+	  (check_ocb_cipher_checksum): Ditto.
+	  (do_check_xts_cipher): Ditto.
+	  (check_gost28147_cipher_basic): Ditto.
+	* tests/bench-slope.c (bench_ecc_init): Free memory on invalid input.
+	* tests/t-cv25519.c (test_it): Free memory on error path
+	* tests/t-dsa.c (hex2buffer): Free memory on error path
+	* tests/t-ecdsa.c (hex2buffer): Free memory on error path
+	  (one_test_sexp): Cleanup memory on exit
+	* tests/t-mpi-point.c (check_ec_mul): Free memory on error
+	  (check_ec_mul_reduction): Ditto
+	* tests/t-rsa-15.c (hex2buffer): Ditto
+	* tests/t-rsa-pss.c (hex2buffer): Ditto
+	* tests/t-x448.c (test_it): Free memory on error path
+	* tests/testdrv.c (my_spawn): Free memory on error paths
+
+2022-05-19  Jakub Jelen  <jjelen@redhat.com>
+
+	cipher: Allow verification of small RSA signatures in FIPS mode.
+	+ commit ca2afc9fb64d9a9b2f8930ba505d9ab6c8a57667
+	* cipher/rsa.c (rsa_check_keysize): Formatting.
+	  (rsa_check_verify_keysize): New function.
+	  (rsa_verify): Allow using smaller keys for verification.
+
+2022-05-17  NIIBE Yutaka  <gniibe@fsij.org>
+
+	Fix internal declaration of _gcry_kdf_compute.
+	+ commit 4019f1a66b15d2ef82eb059c432e6b09b2c69b21
+	* src/gcrypt-int.h (_gcry_kdf_compute): Return gcry_err_code_t.
+
+	mpi: Allow building with --disable-asm for HPPA.
+	+ commit c0692324fe8b3806eefc5017767917dca9cd94d0
+	* mpi/longlong.h [__hppa] (udiv_qrnnd): Only define
+	when assembler is enabled.
+
+2022-05-15  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	aarch64-asm: use ADR for getting pointers for local labels.
+	+ commit fd02e8e78470deb661269c429f3348f811c054c6
+	* cipher/asm-common-aarch64.h (GET_DATA_POINTER): Remove.
+	(GET_LOCAL_POINTER): New.
+	* cipher/camellia-aarch64.S: Use GET_LOCAL_POINTER instead of ADR
+	instruction directly.
+	* cipher/chacha20-aarch64.S: Use GET_LOCAL_POINTER instead of
+	GET_DATA_POINTER.
+	* cipher/cipher-gcm-armv8-aarch64-ce.S: Likewise.
+	* cipher/crc-armv8-aarch64-ce.S: Likewise.
+	* cipher/sha1-armv8-aarch64-ce.S: Likewise.
+	* cipher/sha256-armv8-aarch64-ce.S: Likewise.
+	* cipher/sm3-aarch64.S: Likewise.
+	* cipher/sm3-armv8-aarch64-ce.S: Likewise.
+	* cipher/sm4-aarch64.S: Likewise.
+	---
+
+	Switch to use ADR instead of ADRP/LDR or ADRP/ADD for getting
+	data pointers within assembly files. ADR is more portable across
+	targets and does not require labels to be declared in GOT tables.
+
+2022-05-11  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	cipher: move CBC/CFB/CTR self-tests to tests/basic.
+	+ commit a9700956361d280746f2bffe94cbdb72c95eb3ed
+	* cipher/Makefile.am: Remove 'cipher-selftest.c' and 'cipher-selftest.h'.
+	* cipher/cipher-selftest.c: Remove (refactor these tests to
+	tests/basic.c).
+	* cipher/cipher-selftest.h: Remove.
+	* cipher/blowfish.c (selftest_ctr, selftest_cbc, selftest_cfb): Remove.
+	(selftest): Remove CTR/CBC/CFB bulk self-tests.
+	* cipher/camellia-glue.c (selftest_ctr_128, selftest_cbc_128)
+	(selftest_cfb_128): Remove.
+	(selftest): Remove CTR/CBC/CFB bulk self-tests.
+	* cipher/cast5.c (selftest_ctr, selftest_cbc, selftest_cfb): Remove.
+	(selftest): Remove CTR/CBC/CFB bulk self-tests.
+	* cipher/des.c (bulk_selftest_setkey, selftest_ctr, selftest_cbc)
+	(selftest_cfb): Remove.
+	(selftest): Remove CTR/CBC/CFB bulk self-tests.
+	* cipher/rijndael.c (selftest_basic_128, selftest_basic_192)
+	(selftest_basic_256): Allocate context from stack instead of heap and
+	handle alignment manually.
+	(selftest_ctr_128, selftest_cbc_128, selftest_cfb_128): Remove.
+	(selftest): Remove CTR/CBC/CFB bulk self-tests.
+	* cipher/serpent.c (selftest_ctr_128, selftest_cbc_128)
+	(selftest_cfb_128): Remove.
+	(selftest): Remove CTR/CBC/CFB bulk self-tests.
+	* cipher/sm4.c (selftest_ctr_128, selftest_cbc_128)
+	(selftest_cfb_128): Remove.
+	(selftest): Remove CTR/CBC/CFB bulk self-tests.
+	* cipher/twofish.c (selftest_ctr, selftest_cbc, selftest_cfb): Remove.
+	(selftest): Remove CTR/CBC/CFB bulk self-tests.
+	* tests/basic.c (buf_xor, cipher_cbc_bulk_test, buf_xor_2dst)
+	(cipher_cfb_bulk_test, cipher_ctr_bulk_test): New.
+	(check_ciphers): Run cipher_cbc_bulk_test(), cipher_cfb_bulk_test() and
+	cipher_ctr_bulk_test() for block ciphers.
+	---
+
+	CBC/CFB/CTR bulk self-tests are quite computationally heavy and
+	slow down use cases where application opens cipher context once,
+	does processing and exits. Better place for these tests is in
+	`tests/basic`.
+
+	camellia: add amd64 GFNI/AVX512 implementation.
+	+ commit 9ab61ba24b72bc109b7578a7868716910d2ea9d1
+	* cipher/Makefile.am: Add 'camellia-gfni-avx512-amd64.S'.
+	* cipher/bulkhelp.h (bulk_ocb_prepare_L_pointers_array_blk64): New.
+	* cipher/camellia-aesni-avx2-amd64.h: Rename internal functions from
+	"__camellia_???" to "FUNC_NAME(???)"; Minor changes to comments.
+	* cipher/camellia-gfni-avx512-amd64.S: New.
+	* cipher/camellia-gfni.c (USE_GFNI_AVX512): New.
+	(CAMELLIA_context): Add 'use_gfni_avx512'.
+	(_gcry_camellia_gfni_avx512_ctr_enc, _gcry_camellia_gfni_avx512_cbc_dec)
+	(_gcry_camellia_gfni_avx512_cfb_dec, _gcry_camellia_gfni_avx512_ocb_enc)
+	(_gcry_camellia_gfni_avx512_ocb_dec)
+	(_gcry_camellia_gfni_avx512_enc_blk64)
+	(_gcry_camellia_gfni_avx512_dec_blk64, avx512_burn_stack_depth): New.
+	(camellia_setkey): Use GFNI/AVX512 if supported by CPU.
+	(camellia_encrypt_blk1_64, camellia_decrypt_blk1_64): New.
+	(_gcry_camellia_ctr_enc, _gcry_camellia_cbc_dec, _gcry_camellia_cfb_dec)
+	(_gcry_camellia_ocb_crypt) [USE_GFNI_AVX512]: Add GFNI/AVX512 code path.
+	(_gcry_camellia_xts_crypt): Change parallel block size from 32 to 64.
+	(selftest_ctr_128, selftest_cbc_128, selftest_cfb_128): Increase test
+	block size.
+	* cipher/chacha20-amd64-avx512.S: Clear k-mask registers with xor.
+	* cipher/poly1305-amd64-avx512.S: Likewise.
+	* cipher/sha512-avx512-amd64.S: Likewise.
+	---
+
+	Benchmark on Intel i3-1115G4 (tigerlake):
+
+	Before (GFNI/AVX2):
+	 CAMELLIA128    |  nanosecs/byte   mebibytes/sec   cycles/byte  auto Mhz
+	        CBC dec |     0.356 ns/B      2679 MiB/s      1.46 c/B      4089
+	        CFB dec |     0.374 ns/B      2547 MiB/s      1.53 c/B      4089
+	        CTR enc |     0.409 ns/B      2332 MiB/s      1.67 c/B      4089
+	        CTR dec |     0.406 ns/B      2347 MiB/s      1.66 c/B      4089
+	        XTS enc |     0.430 ns/B      2216 MiB/s      1.76 c/B      4090
+	        XTS dec |     0.433 ns/B      2201 MiB/s      1.77 c/B      4090
+	        OCB enc |     0.460 ns/B      2071 MiB/s      1.88 c/B      4089
+	        OCB dec |     0.492 ns/B      1939 MiB/s      2.01 c/B      4089
+
+	After (GFNI/AVX512):
+	 CAMELLIA128    |  nanosecs/byte   mebibytes/sec   cycles/byte  auto Mhz
+	        CBC dec |     0.207 ns/B      4600 MiB/s     0.827 c/B      3989
+	        CFB dec |     0.207 ns/B      4610 MiB/s     0.825 c/B      3989
+	        CTR enc |     0.218 ns/B      4382 MiB/s     0.868 c/B      3990
+	        CTR dec |     0.217 ns/B      4389 MiB/s     0.867 c/B      3990
+	        XTS enc |     0.330 ns/B      2886 MiB/s      1.35 c/B      4097±4
+	        XTS dec |     0.328 ns/B      2904 MiB/s      1.35 c/B      4097±3
+	        OCB enc |     0.246 ns/B      3879 MiB/s     0.981 c/B      3990
+	        OCB dec |     0.247 ns/B      3855 MiB/s     0.987 c/B      3990
+
+	  CBC dec: 70% faster
+	  CFB dec: 80% faster
+	  CTR: 87% faster
+	  XTS: 31% faster
+	  OCB: 92% faster
+
+2022-05-10  NIIBE Yutaka  <gniibe@fsij.org>
+
+	mpi: Fix for 64-bit for _gcry_mpih_cmp_ui.
+	+ commit a611e3a25d61505698e2bb38ec2db38bc6a74820
+	* mpi/mpih-const-time.c (_gcry_mpih_cmp_ui): Compare 64-bit
+	value correctly.
+
+	random: Fix rndjent for Windows.
+	+ commit 5dc97e855bb27705a548a297b666b7be7b1c59a3
+	* random/jitterentropy-base-user.h [HAVE_W32_SYSTEM] (jent_ncpu):
+	Implement.
+	* random/rndjent.c (_WIN32_WINNT): Define for GetNativeSystemInfo.
+	(EOPNOTSUPP): Define when not available.
+
+2022-04-30  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	tests/basic: add testing for partial bulk processing code paths.
+	+ commit 9ba1f0091ff408d6140ee75a56fd67f02d0d3f30
+	* tests/basic.c (check_one_cipher_core): Add 'split_mode' parameter and
+	handling for split_mode==1.
+	(check_one_cipher): Use split_mode==0 for existing check_one_cipher_core
+	calls; Add new large buffer check with split_mode==1.
+
+	sm4-aesni-avx2: add generic 1 to 16 block bulk processing function.
+	+ commit e239738b4af28b64ab617900fced8a216552e9f1
+	* cipher/sm4-aesni-avx2-amd64.S: Remove unnecessary vzeroupper at
+	function entries.
+	(_gcry_sm4_aesni_avx2_crypt_blk1_16): New.
+	* cipher/sm4.c (_gcry_sm4_aesni_avx2_crypt_blk1_16)
+	(sm4_aesni_avx2_crypt_blk1_16): New.
+	(sm4_get_crypt_blk1_16_fn) [USE_AESNI_AVX2]: Add
+	'sm4_aesni_avx2_crypt_blk1_16'.
+
+	Add SM4 x86-64/GFNI/AVX2 implementation.
+	+ commit 5095d60af42d898311d66b10f5204a3418a4a8af
+	* cipher/Makefile.am: Add 'sm4-gfni-avx2-amd64.S'.
+	* cipher/sm4-aesni-avx2-amd64.S: New.
+	* cipher/sm4.c (USE_GFNI_AVX2): New.
+	(SM4_context): Add 'use_gfni_avx2'.
+	(crypt_blk1_8_fn_t): Rename to...
+	(crypt_blk1_16_fn_t): ...this.
+	(sm4_aesni_avx_crypt_blk1_8): Rename to...
+	(sm4_aesni_avx_crypt_blk1_16): ...this and add handling for 9 to 16
+	input blocks.
+	(_gcry_sm4_gfni_avx_expand_key, _gcry_sm4_gfni_avx2_ctr_enc)
+	(_gcry_sm4_gfni_avx2_cbc_dec, _gcry_sm4_gfni_avx2_cfb_dec)
+	(_gcry_sm4_gfni_avx2_ocb_enc, _gcry_sm4_gfni_avx2_ocb_dec)
+	(_gcry_sm4_gfni_avx2_ocb_auth, _gcry_sm4_gfni_avx2_crypt_blk1_16)
+	(sm4_gfni_avx2_crypt_blk1_16): New.
+	(sm4_aarch64_crypt_blk1_8): Rename to...
+	(sm4_aarch64_crypt_blk1_16): ...this and add handling for 9 to 16
+	input blocks.
+	(sm4_armv8_ce_crypt_blk1_8): Rename to...
+	(sm4_armv8_ce_crypt_blk1_16): ...this and add handling for 9 to 16
+	input blocks.
+	(sm4_expand_key): Add GFNI/AVX2 path.
+	(sm4_setkey): Enable GFNI/AVX2 implementation if HW features
+	available; Disable AESNI implementations when GFNI implementation is
+	enabled.
+	(sm4_encrypt) [USE_GFNI_AVX2]: New.
+	(sm4_decrypt) [USE_GFNI_AVX2]: New.
+	(sm4_get_crypt_blk1_8_fn): Rename to...
+	(sm4_get_crypt_blk1_16_fn): ...this; Update to use *_blk1_16 functions;
+	Add GFNI/AVX2 selection.
+	(_gcry_sm4_ctr_enc, _gcry_sm4_cbc_dec, _gcry_sm4_cfb_dec)
+	(_gcry_sm4_ocb_crypt, _gcry_sm4_ocb_auth): Add GFNI/AVX2 path; Widen
+	generic bulk processing from 8 blocks to 16 blocks.
+	(_gcry_sm4_xts_crypt): Widen generic bulk processing from 8 blocks to
+	16 blocks.
+
+	sm4: add XTS bulk processing.
+	+ commit aad3381e93846212c2022dba50e621e4b48f3295
+	* cipher/sm4.c (_gcry_sm4_xts_crypt): New.
+	(sm4_setkey): Set XTS bulk function.
+
+2022-04-29  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	camellia-avx2: add bulk processing for XTS mode.
+	+ commit 32b18cdb87b771f5c1ec87ef5e0f115f3f2d362f
+	* cipher/bulkhelp.h (bulk_xts_crypt_128): New.
+	* cipher/camellia-glue.c (_gcry_camellia_xts_crypt): New.
+	(camellia_set_key) [USE_AESNI_AVX2]: Set XTS bulk function if AVX2
+	implementation is available.
+
+	camellia-avx2: add partial parallel block processing.
+	+ commit bacdc1de3f4fe063054af4e36e7fdfa5b00ccb64
+	* cipher/camellia-aesni-avx2-amd64.h: Remove unnecessary vzeroupper
+	from function entry.
+	(enc_blk1_32, dec_blk1_32): New.
+	* cipher/camellia-glue.c (avx_burn_stack_depth)
+	(avx2_burn_stack_depth): Move outside of bulk functions to deduplicate.
+	(camellia_setkey): Disable AESNI & VAES implementation when GFNI
+	implementation is enabled.
+	(_gcry_camellia_aesni_avx2_enc_blk1_32)
+	(_gcry_camellia_aesni_avx2_dec_blk1_32)
+	(_gcry_camellia_vaes_avx2_enc_blk1_32)
+	(_gcry_camellia_vaes_avx2_dec_blk1_32)
+	(_gcry_camellia_gfni_avx2_enc_blk1_32)
+	(_gcry_camellia_gfni_avx2_dec_blk1_32, camellia_encrypt_blk1_32)
+	(camellia_decrypt_blk1_32): New.
+	(_gcry_camellia_ctr_enc, _gcry_camellia_cbc_dec, _gcry_camellia_cfb_dec)
+	(_gcry_camellia_ocb_crypt, _gcry_camellia_ocb_auth): Use new bulk
+	processing helpers from 'bulkhelp.h' and 'camellia_encrypt_blk1_32'
+	and 'camellia_decrypt_blk1_32' for partial parallel processing.
+
+2022-04-24  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	cipher/bulkhelp: add functions for CTR/CBC/CFB/OCB bulk processing.
+	+ commit 754055ccd0438b96961601438fafb7799eae612f
+	* cipher/bulkhelp.h (bulk_crypt_fn_t, bulk_ctr_enc_128)
+	(bulk_cbc_dec_128, bulk_cfb_dec_128, bulk_ocb_crypt_128)
+	(bulk_ocb_auth_128): New.
+	* cipher/sm4.c (_gcry_sm4_ctr_enc, _gcry_sm4_cbc_dec)
+	(_gcry_sm4_cfb_dec, _gcry_sm4_ocb_crypt, _gcry_sm4_ocb_auth): Switch
+	to use helper functions from 'bulkhelp.h'.
+
+	Move bulk OCB L pointer array setup code to common header.
+	+ commit 9388279803ff82ea0ccd12a83157b94c807e7a8f
+	* cipher/bulkhelp.h: New.
+	* cipher/camellia-glue.c (_gcry_camellia_ocb_crypt)
+	(_gcry_camellia_ocb_crypt): Use new
+	`bulk_ocb_prepare_L_pointers_array_blkXX` function for OCB L pointer
+	array setup.
+	* cipher/serpent.c (_gcry_serpent_ocb_crypt)
+	(_gcry_serpent_ocb_auth): Likewise.
+	* cipher/sm4.c (_gcry_sm4_ocb_crypt, _gcry_sm4_ocb_auth): Likewise.
+	* cipher/twofish.c (_gcry_twofish_ocb_crypt)
+	(_gcry_twofish_ocb_auth): Likewise.
+
+	sm4: deduplicate bulk processing function selection.
+	+ commit e1c5f950838b2fa086a798f7194b618f581dca96
+	* cipher/sm4.c (crypt_blk1_8_fn_t): New.
+	(sm4_aesni_avx_crypt_blk1_8, sm4_aarch64_crypt_blk1_8)
+	(sm4_armv8_ce_crypt_blk1_8, sm4_crypt_blocks): Change first parameter
+	to void pointer type.
+	(sm4_get_crypt_blk1_8_fn): New.
+	(_gcry_sm4_ctr_enc, _gcry_sm4_cbc_dec, _gcry_sm4_cfb_dec)
+	(_gcry_sm4_ocb_crypt, _gcry_sm4_ocb_auth): Use sm4_get_crypt_blk1_8_fn
+	for selecting crypt_blk1_8.
+
+	Add GFNI/AVX2 implementation of Camellia.
+	+ commit 4e6896eb9fce74908e15e085da00edfed0fa1923
+	* cipher/Makefile.am: Add "camellia-gfni-avx2-amd64.S".
+	* cipher/camellia-aesni-avx2-amd64.h [CAMELLIA_GFNI_BUILD]: Add GFNI
+	support.
+	* cipher/camellia-gfni-avx2-amd64.S: New.
+	* cipher/camellia-glue.c (USE_GFNI_AVX2): New.
+	(CAMELLIA_context) [USE_AESNI_AVX2]: New member "use_gfni_avx2".
+	[USE_GFNI_AVX2] (_gcry_camellia_gfni_avx2_ctr_enc)
+	(_gcry_camellia_gfni_avx2_cbc_dec, _gcry_camellia_gfni_avx2_cfb_dec)
+	(_gcry_camellia_gfni_avx2_ocb_enc, _gcry_camellia_gfni_avx2_ocb_dec)
+	(_gcry_camellia_gfni_avx2_ocb_auth): New.
+	(camellia_setkey) [USE_GFNI_AVX2]: Enable GFNI if supported by HW.
+	(_gcry_camellia_ctr_enc) [USE_GFNI_AVX2]: Add GFNI support.
+	(_gcry_camellia_cbc_dec) [USE_GFNI_AVX2]: Add GFNI support.
+	(_gcry_camellia_cfb_dec) [USE_GFNI_AVX2]: Add GFNI support.
+	(_gcry_camellia_ocb_crypt) [USE_GFNI_AVX2]: Add GFNI support.
+	(_gcry_camellia_ocb_auth) [USE_GFNI_AVX2]: Add GFNI support.
+	* configure.ac: Add "camellia-gfni-avx2-amd64.lo".
+
+	Add detection for HW feature "intel-gfni"
+	+ commit 3410d40996d8f7377935192ebecf4cad66688b25
+	* configure.ac (gfnisupport, gcry_cv_gcc_inline_asm_gfni)
+	(ENABLE_GFNI_SUPPORT): New.
+	* src/g10lib.h (HWF_INTEL_GFNI): New.
+	* src/hwf-x86.c (detect_x86_gnuc): Add GFNI detection.
+	* src/hwfeatures.c (hwflist): Add "intel-gfni".
+	* doc/gcrypt.texi: Add "intel-gfni" to HW features list.
+
+2022-04-21  Jakub Jelen  <jjelen@redhat.com>
+
+	tests: Expect the RSA PKCS #1.5 encryption to fail in FIPS mode.
+	+ commit f736f3c70182d9c948f9105eb769c47c5578df35
+	* tests/basic.c (check_pubkey_crypt): Expect RSA PKCS #1.5 encryption to
+	  fail in FIPS mode. Expect failure when wrong padding is selected
+	* tests/pkcs1v2.c (check_v15crypt): Expect RSA PKCS #1.5 encryption to
+	  fail in FIPS mode
+
+	tests: Replace custom bit with more generic flags.
+	+ commit 299e2f93415984919181e0ee651719bbf83bdd2f
+	* tests/basic.c (global): New flag FLAG_SPECIAL
+	  (check_pubkey_crypt): Change to use bitfield flags
+
+	Do not allow PKCS #1.5 padding for encryption in FIPS.
+	+ commit c7709f7b23848abf4ba65cb99cb2a9e9c7ebdefc
+	* cipher/pubkey-util.c (_gcry_pk_util_data_to_mpi): Block PKCS #1.5
+	  padding for encryption in FIPS mode
+	* cipher/rsa.c (rsa_decrypt): Block PKCS #1.5 decryption in FIPS mode
+
+2022-04-21  NIIBE Yutaka  <gniibe@fsij.org>
+
+	random: Not use secure memory for DRBG instance.
+	+ commit f436bf4451cb2ad0a1f56aa843bf79a58878022f
+	* random/random-drbg.c (drbg_instance): New at BSS.
+	(_drbg_init_internal): Don't allocate at secure memory.
+	(_gcry_rngdrbg_close_fds): Follow the change.
+
+2022-04-20  NIIBE Yutaka  <gniibe@fsij.org>
+
+	cipher: Change the bounds for RSA key generation round.
+	+ commit cd30ed3c0d715aa0c58a32a29cfb1476163a5b94
+	* cipher/rsa.c (generate_fips): Use 10 for p, 20 for q.
+
+2022-04-19  NIIBE Yutaka  <gniibe@fsij.org>
+
+	Use offsetof instead of null ptr calculation.
+	+ commit 9e9f3073369905707b718aa1628d0fe5b1affed9
+	* src/secmem.c (_gcry_secmem_realloc_internal): Use offsetof.
+
+2022-04-18  NIIBE Yutaka  <gniibe@fsij.org>
+
+	cipher: Fix rsa key generation.
+	+ commit 51754fa2ed06cc41487324432dbea654642ef244
+	* cipher/rsa.c (generate_fips): Set the least significant bit.
+
+2022-04-12  Clemens Lang  <cllang@redhat.com>
+
+	build: Fix make dist after socklen.m4 removal.
+	+ commit 922f9957f94a24c58812db9bbabfb55a8ce211a8
+	* m4/Makefile.am: Remove socklen.m4 from EXTRA_DIST
+
+2022-04-08  NIIBE Yutaka  <gniibe@fsij.org>
+
+	build: Remove configure checking for socklen_t.
+	+ commit e5260b6b9f38a91797b2cb5d789e9cbbc97ec485
+	* configure.ac (gl_TYPE_SOCKLEN_T): Remove.
+	* m4/socklen.m4: Remove.
+
+2022-04-06  Tianjia Zhang  <tianjia.zhang@linux.alibaba.com>
+
+	doc: Fix missing ARM hardware features.
+	+ commit a7c3e0b9b0ff636d498a9d82f4ced8b5fac50a8b
+	* doc/gcrypt.texi: Add sha3/sm3/sm4/sha512 to ARM hardware features.
+
+	build: Fix for arm crypto support.
+	+ commit 972aae9fc337ecf25139737cc7083a1bb56457f8
+	* configure.ac: Correct wrong variable names.
+
+2022-04-06  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	chacha20: add AVX512 implementation.
+	+ commit 9a63cfd61753b2c7ef7a872a01565154f10a72c0
+	* cipher/Makefile.am: Add 'chacha20-amd64-avx512.S'.
+	* cipher/chacha20-amd64-avx512.S: New.
+	* cipher/chacha20.c (USE_AVX512): New.
+	(CHACHA20_context_s): Add 'use_avx512'.
+	[USE_AVX512] (_gcry_chacha20_amd64_avx512_blocks16): New.
+	(chacha20_do_setkey) [USE_AVX512]: Setup 'use_avx512' based on
+	HW features.
+	(do_chacha20_encrypt_stream_tail) [USE_AVX512]: Use AVX512
+	implementation if supported.
+	(_gcry_chacha20_poly1305_encrypt) [USE_AVX512]: Disable stitched
+	chacha20-poly1305 implementations if AVX512 implementation is used.
+	(_gcry_chacha20_poly1305_decrypt) [USE_AVX512]: Disable stitched
+	chacha20-poly1305 implementations if AVX512 implementation is used.
+
+	poly1305: add AVX512 implementation.
+	+ commit cd3ed4977076343bb6092001cafe55673dc30e34
+	* LICENSES: Add 3-clause BSD license for poly1305-amd64-avx512.S.
+	* cipher/Makefile.am: Add 'poly1305-amd64-avx512.S'.
+	* cipher/poly1305-amd64-avx512.S: New.
+	* cipher/poly1305-internal.h (POLY1305_USE_AVX512): New.
+	(poly1305_context_s): Add 'use_avx512'.
+	* cipher/poly1305.c (ASM_FUNC_ABI, ASM_FUNC_WRAPPER_ATTR): New.
+	[POLY1305_USE_AVX512] (_gcry_poly1305_amd64_avx512_blocks)
+	(poly1305_amd64_avx512_blocks): New.
+	(poly1305_init): Use AVX512 is HW feature available (set use_avx512).
+	[USE_MPI_64BIT] (poly1305_blocks): Rename to ...
+	[USE_MPI_64BIT] (poly1305_blocks_generic): ... this.
+	[USE_MPI_64BIT] (poly1305_blocks): New.
+
+2022-04-05  NIIBE Yutaka  <gniibe@fsij.org>
+
+	doc: Update yat2m from libgpg-error.
+	+ commit 5f357784662a7d3a3d3498d6ca5d5781e9e60ac0
+	* doc/yat2m.c: Update.
+
+2022-04-04  Tianjia Zhang  <tianjia.zhang@linux.alibaba.com>
+
+	Add SM3 ARMv8/AArch64/CE assembly implementation.
+	+ commit fe891ff4a3cdc74957b215db4a9a9e01fefe0cd4
+	* cipher/Makefile.am: Add 'sm3-armv8-aarch64-ce.S'.
+	* cipher/sm3-armv8-aarch64-ce.S: New.
+	* cipher/sm3.c (USE_ARM_CE): New.
+	[USE_ARM_CE] (_gcry_sm3_transform_armv8_ce)
+	(do_sm3_transform_armv8_ce): New.
+	(sm3_init) [USE_ARM_CE]: New.
+	* configure.ac: Add 'sm3-armv8-aarch64-ce.lo'.
+
+2022-04-01  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	hwf-ppc: fix missing HWF_PPC_ARCH_3_10 in HW feature.
+	+ commit 29bfb3ebbc63d7ed18b916c5c6946790fb3d15df
+	* src/hwf-ppc.c (ppc_features): Add HWF_PPC_ARCH_3_10.
+
+2022-03-31  NIIBE Yutaka  <gniibe@fsij.org>
+
+	random:drbg: Fix the behavior for child process.
+	+ commit df7879a86b1de8eaf2d784687155c4274574b120
+	* random/random-drbg.c (_gcry_rngdrbg_randomize): Update change of PID
+	detection.
+
+	build: When no gpg-error-config, not install libgcrypt-config.
+	+ commit 2db5b5e995c21c5bd9cd193c2ed1109ba9b1a440
+	* configure.ac (USE_GPGRT_CONFIG): New.
+	* src/Makefile.am [USE_GPGRT_CONFIG]: Conditionalize the install
+	of libgcrypt-config.
+
+2022-03-30  Werner Koch  <wk@gnupg.org>
 
 	tests: Add brainpoolP256r1 to bench-slope.
-	+ commit eeddd578120c6c28cf600016aae124223ef99e8b
+	+ commit 67b36154f88ebe271a40c3f3f7b963943c656b71
 	* tests/bench-slope.c (ECC_ALGO_BRAINP256R1): New.
 	(ecc_algo_fips_allowed): Support this curve.
 	(ecc_algo_name): Ditto.
@@ -18,21 +3844,258 @@
 	(ecc_nbits): Ditto.
 	(bench_ecc_init): Ditto.
 
-2022-02-22  NIIBE Yutaka  <gniibe@fsij.org>
+2022-03-29  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	configure: fix avx512 check for i386.
+	+ commit a5d126c61cc00aa2d63c389a956330067c90cbfd
+	* configure.ac (gcry_cv_gcc_inline_asm_avx512): Do not use ZMM22
+	register; Check for broadcast memory source.
+
+2022-03-29  Tianjia Zhang  <tianjia.zhang@linux.alibaba.com>
+
+	Fix configure.ac error of intel-avx512.
+	+ commit 4dc707e336a91ca9ca5a59787b9245a1ca3042c6
+	* configure.ac: Correctly set value for avx512support.
+
+2022-03-29  NIIBE Yutaka  <gniibe@fsij.org>
+
+	kdf:argon2: Fix for the case output > 64.
+	+ commit 564739a58426d89db2f0c9334659949e503d2c59
+	* cipher/blake2.c (blake2b_vl_hash): Fix the last step.
+	* cipher/kdf.c (argon2_open): Check the value.
+
+2022-03-28  NIIBE Yutaka  <gniibe@fsij.org>
+
+	build: Fix for build for Windows.
+	+ commit 5d6a1c396396ba7b44f11af10a9c51b1b573e03c
+	* cipher/Makefile.am: Use EXEEXT_FOR_BUILD.
+	* doc/Makefile.am: Likewise.
+
+	test: Fix cast for Windows 64-bit.
+	+ commit e24fe678656156502bd3ef1b7805cddede1dd2de
+	* tests/bench-slope.c (slope_benchmark): Use uintptr_t.
+
+2022-03-28  Werner Koch  <wk@gnupg.org>
+
+	hash: Add more OIDs.
+	+ commit 26ac5e30018f2bf0a973b3a45410e6a0c8067f0e
+	* cipher/sha256.c: Add X9.62 OID.
+	* cipher/sha512.c: Ditto.
+
+	build: Improve sign-release traget.
+	+ commit ec656616bbbb5db87d3cdf4f4ea695217935d843
+	* Makefile.am (sign-release): Allow running in the dist dir.
+
+2022-03-28  NIIBE Yutaka  <gniibe@fsij.org>
+
+	tests: Fix null pointer arithmetic.
+	+ commit 1517a31ea476b76f67289d07e2c2821aa4ef83ef
+	* tests/bench-slope.c (slope_benchmark): Don't use null pointer.
+
+2022-03-12  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	Fix building sha512-avx512 with clang.
+	+ commit a0db0a121571129b7149e51e98e5fbc6e35413e8
+	* cipher/sha512-avx512-amd64.S
+	(_gcry_sha512_transform_amd64_avx512): Change "%xmm??" registers to
+	"xmm??" for clear_reg parameter.
+	* configure.ac (gcry_cv_gcc_inline_asm_avx512): Check support for
+	registers in range "zmm16-zmm31".
+
+2022-03-10  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	SHA512: Add AVX512 implementation.
+	+ commit 089223aa3b554e5c9a07d9176470308dab10ac8a
+	* LICENSES: Add 'cipher/sha512-avx512-amd64.S'.
+	* cipher/Makefile.am: Add 'sha512-avx512-amd64.S'.
+	* cipher/sha512-avx512-amd64.S: New.
+	* cipher/sha512.c (USE_AVX512): New.
+	(do_sha512_transform_amd64_ssse3, do_sha512_transform_amd64_avx)
+	(do_sha512_transform_amd64_avx2): Add ASM_EXTRA_STACK to return value
+	only if assembly routine returned non-zero value.
+	[USE_AVX512] (_gcry_sha512_transform_amd64_avx512)
+	(do_sha512_transform_amd64_avx512): New.
+	(sha512_init_common) [USE_AVX512]: Use AVX512 implementation if HW
+	feature supported.
+	---
+
+	Benchmark on Intel Core i3-1115G4 (tigerlake):
+
+	 Before:
+	                |  nanosecs/byte   mebibytes/sec   cycles/byte  auto Mhz
+	 SHA512         |      1.51 ns/B     631.6 MiB/s      6.17 c/B      4089
+
+	 After (~29% faster):
+	                |  nanosecs/byte   mebibytes/sec   cycles/byte  auto Mhz
+	 SHA512         |      1.16 ns/B     819.0 MiB/s      4.76 c/B      4090
+
+2022-03-09  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	rijndael-vaes-avx2: perform checksumming inline.
+	+ commit d820d27a3bce6365523fbcb6ec607b23dd4ca4e2
+	* cipher/rijndael-vaes-avx2-amd64.S
+	(_gcry_vaes_avx2_ocb_checksum): Remove.
+	(_gcry_vaes_avx2_ocb_crypt_amd64): Add inline checksumming.
+
+2022-03-07  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	ghash|polyval: add x86_64 VPCLMUL/AVX512 accelerated implementation.
+	+ commit e6f360019369fff42411b4cca976cc8ebe09281d
+	* cipher/cipher-gcm-intel-pclmul.c (GCM_INTEL_USE_VPCLMUL_AVX512)
+	(GCM_INTEL_AGGR32_TABLE_INITIALIZED): New.
+	(ghash_setup_aggr16_avx2): Store H16 for aggr32 setup.
+	[GCM_USE_INTEL_VPCLMUL_AVX512] (GFMUL_AGGR32_ASM_VPCMUL_AVX512)
+	(gfmul_vpclmul_avx512_aggr32, gfmul_vpclmul_avx512_aggr32_le)
+	(gfmul_pclmul_avx512, gcm_lsh_avx512, load_h1h4_to_zmm1)
+	(ghash_setup_aggr8_avx512, ghash_setup_aggr16_avx512)
+	(ghash_setup_aggr32_avx512, swap128b_perm): New.
+	(_gcry_ghash_setup_intel_pclmul) [GCM_USE_INTEL_VPCLMUL_AVX512]: Enable
+	AVX512 implementation based on HW features.
+	(_gcry_ghash_intel_pclmul, _gcry_polyval_intel_pclmul): Add
+	VPCLMUL/AVX512 code path; Small tweaks to VPCLMUL/AVX2 code path; Tweaks
+	on register clearing.
+
+	Add detection for HW feature "intel-avx512"
+	+ commit 8cf06145263eb23b5411fae03e1ea13e146d605e
+	* configure.ac (avx512support, gcry_cv_gcc_inline_asm_avx512)
+	(ENABLE_AVX512_SUPPORT): New.
+	* src/g10lib.h (HWF_INTEL_AVX512): New.
+	* src/hwf-x86.c (detect_x86_gnuc): Add AVX512 detection.
+	* src/hwfeatures.c (hwflist): Add "intel-avx512".
+	* doc/gcrypt.texi: Add "intel-avx512" to HW features list.
+
+2022-03-06  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	ghash|polyval: add x86_64 VPCLMUL/AVX2 accelerated implementation.
+	+ commit d857e85cb4d4cb9702a59364ce9a4b9d81328cb5
+	* cipher/cipher-gcm-intel-pclmul.c (GCM_INTEL_USE_VPCLMUL_AVX2)
+	(GCM_INTEL_AGGR8_TABLE_INITIALIZED)
+	(GCM_INTEL_AGGR16_TABLE_INITIALIZED): New.
+	(gfmul_pclmul): Fixes to comments.
+	[GCM_USE_INTEL_VPCLMUL_AVX2] (GFMUL_AGGR16_ASM_VPCMUL_AVX2)
+	(gfmul_vpclmul_avx2_aggr16, gfmul_vpclmul_avx2_aggr16_le)
+	(gfmul_pclmul_avx2, gcm_lsh_avx2, load_h1h2_to_ymm1)
+	(ghash_setup_aggr8_avx2, ghash_setup_aggr16_avx2): New.
+	(_gcry_ghash_setup_intel_pclmul): Add 'hw_features' parameter; Setup
+	ghash and polyval function pointers for context; Add VPCLMUL/AVX2 code
+	path; Defer aggr8 and aggr16 table initialization to until first use in
+	'_gcry_ghash_intel_pclmul' or '_gcry_polyval_intel_pclmul'.
+	[__x86_64__] (ghash_setup_aggr8): New.
+	(_gcry_ghash_intel_pclmul): Add VPCLMUL/AVX2 code path; Add call for
+	aggr8 table initialization.
+	(_gcry_polyval_intel_pclmul): Add VPCLMUL/AVX2 code path; Add call for
+	aggr8 table initialization.
+	* cipher/cipher-gcm.c [GCM_USE_INTEL_PCLMUL] (_gcry_ghash_intel_pclmul)
+	(_gcry_polyval_intel_pclmul): Remove.
+	[GCM_USE_INTEL_PCLMUL] (_gcry_ghash_setup_intel_pclmul): Add
+	'hw_features' parameter.
+	(setupM) [GCM_USE_INTEL_PCLMUL]: Pass HW features to
+	'_gcry_ghash_setup_intel_pclmul'; Let '_gcry_ghash_setup_intel_pclmul'
+	setup function pointers.
+	* cipher/cipher-internal.h (GCM_USE_INTEL_VPCLMUL_AVX2): New.
+	(gcry_cipher_handle): Add member 'gcm.hw_impl_flags'.
+
+2022-03-02  Tianjia Zhang  <tianjia.zhang@linux.alibaba.com>
+
+	Add SM4 ARMv8/AArch64/CE assembly implementation.
+	+ commit 47cafffb09d8a224f07e0750f4ba882bb86cb15a
+	* cipher/Makefile.am: Add 'sm4-armv8-aarch64-ce.S'.
+	* cipher/sm4-armv8-aarch64-ce.S: New.
+	* cipher/sm4.c (USE_ARM_CE): New.
+	(SM4_context) [USE_ARM_CE]: Add 'use_arm_ce'.
+	[USE_ARM_CE] (_gcry_sm4_armv8_ce_expand_key)
+	(_gcry_sm4_armv8_ce_crypt, _gcry_sm4_armv8_ce_ctr_enc)
+	(_gcry_sm4_armv8_ce_cbc_dec, _gcry_sm4_armv8_ce_cfb_dec)
+	(_gcry_sm4_armv8_ce_crypt_blk1_8, sm4_armv8_ce_crypt_blk1_8): New.
+	(sm4_expand_key) [USE_ARM_CE]: Use ARMv8/AArch64/CE key setup.
+	(sm4_setkey): Enable ARMv8/AArch64/CE if supported by HW.
+	(sm4_encrypt) [USE_ARM_CE]: Use SM4 CE encryption.
+	(sm4_decrypt) [USE_ARM_CE]: Use SM4 CE decryption.
+	(_gcry_sm4_ctr_enc, _gcry_sm4_cbc_dec, _gcry_sm4_cfb_dec)
+	(_gcry_sm4_ocb_crypt, _gcry_sm4_ocb_auth) [USE_ARM_CE]: Add
+	ARMv8/AArch64/CE bulk functions.
+	* configure.ac: Add 'sm4-armv8-aarch64-ce.lo'.
+
+	hwf-arm: add ARMv8.2 optional crypto extension HW features.
+	+ commit 7d2983979866223d96aad4806af0311671585f64
+	* src/g10lib.h (HWF_ARM_SHA3, HWF_ARM_SM3, HWF_ARM_SM4)
+	(HWF_ARM_SHA512): New.
+	* src/hwf-arm.c (arm_features): Add sha3, sm3, sm4, sha512 HW features.
+	* src/hwfeatures.c (hwflist): Add sha3, sm3, sm4, sha512 HW features.
+
+2022-02-24  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	powerpc: check for missing optimization level for vector register usage.
+	+ commit 6951e0f591ccff24b9ce2e43c2dcab955e3302c4
+	* cipher/Makefile.am [ENABLE_PPC_VCRYPTO_EXTRA_CFLAGS]
+	(ppc_vcrypto_cflags): Add '-O2'.
+	* configure.ac (gcry_cv_cc_ppc_altivec): Check for missing compiler
+	optimization with vec_sld_u32 inline function.
+	* configure.ac (gcry_cv_cc_ppc_altivec_cflags): Check for missing
+	compiler optimization with vec_sld_u32 inline function; Add '-O2' to
+	CFLAGS.
+
+2022-02-23  Tianjia Zhang  <tianjia.zhang@linux.alibaba.com>
+
+	Add SM4 ARMv8/AArch64 assembly implementation.
+	+ commit d8825601f10aec20db118496bb68a5cd1372b7da
+	* cipher/Makefile.am: Add 'sm4-aarch64.S'.
+	* cipher/sm4-aarch64.S: New.
+	* cipher/sm4.c (USE_AARCH64_SIMD): New.
+	(SM4_context) [USE_AARCH64_SIMD]: Add 'use_aarch64_simd'.
+	[USE_AARCH64_SIMD] (_gcry_sm4_aarch64_crypt)
+	(_gcry_sm4_aarch64_ctr_enc, _gcry_sm4_aarch64_cbc_dec)
+	(_gcry_sm4_aarch64_cfb_dec, _gcry_sm4_aarch64_crypt_blk1_8)
+	(sm4_aarch64_crypt_blk1_8): New.
+	(sm4_setkey): Enable ARMv8/AArch64 if supported by HW.
+	(_gcry_sm4_ctr_enc, _gcry_sm4_cbc_dec, _gcry_sm4_cfb_dec)
+	(_gcry_sm4_ocb_crypt, _gcry_sm4_ocb_auth) [USE_AARCH64_SIMD]:
+	Add ARMv8/AArch64 bulk functions.
+	* configure.ac: Add 'sm4-aarch64.lo'.
+
+	Move VPUSH_API/VPOP_API macros to common header.
+	+ commit 83e1649edd5eedd8faf24e5c10cb643218ce3c6f
+	* cipher/asm-common-aarch64.h: Add VPUSH_API/VPOP_API/CLEAR_REG macros.
+	* cipher/cipher-gcm-armv8-aarch64-ce.S: Remove common macros.
+
+2022-02-22  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	Perform AEAD input 24KiB splitting only when input larger than 32KiB.
+	+ commit 2508b755608ce182a7e570dc2717a6a70346b927
+	* cipher/chacha20.c (_gcry_chacha20_poly1305_encrypt)
+	(_gcry_chacha20_poly1305_decrypt): Process in 24KiB chunks if input
+	larger than 32KiB.
+	* cipher/cipher-ccm.c (_gcry_cipher_ccm_encrypt)
+	(_gcry_cipher_ccm_decrypt): Likewise.
+	* cipher/cipher-eax.c (_gcry_cipher_eax_encrypt)
+	(_gcry_cipher_eax_decrypt): Likewise.
+	* cipher/cipher-gcm.c (gcm_cipher_inner): Likewise.
+	* cipher/cipher-ocb.c (ocb_crypt): Likewise.
+	* cipher/cipher-poly2305.c (_gcry_cipher_poly1305_encrypt)
+	(_gcry_cipher_poly1305_decrypt): Likewise.
+
+2022-02-17  NIIBE Yutaka  <gniibe@fsij.org>
 
 	fips: Clarify what to be hashed for the integrity check.
-	+ commit 9fa4c8946ac5e79c37941c6264ac3d6314d9a3c0
+	+ commit 052c5ef4cea56772b7015e36f231fa0bcbf91410
 	* src/fips.c (get_file_offset): Compute the maximum offset
 	of segments.
 	* src/gen-note-integrity.sh: Likewise.
 
 	fips: Fix gen-note-integrity.sh script not to use cmp utility.
-	+ commit ad8b67f9e21982c841f31e92d2639f726f7ea4be
+	+ commit 3c8b6c4a9cad59c5e1db5706f6774a3141b60210
 	* src/gen-note-integrity.sh: Simplify detecting 32-bit machine
 	or 64-bit machine.
 
+	Silence compiler warnings for possible alignment problem.
+	+ commit 5420cbbd3ec7ebf081224796e8d1f8299f7ad985
+	* cipher/kdf.c (balloon_final): Fix the cast.
+	(_gcry_kdf_compute, _gcry_kdf_final, _gcry_kdf_close): Likewise.
+
+2022-02-16  NIIBE Yutaka  <gniibe@fsij.org>
+
 	fips: More portable integrity check.
-	+ commit dcc6979fd2ed32bb5a5e448e2c9da1158c1d93c2
+	+ commit a340e980388243ceae6df57d101036f3f2a955be
 	* src/Makefile.am (EXTRA_DIST): Change the name of the script.
 	(libgcrypt.la.done): Invoce OBJCOPY with --add-section.
 	(libgcrypt.so.hmac): Specify ECHO_N.
@@ -44,7 +4107,7 @@
 	Generate ElfN_Nhdr, and then the hmac.
 
 	fips: Integrity check improvement, with only loadable segments.
-	+ commit 974f4c7e698b0c1ffe3de82bad9b3f8813d1f42b
+	+ commit 9dcf9305962b90febdf2d7cc73b49feadbf6a01f
 	* configure.ac (READELF): Check the tool.
 	* src/Makefile.am (libgcrypt.so.hmac): Use genhmac.sh with hmac256.
 	* src/fips.c (get_file_offsets): Rename from get_file_offset.
@@ -53,35 +4116,41 @@
 	(hmac256_check): Finish scanning at the end of loadble segments.
 	* src/genhmac.sh: New.
 
-2022-02-22  Clemens Lang  <cllang@redhat.com>
+	build: Clean up acinclude.m4.
+	+ commit b2f110f99626afce84c23c76db0ebaaadac4ee48
+	* acinclude.m4 (GNUPG_CHECK_TYPEDEF): Remove.  We can just use
+	AC_CHECK_TYPES.
+	(GNUPG_CHECK_GNUMAKE): Remove.  It may build with other Make.
+	(GNUPG_SYS_LIBTOOL_CYGWIN32): Remove.  Now, it's done by LT_INIT.
+	(TYPE_SOCKLEN_T): Remove.  Now, we use gl_TYPE_SOCKLEN_T.
+
+	build: Remove checking Pth library.
+	+ commit d98a78f0eb7711d32f473a04ea417e0f0bde6a00
+	* acinclude.m4 (GNUPG_PTH_VERSION_CHECK): Remove.
+	* configure.ac (PTH_CFLAGS, PTH_LIBS): Remove.
+
+2022-02-15  Clemens Lang via Gcrypt-devel  <gcrypt-devel@lists.gnupg.org>
 
 	fips: Use ELF header to find hmac file offset.
-	+ commit 4ed49a917212507de8679aaf08504922a95cf6ef
+	+ commit beb5d6df5c5785db7c32a24a5d2a351cb964bfbc
 	* src/fips.c [ENABLE_HMAC_BINARY_CHECK] (hmac256_check): Use ELF headers
 	  to locate the file offset for the HMAC in addition to information from
 	  the loader
 
-2022-02-21  NIIBE Yutaka  <gniibe@fsij.org>
-
-	Silence compiler warnings for possible alignment problem.
-	+ commit 64fef214025949a1b0a76355b99c85594caea4ca
-	* cipher/kdf.c (_gcry_kdf_compute, _gcry_kdf_final, _gcry_kdf_close):
-	Fix the cast.
-
-2022-02-18  NIIBE Yutaka  <gniibe@fsij.org>
+2022-02-15  NIIBE Yutaka  <gniibe@fsij.org>
 
 	build: Fix m4/gpg-error.m4.
-	+ commit b5b7b8c5c76838350f1857a40c428c9092f9da8e
+	+ commit bff9f1b024647e18b2c87dcd769c0e449f7752e6
 	* m4/gpg-error.m4: Unset GPGRT_CONFIG when it doesn't work well.
 
 2022-02-14  Clemens Lang via Gcrypt-devel  <gcrypt-devel@lists.gnupg.org>
 
 	hmac: Fix memory leak.
-	+ commit 2bdc6614c866b0197f534e5cf3ec35d9f024facd
+	+ commit 6994d874af865cc6ba95a8a6eb5a8fe048e88e07
 	* src/hmac.c: Release HMAC256 context
 
 	fips: Fix memory leaks in FIPS mode.
-	+ commit a60f8e43dd1b02adf7d1fd54c2e1d27564dd12c1
+	+ commit 7fc5d33e74164519edcd8127a35cc21228d2727f
 	* cipher/pubkey.c (_gcry_pk_sign_md): Fix memory leak in FIPS mode when
 	  used with SHA1
 	* tests/basic.c (check_one_cipher_core): Add missing free in error code
@@ -89,24 +4158,102 @@
 	* tests/dsa-rfc6979.c (check_dsa_rfc6979): Likewise
 	* tests/pubkey.c (check_x931_derived_key): Likewise
 
-2022-02-14  NIIBE Yutaka  <gniibe@fsij.org>
+2022-02-10  NIIBE Yutaka  <gniibe@fsij.org>
+
+	Clean up for removal of memory guard support.
+	+ commit 738723a1cd20b24fc667a457163a4aa6617dc182
+	* mpi/mpiutil.c (_gcry_mpi_m_check): Remove.
+	* src/g10lib.h (_gcry_check_heap): Remove.
+	* src/global.c (_gcry_check_heap): Remove.
+	* src/mpi.h (mpi_m_check): Remove.
+
+	Remove the built-in memory guard support.
+	+ commit f98ca6aa34ccdbbaf94f93ae30beafe400303c97
+	* configure.ac (--enable-m-guard): Remove.
+	* src/global.c (_gcry_vcontrol): Return GPG_ERR_NOT_SUPPORTED for
+	GCRYCTL_ENABLE_M_GUARD.
+	* src/stdmem.c (use_m_guard, _gcry_private_enable_m_guard): Remove.
+	(_gcry_private_malloc): Remove the code path with use_m_guard==1.
+	(_gcry_private_malloc_secure): Likewise.
+	(_gcry_private_realloc, _gcry_private_free): Likewise.
+	(_gcry_private_check_heap): Remove.
+	* src/stdmem.h: Remove declarations for memory guard functions.
+
+2022-02-09  NIIBE Yutaka  <gniibe@fsij.org>
+
+	Fix memory allocation when GCRYCTL_ENABLE_M_GUARD.
+	+ commit 90f41a1898e421c04080d35d7fea98ee18e74865
+	* configure.ac: Add check for ALIGNOF_LONG_DOUBLE.
+	* src/stdmem.c: Adjust EXTRA_ALIGN.
+
+	kdf: Prepare aligned memory in balloon_final.
+	+ commit 6936f234220d12a87fe17f7fbdbb29ba9787dd95
+	* cipher/kdf.c (BALLOON_BLOCK_LEN_MAX): Rename from
+	BALLOON_SALT_LEN_MAX.
+	(balloon_xor_block): Revert the previous change.
+	(balloon_final): Prepare memory for u64.
+
+2022-02-08  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
+
+	kdf: fix unaligned memory access in balloon_xor_block.
+	+ commit 59b2504df8f02f82adf0dd83db219bc451b0d9cc
+	* cipher/kdf.c (balloon_xor_block): Use 'buf_xor' helper function; Change
+	pointer parameters to 'void *' type.
+	(balloon_final): Don't cast last_block to 'u64 *' for balloon_xor_block
+	call.
+
+2022-02-08  NIIBE Yutaka  <gniibe@fsij.org>
+
+	kdf: Extend original Balloon to other digest algos.
+	+ commit 26bfa41e2413621c8e73dacba9b7c5ed69a1da35
+	* cipher/kdf.c (struct balloon_thread_data): Use pointer to md_spec.
+	(prng_aes_ctr_init): Select relevant cipher to match BLKLEN.
+	Use other half of digest for IV if not original Balloon.
+	(balloon_open): Support other digest algos.
+	(balloon_final): Check the error code in compute.
+
+2022-02-07  NIIBE Yutaka  <gniibe@fsij.org>
+
+	kdf: Add experimental Balloon KDF.
+	+ commit 08ab32228ad20fd730979d700bf46b18e469703c
+	* cipher/kdf.c (prng_aes_ctr_init, prng_aes_ctr_get_rand64): New.
+	(prng_aes_ctr_fini, ballon_context_size): New.
+	(balloon_open): Implement with SHA-256.
+	(balloon_xor_block, balloon_compress, balloon_expand): New.
+	(balloon_compute_fill, balloon_compute_mix, balloon_compute): New.
+	(balloon_compute_all, balloon_final, balloon_close): New.
+	(_gcry_kdf_open): Check argument for GCRY_KDF_BALLOON.
+	(_gcry_kdf_compute): Dispatch for GCRY_KDF_BALLOON.
+	(_gcry_kdf_final, _gcry_kdf_close): Likewise.
+	* tests/t-kdf.c (check_balloon): New.
+	(main): Add check_balloon.
 
 	kdf: Use u64.
-	+ commit 6683007d696dfe64640dc741c4332784ec246388
+	+ commit e257fe39b8ffafa3b1fc72b00db1ea43d29c9983
 	* cipher/kdf.c (rotr64): We use u64 in libgcrypt.
 
 2022-02-04  Heiko Becker  <heirecka@exherbo.org>
 
 	jitterentropy: Include <fcntl.h> and <limits.h>
-	+ commit ffaef0be613121d3ee37867d82932a7a30c2bc6d
+	+ commit a484bd665f4afaf39eaa0fdf3aa1c7dae75078b4
 	* random/jitterentropy-base-user.h: Include <fcntl.h> for O_RDONLY
 	* random/jitterentropy-base-user.h: Include <limits.h> for LONG_MAX
 
-2022-02-01  Werner Koch  <wk@gnupg.org>
+2022-02-02  Jussi Kivilinna  <jussi.kivilinna@iki.fi>
 
-	Release 1.10.0.
-	+ commit e4ab2147f3e236f7be95f9709ce09193b2ca5c1a
+	hwf-arm: add detection of ARMv8 crypto extension by toolchain config.
+	+ commit d480db6e6c806835405c6795024a8fd91448c16b
+	* src/hwf-arm.c (detect_arm_hwf_by_toolchain): New.
+	(_gcry_hwf_detect_arm): Move __ARM_NEON check to
+	'detect_arm_hwf_by_toolchain' and add call to the new function.
 
+2022-02-02  NIIBE Yutaka  <gniibe@fsij.org>
+
+	Remove random-daemon server and util.
+	+ commit d918d8aee27987c3bb99f44a7ed3508d81009f51
+	* configure.ac (--enable-random-daemon): Remove.
+	* src/Makefile.am: Remove ENABLE_RANDOM_DAEMON things.
+	* src/gcryptrnd.c, src/getrandom.c: Remove.
 
 2022-01-31  Werner Koch  <wk@gnupg.org>
 
@@ -233,20 +4380,6 @@
 	* cipher/blake2.c (blake2b_vl_hash): New.
 
 2022-01-26  NIIBE Yutaka  <gniibe@fsij.org>
-
-	kdf: Improve new KDF API.
-	+ commit 5d1da2c61981243729365724f14e3d4abacb0e6a
-	* cipher/kdf.c (struct argon2_thread_data): Change layout.
-	(argon2_iterator): Use struct gcry_kdf_pt_head.
-	(argon2_compute_segment): Rename from argon2_compute_row.
-	(argon2_open): Handle N_THREAD maximum.
-	(_gcry_kdf_iterator): Use struct gcry_kdf_pt_head.
-	(_gcry_kdf_compute_segment): Rename from _gcry_kdf_compute_row.
-	* src/gcrypt-int.h: Update declarations.
-	* src/gcrypt.h.in (struct gcry_kdf_pt_head): Expose the data type.
-	* src/libgcrypt.def, src/libgcrypt.vers: Update.
-	* src/visibility.c, src/visibility.h: Update.
-	* tests/t-kdf.c (start_thread, my_kdf_derive): Follow the change.
 
 	kdf: Improve new KDF API.
 	+ commit f21871e241e96148cef3ad4314ad596178cf8967
