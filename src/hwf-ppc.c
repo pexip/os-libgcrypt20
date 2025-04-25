@@ -103,6 +103,7 @@ static const struct feature_map_s ppc_features[] =
     { 0, PPC_FEATURE2_VEC_CRYPTO, HWF_PPC_VCRYPTO },
 #endif
     { 0, PPC_FEATURE2_ARCH_3_00, HWF_PPC_ARCH_3_00 },
+    { 0, PPC_FEATURE2_ARCH_3_10, HWF_PPC_ARCH_3_10 },
   };
 #endif
 
@@ -123,8 +124,8 @@ get_hwcap(unsigned int *hwcap, unsigned int *hwcap2)
       return 0;
     }
 
-#if 0 // TODO: configure.ac detection for __builtin_cpu_supports
-      // TODO: move to 'detect_ppc_builtin_cpu_supports'
+#if 0 /* TODO: configure.ac detection for __builtin_cpu_supports */
+      /* TODO: move to 'detect_ppc_builtin_cpu_supports' */
 #if defined(__GLIBC__) && defined(__GNUC__) && __GNUC__ >= 6
   /* __builtin_cpu_supports returns 0 if glibc support doesn't exist, so
    * we can only trust positive results. */

@@ -1,3 +1,124 @@
+libgcrypt20 (1.11.0-7) unstable; urgency=medium
+
+  [ Simon McVittie ]
+  * Add an autopkgtest smoke-test for linking to libgcrypt.
+    Superficial tests like this one are a surprisingly effective way to
+    detect packaging regressions. Closes: #1088243
+
+  [ Andreas Metzler ]
+  * Sync with Ubuntu 1.11.0-6ubuntu1:
+    Pull upstream patch to fix FTBFS on s390x during build-time tests:
+    + lp2083245-disable-sha3-s390x-acceleration-for-cshake.patch
+    (LP: #2083245)
+  * Run wrap-and-sort -ast.
+
+ -- Andreas Metzler <ametzler@debian.org>  Tue, 24 Dec 2024 13:35:47 +0100
+
+libgcrypt20 (1.11.0-6) unstable; urgency=medium
+
+  * 30_mpi-ec-inline-reduce-register-pressure-on-32-bit-ARM.patchn from
+    upstream GIT master: Fix FTBFS on arm with gcc-14. Closes: #1077326
+
+ -- Andreas Metzler <ametzler@debian.org>  Wed, 07 Aug 2024 18:42:37 +0200
+
+libgcrypt20 (1.11.0-5) unstable; urgency=medium
+
+  * Upload to unstable.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sun, 28 Jul 2024 13:05:45 +0200
+
+libgcrypt20 (1.11.0-4) experimental; urgency=medium
+
+  * Add missing Breaks/Replaces to libgcrypt-bin. Closes: #1076625
+
+ -- Andreas Metzler <ametzler@debian.org>  Sat, 20 Jul 2024 11:31:22 +0200
+
+libgcrypt20 (1.11.0-3) experimental; urgency=medium
+
+  * Point watchfile to releases instead of snapshots again.
+  * Move helper binaries from -dev package to newly added libgcrypt-bin
+    package, mark libgcrypt20-dev Multi-Arch: same. Closes: #714589
+
+ -- Andreas Metzler <ametzler@debian.org>  Fri, 19 Jul 2024 13:49:18 +0200
+
+libgcrypt20 (1.11.0-2) unstable; urgency=low
+
+  * Upload to unstable.
+
+ -- Andreas Metzler <ametzler@debian.org>  Tue, 09 Jul 2024 16:29:33 +0200
+
+libgcrypt20 (1.11.0-1) experimental; urgency=low
+
+  * New upstream version.
+    + Drop 30_add_missing_files_from_master.diff.
+    + Update libgcrypt20.symbols to refer to release instead of beta version.
+
+ -- Andreas Metzler <ametzler@debian.org>  Fri, 21 Jun 2024 18:08:24 +0200
+
+libgcrypt20 (1.11.0~beta450-1) experimental; urgency=low
+
+  * New upstream snapshot.
+    + Drop 30_m4-Include-_AM_PATH_GPGRT_CONFIG-definition.patch.
+    + Update symbol file. Add new functions. Bump version requirement
+      on all symbols. (Many algorithms, enums extended, etc.)
+    + 30_add_missing_files_from_master.diff: Add some files missing in tarball
+      from upstream GIT master.
+    + Update debian/copyright.
+    + Version libgpg-error-dev build-dependency.
+    + Drop debian/libgcrypt-config.1, libgcrypt-config is not shipped anymore.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sat, 25 May 2024 11:36:53 +0200
+
+libgcrypt20 (1.10.3-3) unstable; urgency=medium
+
+  * 30_m4-Include-_AM_PATH_GPGRT_CONFIG-definition.patch from upstream GIT
+    master: Update libgcrypt.m4 to let AM_PATH_LIBGCRYPT continue to work
+    without preceding AM_PATH_GPG_ERROR() when libgcrypt-config is removed.
+
+ -- Andreas Metzler <ametzler@debian.org>  Tue, 14 May 2024 18:11:46 +0200
+
+libgcrypt20 (1.10.3-2) unstable; urgency=medium
+
+  * Upload to unstable.
+
+ -- Andreas Metzler <ametzler@debian.org>  Fri, 01 Dec 2023 11:47:14 +0100
+
+libgcrypt20 (1.10.3-1) experimental; urgency=medium
+
+  * New upstream release.
+    + Update symbol file.
+
+ -- Andreas Metzler <ametzler@debian.org>  Thu, 30 Nov 2023 14:29:24 +0100
+
+libgcrypt20 (1.10.2-3) unstable; urgency=medium
+
+  [ Simon Josefsson ]
+  * Update Homepage: URL.
+
+  [ Andreas Metzler ]
+  * Drop --insert-timestamp linker option on mingw*, binutils 2.41 should use
+    SOURCE_DATE_EPOCH automatically and the Debian package has dropped the
+    patch to add the --insert-timestamp option. Closes: #1052219
+
+ -- Andreas Metzler <ametzler@debian.org>  Tue, 19 Sep 2023 13:48:32 +0200
+
+libgcrypt20 (1.10.2-2) unstable; urgency=medium
+
+  * Upload to unstable.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sun, 11 Jun 2023 11:21:04 +0200
+
+libgcrypt20 (1.10.2-1) experimental; urgency=medium
+
+  [ Helmut Grohne ]
+  * Support the noudeb build profile. Closes: #1024943
+
+  [ Andreas Metzler ]
+  * New upstream release.
+    + Drop superfluous patches.
+
+ -- Andreas Metzler <ametzler@debian.org>  Sun, 09 Apr 2023 13:38:50 +0200
+
 libgcrypt20 (1.10.1-3+pexip24u3) pexip-bookworm; urgency=medium
 
   * New versioning scheme

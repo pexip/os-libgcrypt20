@@ -10,18 +10,18 @@ XSBC-Pexip-Original-Uploaders:
  Simon Josefsson <simon@josefsson.org>,
 Build-Depends:
  debhelper-compat (= 13),
- libgpg-error-dev,
+ libgpg-error-dev (>= 1.49),
 Build-Depends-Indep:
- libgpg-error-mingw-w64-dev,
+ libgpg-error-mingw-w64-dev (>= 1.49),
  mingw-w64,
  texinfo,
  texlive-latex-base,
  texlive-plain-generic,
-Standards-Version: 4.6.0
+Standards-Version: 4.7.0
 Vcs-Git: https://salsa.debian.org/gnutls-team/libgcrypt.git -b branch1.6
 Vcs-Browser: https://salsa.debian.org/gnutls-team/libgcrypt/tree/branch1.6
 Rules-Requires-Root: no
-Homepage: https://directory.fsf.org/project/libgcrypt/
+Homepage: https://gnupg.org/software/libgcrypt/
 XS-Pexip-Upstream: http://deb.debian.org/debian/ trixie
 
 Package: libgcrypt20-doc
@@ -66,7 +66,9 @@ Depends:
  libgpg-error-dev,
  ${misc:Depends},
 Suggests:
+ libgcrypt-bin,
  libgcrypt20-doc,
+Multi-Arch: same
 Description: LGPL Crypto library - development files
  libgcrypt contains cryptographic functions.  Many important free
  ciphers, hash algorithms and public key signing algorithms have been
@@ -104,6 +106,7 @@ Description: LGPL Crypto library - runtime library
 Package: libgcrypt20-udeb
 Section: debian-installer
 Package-Type: udeb
+Build-Profiles: <!noudeb>
 Architecture: any
 Depends:
  ${misc:Depends},
@@ -143,3 +146,27 @@ Description: LGPL Crypto library - Windows development
  This is a Windows version of libgcrypt.  It's meant to be used when
  cross-building software that targets the Windows platform, e.g. the
  win32-loader component of Debian-Installer.
+
+Package: libgcrypt-bin
+Section: devel
+Architecture: any
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
+Breaks:
+ libgcrypt20-dev (<< 1.11.0-3),
+Replaces:
+ libgcrypt20-dev (<< 1.11.0-3),
+Description: LGPL Crypto library - utility binaries
+ libgcrypt contains cryptographic functions.  Many important free
+ ciphers, hash algorithms and public key signing algorithms have been
+ implemented:
+ .
+ Arcfour, Blowfish, CAST5, DES, AES, Twofish, Serpent, rfc2268 (rc2), SEED,
+ Poly1305, Camellia, ChaCha20, IDEA, Salsa, SM4, Blake-2, CRC, MD2, MD4, MD5,
+ RIPE-MD160, SM3, SHA-1, SHA-256, SHA-512, SHA3-224, SHA3-256, SHA3-384,
+ SHA3-512, SHAKE128, SHAKE256, Tiger, Whirlpool, DSA, DSA2, ElGamal, RSA, ECC
+ (Curve25519, sec256k1, GOST R 34.10-2001 and GOST R 34.10-2012, etc.)
+ .
+ This package contains some utilities which are mainly useful when
+ developing programs using libgcrypt.

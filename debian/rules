@@ -37,7 +37,6 @@ override_dh_auto_build-indep:
 	    --enable-static \
 	    --prefix=/usr/$$cpu-w64-mingw32 \
 	    --host=$$cpu-w64-mingw32 --build=$(DEB_HOST_GNU_TYPE) \
-	    LDFLAGS="-Xlinker --insert-timestamp=$(SOURCE_DATE_EPOCH)" \
 	  && \
 	  $(MAKE) \
 	  || exit 1 ; \

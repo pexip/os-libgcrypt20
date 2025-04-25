@@ -5,7 +5,7 @@
  * This file is part of Libgcrypt.
  *
  * Libgcrypt is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser general Public License as
+ * it under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
  *
@@ -1413,7 +1413,7 @@ const gcry_mac_spec_t _gcry_mac_type_spec_hmac_tiger1 = {
 #endif
 #if USE_MD5
 const gcry_mac_spec_t _gcry_mac_type_spec_hmac_md5 = {
-  GCRY_MAC_HMAC_MD5, {0, 0}, "HMAC_MD5",
+  GCRY_MAC_HMAC_MD5, {0, 1}, "HMAC_MD5",
   &hmac_ops
 };
 #endif

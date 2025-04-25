@@ -1,0 +1,9 @@
+Tests:
+ libgcrypt20-dev,
+Depends:
+ build-essential,
+ libgcrypt20-dev,
+ pkgconf,
+Restrictions:
+ allow-stderr,
+ superficial,

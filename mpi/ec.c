@@ -375,7 +375,7 @@ ec_addm_25519 (gcry_mpi_t w, gcry_mpi_t u, gcry_mpi_t v, mpi_ec_t ctx)
 
   _gcry_mpih_add_n (wp, up, vp, wsize);
   borrow = _gcry_mpih_sub_n (n, wp, ctx->p->d, wsize);
-  mpih_set_cond (wp, n, wsize, (borrow == 0UL));
+  mpih_set_cond (wp, n, wsize, mpih_limb_is_zero (borrow));
   wp[LIMB_SIZE_25519-1] &= ~((mpi_limb_t)1 << (255 % BITS_PER_MPI_LIMB));
 }
 
@@ -396,7 +396,7 @@ ec_subm_25519 (gcry_mpi_t w, gcry_mpi_t u, gcry_mpi_t v, mpi_ec_t ctx)
 
   borrow = _gcry_mpih_sub_n (wp, up, vp, wsize);
   _gcry_mpih_add_n (n, wp, ctx->p->d, wsize);
-  mpih_set_cond (wp, n, wsize, (borrow != 0UL));
+  mpih_set_cond (wp, n, wsize, mpih_limb_is_not_zero (borrow));
   wp[LIMB_SIZE_25519-1] &= ~((mpi_limb_t)1 << (255 % BITS_PER_MPI_LIMB));
 }
 
@@ -433,7 +433,7 @@ ec_mulm_25519 (gcry_mpi_t w, gcry_mpi_t u, gcry_mpi_t v, mpi_ec_t ctx)
   _gcry_mpih_add_n (wp, wp, n, wsize);
 
   cy = _gcry_mpih_sub_n (n, wp, ctx->p->d, wsize);
-  mpih_set_cond (wp, n, wsize, (cy == 0UL));
+  mpih_set_cond (wp, n, wsize, mpih_limb_is_zero (cy));
 }
 
 static void
@@ -470,7 +470,7 @@ ec_addm_448 (gcry_mpi_t w, gcry_mpi_t u, gcry_mpi_t v, mpi_ec_t ctx)
 
   cy = _gcry_mpih_add_n (wp, up, vp, wsize);
   _gcry_mpih_sub_n (n, wp, ctx->p->d, wsize);
-  mpih_set_cond (wp, n, wsize, (cy != 0UL));
+  mpih_set_cond (wp, n, wsize, mpih_limb_is_not_zero (cy));
 }
 
 static void
@@ -490,7 +490,7 @@ ec_subm_448 (gcry_mpi_t w, gcry_mpi_t u, gcry_mpi_t v, mpi_ec_t ctx)
 
   borrow = _gcry_mpih_sub_n (wp, up, vp, wsize);
   _gcry_mpih_add_n (n, wp, ctx->p->d, wsize);
-  mpih_set_cond (wp, n, wsize, (borrow != 0UL));
+  mpih_set_cond (wp, n, wsize, mpih_limb_is_not_zero (borrow));
 }
 
 static void
@@ -561,7 +561,7 @@ ec_mulm_448 (gcry_mpi_t w, gcry_mpi_t u, gcry_mpi_t v, mpi_ec_t ctx)
   _gcry_mpih_add_n (wp, wp, n, wsize);
 
   cy = _gcry_mpih_sub_n (n, wp, ctx->p->d, wsize);
-  mpih_set_cond (wp, n, wsize, (cy == 0UL));
+  mpih_set_cond (wp, n, wsize, mpih_limb_is_zero (cy));
 }
 
 static void
@@ -581,9 +581,9 @@ ec_pow2_448 (gcry_mpi_t w, const gcry_mpi_t b, mpi_ec_t ctx)
 static void
 ec_secp256k1_mod (gcry_mpi_t w, mpi_ec_t ctx)
 {
-  mpi_size_t wsize = (256 + BITS_PER_MPI_LIMB - 1) / BITS_PER_MPI_LIMB;
-  mpi_limb_t n[wsize + 1];
-  mpi_limb_t s[wsize + 1];
+  mpi_limb_t s[(256 + BITS_PER_MPI_LIMB - 1) / BITS_PER_MPI_LIMB + 1];
+  mpi_limb_t n[DIM(s)];
+  const mpi_size_t wsize = DIM(s) - 1;
   mpi_limb_t cy, borrow;
   mpi_ptr_t wp;
 
@@ -622,7 +622,8 @@ ec_secp256k1_mod (gcry_mpi_t w, mpi_ec_t ctx)
   cy = _gcry_mpih_add_n (wp, wp, n, wsize);
 
   borrow = _gcry_mpih_sub_n (s, wp, ctx->p->d, wsize);
-  mpih_set_cond (wp, s, wsize, (cy != 0UL) | (borrow == 0UL));
+  mpih_set_cond (wp, s, wsize,
+		 mpih_limb_is_not_zero (cy) | mpih_limb_is_zero (borrow));
 
   w->nlimbs = wsize;
   MPN_NORMALIZE (wp, w->nlimbs);
@@ -856,7 +857,7 @@ ec_p_init (mpi_ec_t ctx, enum gcry_mpi_ec_models model,
           if (!match_p)
             continue;
 
-          for (j=0; i< DIM(ctx->t.scratch) && bad_points_table[i][j]; j++)
+          for (j=0; j < DIM(ctx->t.scratch) && bad_points_table[i][j]; j++)
             ctx->t.scratch[j] = scanval (bad_points_table[i][j]);
         }
     }
@@ -1024,7 +1025,7 @@ _gcry_mpi_ec_p_new (gcry_ctx_t *r_ctx,
   if (!p || !a)
     return GPG_ERR_EINVAL;
 
-  ctx = _gcry_ctx_alloc (CONTEXT_TYPE_EC, sizeof *ec, ec_deinit);
+  ctx = _gcry_ctx_alloc (CONTEXT_TYPE_EC, sizeof *ec, ec_deinit, NULL);
   if (!ctx)
     return gpg_err_code_from_syserror ();
   ec = _gcry_ctx_get_pointer (ctx, CONTEXT_TYPE_EC);

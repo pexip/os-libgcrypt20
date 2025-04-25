@@ -32,13 +32,7 @@
 #include "context.h"
 #include "ec-context.h"
 #include "ec-inline.h"
-
-
-/* These variables are used to generate masks from conditional operation
- * flag parameters.  Use of volatile prevents compiler optimizations from
- * converting AND-masking to conditional branches.  */
-static volatile mpi_limb_t vzero = 0;
-static volatile mpi_limb_t vone = 1;
+#include "const-time.h"
 
 
 static inline
@@ -94,9 +88,9 @@ _gcry_mpi_ec_nist192_mod (gcry_mpi_t w, mpi_ec_t ctx)
   };
   const mpi_limb64_t zero = LIMB_TO64(0);
   mpi_ptr_t wp;
-  mpi_size_t wsize = 192 / BITS_PER_MPI_LIMB64;
-  mpi_limb64_t s[wsize + 1];
-  mpi_limb64_t o[wsize + 1];
+  mpi_limb64_t s[192 / BITS_PER_MPI_LIMB64 + 1];
+  mpi_limb64_t o[DIM(s)];
+  const mpi_size_t wsize = DIM(s) - 1;
   mpi_limb_t mask1;
   mpi_limb_t mask2;
   mpi_limb_t s_is_negative;
@@ -147,8 +141,8 @@ _gcry_mpi_ec_nist192_mod (gcry_mpi_t w, mpi_ec_t ctx)
 
   s_is_negative = LO32_LIMB64(s[3]) >> 31;
 
-  mask2 = vzero - s_is_negative;
-  mask1 = s_is_negative - vone;
+  mask2 = ct_limb_gen_mask(s_is_negative);
+  mask1 = ct_limb_gen_inv_mask(s_is_negative);
 
   STORE64_COND(wp, 0, mask2, o[0], mask1, s[0]);
   STORE64_COND(wp, 1, mask2, o[1], mask1, s[1]);
@@ -186,10 +180,10 @@ _gcry_mpi_ec_nist224_mod (gcry_mpi_t w, mpi_ec_t ctx)
   };
   const mpi_limb64_t zero = LIMB_TO64(0);
   mpi_ptr_t wp;
-  mpi_size_t wsize = (224 + BITS_PER_MPI_LIMB64 - 1) / BITS_PER_MPI_LIMB64;
+  mpi_limb64_t s[(224 + BITS_PER_MPI_LIMB64 - 1) / BITS_PER_MPI_LIMB64];
+  mpi_limb64_t d[DIM(s)];
+  const mpi_size_t wsize = DIM(s);
   mpi_size_t psize = ctx->p->nlimbs;
-  mpi_limb64_t s[wsize];
-  mpi_limb64_t d[wsize];
   mpi_limb_t mask1;
   mpi_limb_t mask2;
   mpi_limb_t s_is_negative;
@@ -270,8 +264,8 @@ _gcry_mpi_ec_nist224_mod (gcry_mpi_t w, mpi_ec_t ctx)
 
   s_is_negative = (HI32_LIMB64(s[3]) >> 31);
 
-  mask2 = vzero - s_is_negative;
-  mask1 = s_is_negative - vone;
+  mask2 = ct_limb_gen_mask(s_is_negative);
+  mask1 = ct_limb_gen_inv_mask(s_is_negative);
 
   STORE64_COND(wp, 0, mask2, d[0], mask1, s[0]);
   STORE64_COND(wp, 1, mask2, d[1], mask1, s[1]);
@@ -345,12 +339,12 @@ _gcry_mpi_ec_nist256_mod (gcry_mpi_t w, mpi_ec_t ctx)
   };
   const mpi_limb64_t zero = LIMB_TO64(0);
   mpi_ptr_t wp;
-  mpi_size_t wsize = (256 + BITS_PER_MPI_LIMB64 - 1) / BITS_PER_MPI_LIMB64;
+  mpi_limb64_t s[(256 + BITS_PER_MPI_LIMB64 - 1) / BITS_PER_MPI_LIMB64 + 1];
+  mpi_limb64_t t[DIM(s)];
+  mpi_limb64_t d[DIM(s)];
+  mpi_limb64_t e[DIM(s)];
+  const mpi_size_t wsize = DIM(s) - 1;
   mpi_size_t psize = ctx->p->nlimbs;
-  mpi_limb64_t s[wsize + 1];
-  mpi_limb64_t t[wsize + 1];
-  mpi_limb64_t d[wsize + 1];
-  mpi_limb64_t e[wsize + 1];
   mpi_limb_t mask1;
   mpi_limb_t mask2;
   mpi_limb_t mask3;
@@ -477,11 +471,15 @@ _gcry_mpi_ec_nist256_mod (gcry_mpi_t w, mpi_ec_t ctx)
 
   carry = LO32_LIMB64(s[4]);
 
+  /* Load values to stack to ease register pressure on i386. */
+  e[0] = p_mult[carry + 4][0];
+  e[1] = p_mult[carry + 4][1];
+  e[2] = p_mult[carry + 4][2];
+  e[3] = p_mult[carry + 4][3];
+  e[4] = p_mult[carry + 4][4];
   SUB5_LIMB64 (s[4], s[3], s[2], s[1], s[0],
 	       s[4], s[3], s[2], s[1], s[0],
-	       p_mult[carry + 4][4], p_mult[carry + 4][3],
-	       p_mult[carry + 4][2], p_mult[carry + 4][1],
-	       p_mult[carry + 4][0]);
+	       e[4], e[3], e[2], e[1], e[0]);
 
   /* Add 1*P */
   ADD5_LIMB64 (d[4], d[3], d[2], d[1], d[0],
@@ -499,9 +497,9 @@ _gcry_mpi_ec_nist256_mod (gcry_mpi_t w, mpi_ec_t ctx)
 
   s_is_negative = LO32_LIMB64(s[4]) >> 31;
   d_is_negative = LO32_LIMB64(d[4]) >> 31;
-  mask3 = vzero - d_is_negative;
-  mask2 = (vzero - s_is_negative) & ~mask3;
-  mask1 = (s_is_negative - vone) & ~mask3;
+  mask3 = ct_limb_gen_mask(d_is_negative);
+  mask2 = ct_limb_gen_mask(s_is_negative) & ~mask3;
+  mask1 = ct_limb_gen_inv_mask(s_is_negative) & ~mask3;
 
   s[0] = LIMB_OR64(MASK_AND64(mask2, d[0]), MASK_AND64(mask1, s[0]));
   s[1] = LIMB_OR64(MASK_AND64(mask2, d[1]), MASK_AND64(mask1, s[1]));
@@ -595,15 +593,15 @@ _gcry_mpi_ec_nist384_mod (gcry_mpi_t w, mpi_ec_t ctx)
   };
   const mpi_limb64_t zero = LIMB_TO64(0);
   mpi_ptr_t wp;
-  mpi_size_t wsize = (384 + BITS_PER_MPI_LIMB64 - 1) / BITS_PER_MPI_LIMB64;
-  mpi_size_t psize = ctx->p->nlimbs;
+  mpi_limb64_t s[(384 + BITS_PER_MPI_LIMB64 - 1) / BITS_PER_MPI_LIMB64 + 1];
+  mpi_limb64_t t[DIM(s)];
+  mpi_limb64_t d[DIM(s)];
+  mpi_limb64_t x[DIM(s)];
 #if (BITS_PER_MPI_LIMB64 == BITS_PER_MPI_LIMB) && defined(WORDS_BIGENDIAN)
-  mpi_limb_t wp_shr32[wsize * LIMBS_PER_LIMB64];
+  mpi_limb_t wp_shr32[(DIM(s) - 1) * LIMBS_PER_LIMB64];
 #endif
-  mpi_limb64_t s[wsize + 1];
-  mpi_limb64_t t[wsize + 1];
-  mpi_limb64_t d[wsize + 1];
-  mpi_limb64_t x[wsize + 1];
+  const mpi_size_t wsize = DIM(s) - 1;
+  mpi_size_t psize = ctx->p->nlimbs;
   mpi_limb_t mask1;
   mpi_limb_t mask2;
   mpi_limb_t s_is_negative;
@@ -755,12 +753,17 @@ _gcry_mpi_ec_nist384_mod (gcry_mpi_t w, mpi_ec_t ctx)
 
   carry = LO32_LIMB64(s[6]);
 
+  /* Load values to stack to ease register pressure on i386. */
+  x[0] = p_mult[carry + 3][0];
+  x[1] = p_mult[carry + 3][1];
+  x[2] = p_mult[carry + 3][2];
+  x[3] = p_mult[carry + 3][3];
+  x[4] = p_mult[carry + 3][4];
+  x[5] = p_mult[carry + 3][5];
+  x[6] = p_mult[carry + 3][6];
   SUB7_LIMB64 (s[6], s[5], s[4], s[3], s[2], s[1], s[0],
 	       s[6], s[5], s[4], s[3], s[2], s[1], s[0],
-	       p_mult[carry + 3][6], p_mult[carry + 3][5],
-	       p_mult[carry + 3][4], p_mult[carry + 3][3],
-	       p_mult[carry + 3][2], p_mult[carry + 3][1],
-	       p_mult[carry + 3][0]);
+	       x[6], x[5], x[4], x[3], x[2], x[1], x[0]);
 
   ADD7_LIMB64 (d[6], d[5], d[4], d[3], d[2], d[1], d[0],
 	       s[6], s[5], s[4], s[3], s[2], s[1], s[0],
@@ -770,8 +773,8 @@ _gcry_mpi_ec_nist384_mod (gcry_mpi_t w, mpi_ec_t ctx)
 	       p_mult[0 + 3][1], p_mult[0 + 3][0]);
 
   s_is_negative = LO32_LIMB64(s[6]) >> 31;
-  mask2 = vzero - s_is_negative;
-  mask1 = s_is_negative - vone;
+  mask2 = ct_limb_gen_mask(s_is_negative);
+  mask1 = ct_limb_gen_inv_mask(s_is_negative);
 
   STORE64_COND(wp, 0, mask2, d[0], mask1, s[0]);
   STORE64_COND(wp, 1, mask2, d[1], mask1, s[1]);
@@ -791,8 +794,8 @@ _gcry_mpi_ec_nist384_mod (gcry_mpi_t w, mpi_ec_t ctx)
 void
 _gcry_mpi_ec_nist521_mod (gcry_mpi_t w, mpi_ec_t ctx)
 {
-  mpi_size_t wsize = (521 + BITS_PER_MPI_LIMB - 1) / BITS_PER_MPI_LIMB;
-  mpi_limb_t s[wsize];
+  mpi_limb_t s[(521 + BITS_PER_MPI_LIMB - 1) / BITS_PER_MPI_LIMB];
+  const mpi_size_t wsize = DIM(s);
   mpi_limb_t cy;
   mpi_ptr_t wp;
 
@@ -814,7 +817,7 @@ _gcry_mpi_ec_nist521_mod (gcry_mpi_t w, mpi_ec_t ctx)
   /* "mod p" */
   cy = _gcry_mpih_sub_n (wp, wp, ctx->p->d, wsize);
   _gcry_mpih_add_n (s, wp, ctx->p->d, wsize);
-  mpih_set_cond (wp, s, wsize, (cy != 0UL));
+  mpih_set_cond (wp, s, wsize, mpih_limb_is_not_zero (cy));
 
   w->nlimbs = wsize;
   MPN_NORMALIZE (wp, w->nlimbs);
