@@ -1,3 +1,9 @@
+libgcrypt20 (1.11.0-7+pexip25u1) pexip-trixie; urgency=medium
+
+  * Initial trixie build
+
+ -- Mark Hymers <mark.hymers@pexip.com>  Tue, 29 Apr 2025 22:36:07 +0100
+
 libgcrypt20 (1.11.0-7) unstable; urgency=medium
 
   [ Simon McVittie ]
