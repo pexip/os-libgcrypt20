@@ -1,3 +1,16 @@
+libgcrypt20 (1.11.0-7+pexip25u3+deb13u1) pexip-trixie; urgency=medium
+
+  * New upstream release with security fixes
+
+ -- Steve McIntyre <steve.mcintyre@pexip.com>  Tue, 26 May 2026 11:14:42 +0100
+
+libgcrypt20 (1.11.0-7+deb13u1) trixie-security; urgency=high
+
+  * Non-maintainer upload by the Security Team.
+  * cipher:ecc: Fix decoding a point on Montgomery curve. (CVE-2026-41989)
+
+ -- Salvatore Bonaccorso <carnil@debian.org>  Tue, 19 May 2026 21:41:39 +0200
+
 libgcrypt20 (1.11.0-7+pexip25u2) pexip-trixie; urgency=medium
 
   * Trixie build for product distribution

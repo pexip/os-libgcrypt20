@@ -3,3 +3,4 @@
 25_norevisionfromgit.diff
 30_mpi-ec-inline-reduce-register-pressure-on-32-bit-ARM.patch
 lp2083245-disable-sha3-s390x-acceleration-for-cshake.patch
+cipher-ecc-Fix-decoding-a-point-on-Montgomery-curve.patch
